@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "comment": "ШАБЛОН конфига координат (из общей ветки). Рабочим конфигом этот файл не является: скилл pp-ai-init копирует его в config/sources.json командной ветки и заполняет вместе с командой. Заполняется только «где лежит и как обратиться» и дефолты; критерии отбора — в queries/<имя>.md, вид отчёта — в templates/<имя>.md, сценарий — в processes/<имя>.md. Все значения TODO — открытые: до заполнения живой прогон по ним останавливается, а не угадывает. Секции под префиксом overlay: — личные наложения в своей ветке: поля объекта дополняются, массивы заменяются целиком.",
+
+  "taskStores": [
+    {
+      "id": "tasks",
+      "kind": "TODO: тип хранилища задач (jira | …); должен совпадать с именем адаптера <kind>.md",
+      "adapter": "adapters/TODO.md",
+      "displayName": "TODO: как хранилище называть в отчётах",
+      "mcpServer": "TODO: имя MCP-сервера, подключённого в сессии",
+      "enabled": true,
+
+      "baseUrl": "TODO: корень веб-интерфейса",
+      "issueUrlTemplate": "TODO: ссылка на задачу, например {baseUrl}/browse/{key}",
+
+      "projects": ["TODO: проекты команды"],
+      "issueTypes": ["TODO: имена типов задач этой инстансы; до подтверждения живым вызовом значения не годятся для фильтра"],
+      "statusesExclude": ["TODO: закрытые статусы как в этой инстансе"],
+
+      "modules": [
+        {
+          "comment": "КЭ команды: записи {name, code} — нужны не только отчётам. name — для человека, в отчёты не выводится; code — вида CI03296913, в поиск уходит только цифровая часть (3296913). Пустой список — отбора по КЭ нет",
+          "name": "TODO: как КЭ называть в разговоре с человеком",
+          "code": "TODO: код КЭ вида CI00000000"
+        }
+      ],
+
+      "capabilities": ["searchIssues", "getIssues", "getIssue", "addComment"],
+      "limits": {
+        "jqlMustIncludeIssueType": true,
+        "getIssuesBatchMax": 20,
+        "pageSize": 50
+      }
+    }
+  ],
+
+  "codeStores": [
+    {
+      "id": "code",
+      "kind": "TODO: тип хранилища кода (bitbucket-server | …); имя адаптера <kind>.md",
+      "adapter": "adapters/TODO.md",
+      "displayName": "TODO: как хранилище называть в отчётах",
+      "mcpServer": "TODO: имя MCP-сервера, подключённого в сессии",
+      "enabled": true,
+
+      "baseUrl": "TODO: корень веб-интерфейса",
+      "pullRequestUrlTemplate": "TODO: ссылка на PR",
+
+      "repositories": [
+        {
+          "projectKey": "TODO",
+          "slug": "TODO",
+          "defaultBranch": "TODO"
+        }
+      ],
+
+      "acceptTargetBranches": ["TODO: ветки приёмки, в которые попадают смерженные PR"],
+      "pullRequest": {
+        "pageSize": 25,
+        "keyExtraction": {
+          "fields": ["TODO: поля PR, из которых берётся ключ задачи"],
+          "pattern": "[A-Z][A-Z0-9]+-[0-9]+",
+          "ignorePatterns": ["TODO: шаблоны ключей, которые ключом задачи не являются (релизные метки, имена сборок)"]
+        }
+      },
+
+      "capabilities": ["listPullRequests", "getPullRequest", "getPullRequestDiff", "listCommits", "getCommitChanges"]
+    }
+  ],
+
+  "defaults": {
+    "process": "TODO: имя процесса по умолчанию",
+    "taskStore": "tasks",
+    "codeStore": "code"
+  }
+}

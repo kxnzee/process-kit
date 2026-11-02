@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "pp-ai-confluence": {
+      "type": "streamable-http",
+      "httpUrl": "https://api.sbertrack.sberbank.ru/confluence/mcp",
+      "headers": {
+        "x-confluence-token": "$secret:pp-ai-confluence/x-confluence-token"
+      }
+    },
+    "pp-ai-confluence-delta": {
+      "type": "streamable-http",
+      "httpUrl": "https://api.sbertrack.sberbank.ru/confluence/delta/mcp",
+      "headers": {
+        "x-confluence-token": "$secret:pp-ai-confluence-delta/x-confluence-token"
+      }
+    },
+    "pp-ai-jira": {
+      "type": "streamable-http",
+      "httpUrl": "https://api.sbertrack.sberbank.ru/jira/mcp",
+      "headers": {
+        "x-jira-token": "$secret:pp-ai-jira/x-jira-token"
+      }
+    },
+    "pp-ai-jira-delta": {
+      "type": "streamable-http",
+      "httpUrl": "https://api.sbertrack.sberbank.ru/jira/delta/mcp",
+      "headers": {
+        "x-jira-token": "$secret:pp-ai-jira-delta/x-jira-token"
+      }
+    }
+  },
+  "$version": 4
+}

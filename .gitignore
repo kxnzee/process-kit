@@ -1,0 +1,33 @@
+# Доступами заведует клиент GigaCode: токенов и файлов с ними в проекте быть не должно
+.gigacode/.env
+.env
+.env.*
+
+# Что GigaCode и IDE пишут в папку проекта сами
+.gigacode/tmp/
+.gigacode/history/
+.gigacode/memory/
+.gigacode/cache/
+.gigacode/logs/
+.gigacode/state/
+.gigacode/sessions/
+.gigacode/projects/
+.gigacode/shell-snapshots/
+.gigacode/plugins/
+.gigacode-extension-install.json
+
+# IDE и вспомогательные каталоги
+.gigaide/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+process-kit.local.json
+
+# Данные человека: результаты запусков и журнал прогонов в git не попадают
+outputs/
+.history/
+
+# старые имена папок результатов, удалить в следующей версии
+Process Kit/
+.runs/

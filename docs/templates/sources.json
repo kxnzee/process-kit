@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "taskStores": [
+    {
+      "id": "tasks",
+      "kind": "jira",
+      "adapter": "adapters/jira.md",
+      "displayName": "Jira",
+      "mcpServer": "TODO",
+      "enabled": true,
+      "baseUrl": "https://jira.example",
+      "issueUrlTemplate": "{baseUrl}/browse/{key}",
+      "projects": ["TODO"],
+      "issueTypes": ["TODO: имена типов задач этой инстансы; до подтверждения живым вызовом не для фильтра"],
+      "statusesExclude": ["TODO"],
+      "capabilities": ["searchIssues", "getIssues", "getIssue", "addComment"],
+      "limits": {
+        "jqlMustIncludeIssueType": true,
+        "getIssuesBatchMax": 20,
+        "pageSize": 50
+      }
+    }
+  ],
+  "codeStores": [
+    {
+      "id": "code",
+      "kind": "bitbucket-server",
+      "adapter": "adapters/bitbucket.md",
+      "displayName": "Bitbucket",
+      "mcpServer": "TODO",
+      "enabled": true,
+      "baseUrl": "https://bitbucket.example",
+      "pullRequestUrlTemplate": "{baseUrl}/projects/{projectKey}/repos/{slug}/pull-requests/{id}",
+      "repositories": [
+        {
+          "projectKey": "TODO",
+          "slug": "TODO",
+          "defaultBranch": "master"
+        }
+      ],
+      "acceptTargetBranches": ["master"],
+      "pullRequest": {
+        "pageSize": 25,
+        "keyExtraction": {
+          "fields": ["title", "fromRef.displayId", "description"],
+          "pattern": "[A-Z][A-Z0-9]+-[0-9]+",
+          "ignorePatterns": ["TODO"]
+        }
+      },
+      "capabilities": ["listPullRequests", "getPullRequest", "getPullRequestDiff", "listCommits", "getCommitChanges"]
+    }
+  ],
+  "defaults": {
+    "process": "TODO",
+    "taskStore": "tasks",
+    "codeStore": "code"
+  }
+}

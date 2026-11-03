@@ -1,9 +1,40 @@
 'use strict';
-// Normalize preselected demo records; this does not perform the live Jira selection.
-function normalizeFixture(fixture) {
-  if (fixture.query !== 'sdd-stories-report') throw new Error('фикстура не соответствует запросу sdd-stories-report');
-  if (!Array.isArray(fixture.stories) || !Array.isArray(fixture.excluded) || !Array.isArray(fixture.unverified)) throw new Error('в фикстуре нужны stories/excluded/unverified');
-  const meta = { ...(fixture.meta || {}), demo: true };
+// Pure SDD calculation from recorded evidence. No MCP or file reads.
+const {createHash}=require('node:crypto');
+function selectionId(tasks){return createHash('sha256').update(JSON.stringify({meta:tasks.meta,stories:tasks.stories,excluded:tasks.excluded,unverified:tasks.unverified})).digest('hex');}
+function unique(rows,label){
+ if(!Array.isArray(rows)||rows.some(row=>!row||typeof row.key!=='string'||!row.key)||new Set(rows.map(row=>row.key)).size!==rows.length)throw new Error(label+': нужны уникальные записи с key');
+}
+function splitFixture(fixture){
+ if(fixture.query!=='sdd-stories-report'||!Array.isArray(fixture.stories)||!Array.isArray(fixture.excluded)||!Array.isArray(fixture.unverified))throw new Error('фикстура не соответствует запросу sdd-stories-report');
+ const tasks={meta:{...structuredClone(fixture.meta||{}),demo:true},stories:[],excluded:structuredClone(fixture.excluded),unverified:structuredClone(fixture.unverified)};
+ const records=[];
+ unique(fixture.stories,'stories');
+ for(const original of fixture.stories){
+  const story=structuredClone(original),record={key:story.key};
+  for(const key of ['prs','prsComplete','commit'])if(Object.hasOwn(story,key)){record[key]=story[key];delete story[key];}
+  tasks.stories.push(story);records.push(record);
+ }
+ tasks.selectionId=selectionId(tasks);
+ return {tasks,code:{selectionId:tasks.selectionId,records}};
+}
+function assessSdd(tasks,code){
+ if(!tasks||!code||!tasks.meta||!Array.isArray(tasks.excluded)||!Array.isArray(tasks.unverified))throw new Error('Нужны task-records и code-evidence');
+ unique(tasks.stories,'task-records');unique(code.records,'code-evidence');
+ if(tasks.stories.some(row=>row.labels!==undefined&&(!Array.isArray(row.labels)||row.labels.some(label=>typeof label!=='string'))))throw new Error('Метки должны быть списком строк или отсутствовать');
+ if(code.records.some(row=>(row.prsComplete!==undefined&&typeof row.prsComplete!=='boolean')||(row.prs!==undefined&&(!Array.isArray(row.prs)||row.prs.some(pr=>!pr||typeof pr.state!=='string'||(pr.changedPaths!==undefined&&(!Array.isArray(pr.changedPaths)||pr.changedPaths.some(file=>typeof file!=='string'))))))))throw new Error('Неверный формат свидетельств кода');
+ if(code.records.some(row=>Object.keys(row).some(key=>!['key','prs','prsComplete','commit','reason'].includes(key))))throw new Error('Свидетельства кода содержат посторонние поля');
+ if(tasks.selectionId!==selectionId(tasks)||code.selectionId!==tasks.selectionId)throw new Error('Свидетельства относятся к другому отбору');
+ const keys=new Set(tasks.stories.map(row=>row.key));
+ if(code.records.some(row=>!keys.has(row.key)))throw new Error('В коде есть чужой ключ');
+ if(tasks.stories.some(row=>['prs','prsComplete','commit','via'].some(key=>Object.hasOwn(row,key))))throw new Error('Источник задач содержит расчёт или свидетельства кода');
+ const index=new Map(code.records.map(row=>[row.key,row]));
+ const fixture={meta:structuredClone(tasks.meta),excluded:structuredClone(tasks.excluded),unverified:structuredClone(tasks.unverified),stories:tasks.stories.map(story=>({...structuredClone(story),...structuredClone(index.get(story.key)||{prsComplete:false})}))};
+ return classify(fixture);
+}
+function normalizeFixture(fixture){const input=splitFixture(fixture);return assessSdd(input.tasks,input.code);}
+function classify(fixture) {
+  const meta = { ...(fixture.meta || {}) };
   const label = String(meta.label || 'SDD').toLowerCase();
   const prefix = String(meta.watchPath || 'openspec/changes').replace(/\/$/, '') + '/';
   const sddStories = [], plainStories = [], unverified = [...fixture.unverified];
@@ -33,4 +64,4 @@ function normalizeFixture(fixture) {
       labelCount, commitCount, unverifiedCount: unverified.length,
       sddShare: storyCount ? (100 * sddStories.length / storyCount).toFixed(1).replace('.', ',') : '0' } };
 }
-module.exports = { normalizeFixture };
+module.exports = { normalizeFixture, splitFixture, assessSdd, selectionId };

@@ -443,6 +443,11 @@ function ruleActions() {
     else if (!['source', 'transform', 'act'].includes(String(d.kind))) E('действие', file, 2, `kind должен быть source | transform | act (найдено: ${d.kind})`);
     if (!d.consumes) E('действие', file, 2, 'нет consumes (что принимает)');
     if (!d.produces) E('действие', file, 2, 'нет produces (что отдаёт)');
+    else if (typeof d.produces !== 'object' || Array.isArray(d.produces) || Object.keys(d.produces).length !== 1 || Object.entries(d.produces).some(([key,value])=>!NAME.test(key)||typeof value!=='string'||!value.trim())) E('действие', file, 2, 'атомарное действие объявляет один именованный результат с описанием');
+    for (const key of ['artifacts','params']) {
+      const list=d.consumes?.[key];
+      if (!Array.isArray(list)||list.some(value=>typeof value!=='string'||!value)||new Set(list).size!==list.length) E('действие', file, 2, `consumes.${key}: нужен список уникальных входов`);
+    }
 
     if (d.kind === 'transform' && !/^none(?: |$)/.test(String(d.adapter))) E('действие', file, 2, 'transform не имеет сетевого adapter');
     if (d.kind === 'source' && (!d.adapter || /^none(?: |$)/.test(String(d.adapter)))) E('действие', file, 2, 'source требует сетевое подключение');
@@ -824,7 +829,8 @@ function ruleProcessValues() {
         }
       }
       if (opt.demo || action.kind === 'transform' || /^none(?: |$)/.test(String(action.adapter))) continue;
-      const fields = { taskStore: asList(req.taskFields), codeStore: asList(req.codeFields) };
+      const slots=asList(action.consumes?.params);
+      const fields = { taskStore: slots.includes('taskStore')?asList(req.taskFields):[], codeStore: slots.includes('codeStore')?asList(req.codeFields):[] };
       if (!fields.taskStore.length && !fields.codeStore.length) {
         E('значения', file, 0, 'сетевой процесс должен объявить requires.taskFields/codeFields'); continue;
       }

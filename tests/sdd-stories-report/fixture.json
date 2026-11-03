@@ -1,5 +1,5 @@
 {
-  "comment": "ВЫМЫШЛЕННЫЕ ДАННЫЕ для демонстрационного прогона и тестов (dataFile=tests/sdd-stories-report/fixture.json). Ничего о реальных задачах, людях и репозиториях не говорят. Форма — вход шага fetch процесса sdd-stories-report: мета-поля шапки отчёта, разделы stories[] / excluded[] / unverified[] и счётчики. Правила отбора, по которым набор и отсев получены, — в actions/run-query/queries/sdd-stories-report.md. Эталонные результаты прогона — в tests/sdd-stories-report/.",
+  "comment": "ВЫМЫШЛЕННЫЕ ДАННЫЕ: общий пакет независимых свидетельств задач и кода. splitFixture разделяет их для fetch/read-code; assess рассчитывает report-data. Эталонные группы и счётчики хранятся отдельно в fetch.json, не копируются в результат.",
   "meta": {
     "reportTitle": "Доля стори, выполненных по SDD",
     "generatedAt": "2026-01-20",

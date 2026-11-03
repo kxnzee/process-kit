@@ -1,10 +1,10 @@
 ---
 name: sdd-stories-report
-version: 1.0.0
+version: 1.1.0
 area: отчётность
 status: действует
 requires:
-  actions: [run-query, compose-report, send-mail]
+  actions: [run-query, read-code-evidence, assess-sdd, compose-report, prepare-mail-draft]
   context: [common.md, writing-style.md]
   taskFields: [baseUrl, issueUrlTemplate, projects, modules[].name, modules[].code]
   codeFields: [baseUrl, repositories[].projectKey, repositories[].slug, repositories[].defaultBranch, acceptTargetBranches]
@@ -38,7 +38,8 @@ params:
 
 ## Что важно знать при исполнении
 
-- Отбор строится от историй: шаг `fetch` читает историю статусов каждой стори.
+- Отбор строится от историй: шаг `fetch` читает историю статусов каждой стори; `read-code` читает код,
+  `assess` сопоставляет свидетельства и рассчитывает показатели без сети.
 - Процент считается только по прошедшим отбор стори: стори, которые не удалось проверить,
   в знаменатель не входят и перечисляются отдельно.
 - Проект, сервер подключения и адреса систем в этом файле не повторяются: они берутся из
@@ -57,6 +58,20 @@ params:
 
 - действие: run-query
 - параметры: `query: sdd-stories-report`
+- артефакт: task-records
+- следующий: read-code
+
+### read-code
+
+- действие: read-code-evidence
+- параметры: `query: sdd-evidence`
+- артефакт: code-evidence
+- следующий: assess
+
+### assess
+
+- действие: assess-sdd
+- параметры: `rule: sdd`
 - артефакт: report-data
 - следующий: compose
 
@@ -75,11 +90,10 @@ params:
 
 ### notify
 
-- действие: send-mail
+- действие: prepare-mail-draft
 - параметры:
   - `to: {report-data} → plainStories[] → поле responsible каждой задачи: имена через «; », повторы убрать, «—» пропустить; если не осталось ни одного — остановиться и спросить у человека`
   - `subject: SDD с {params.startDate}: стори, выполненные без SDD`
-  - `body: {report-text}`
 - артефакт: mail-draft
 - следующий: end
 

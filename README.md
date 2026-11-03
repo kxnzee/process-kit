@@ -97,7 +97,7 @@ git branch --unset-upstream                  # ветка my не связана
 git config branch.my.pushRemote no_push      # git push откажется отправлять my
 ```
 
-Для установки защиты с сохранением уже существующего hook выполните
+Для установки pre-commit (секреты в индексе) и pre-push с сохранением прежних hooks выполните
 `node tools/install-hooks.js`. Исходный скрипт — `.gigacode/hooks/pre-push`,
 в `.git/hooks/pre-push` устанавливается вызывающая его обёртка. В общий адрес
 защита не пропускает:

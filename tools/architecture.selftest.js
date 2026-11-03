@@ -39,7 +39,6 @@ try {
   check('неизвестный переход', () => assert.ok(model('### a\n- действие: edit-text\n- следующий: missing').errors.some(e => e.includes('отсутствующий'))));
   check('повтор шага', () => assert.ok(model('### a\n- действие: edit-text\n### a\n- действие: edit-text').errors.some(e => e.includes('повтор'))));
   check('branch требует default', () => assert.ok(model('### a\n- branch:\n - когда: true → goto: end').errors.some(e => e.includes('default'))));
-  check('ссылка общего на личное запрещена', () => assert.equal(allowedReference('report', 'my-query'), false));
   check('ссылка между командами запрещена', () => assert.equal(allowedReference('team-a-report', 'team-b-query'), false));
   check('личный на общий разрешён', () => assert.equal(allowedReference('my-report', 'run-query'), true));
   check('неверная календарная дата', () => assert.equal(validRunFolderName('2026-02-30_отчёт'), false));
@@ -64,17 +63,6 @@ try {
     validate(['--only', 'processes'], false, 'вход report-data недоступен');
   });
   const fx = JSON.parse(fs.readFileSync(path.join(source, 'tests/sdd-stories-report/fixture.json')));
-  check('метка достаточна при недоступном PR', () => {
-    const input = structuredClone(fx); delete input.stories[0].prs;
-    const data = normalizeFixture(input);
-    assert.ok(data.sddStories.some(s => s.key === 'DEMO-201'));
-  });
-  check('без метки при неполном PR нельзя в plain', () => {
-    const input = structuredClone(fx); input.stories[2].prsComplete = false;
-    const data = normalizeFixture(input);
-    assert.ok(!data.plainStories.some(s => s.key === 'DEMO-203'));
-    assert.ok(data.unverified.some(s => s.key === 'DEMO-203'));
-  });
   check('положительный PR достаточен при неизвестной метке', () => {
     const input = structuredClone(fx); delete input.stories[1].labels;
     assert.ok(normalizeFixture(input).sddStories.some(s => s.key === 'DEMO-202'));

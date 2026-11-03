@@ -8,6 +8,8 @@ consumes:
   params: [query, codeStore, dataFile, watchPath]
 produces:
   code-evidence: PR и полнота проверки кода по ключам выбранных задач
+contracts:
+  code-evidence: contracts/result.json
 ---
 
 # Прочитать свидетельства кода

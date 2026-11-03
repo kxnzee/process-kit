@@ -11,6 +11,8 @@ consumes:
   params: [<параметр>, <параметр>]
 produces:
   <артефакт>: <что в нём>
+contracts:
+  <артефакт>: <text или contracts/result.json для структурированного JSON>
 ---
 
 # Действие: <название>

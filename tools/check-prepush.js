@@ -20,7 +20,7 @@ const git = (...args) => cmd('git', args).stdout.trim();
 function test(name, args, succeeds) { cmd('git', args, succeeds ? 0 : 1); passed++; console.log(`✓ ${name}`); }
 try {
   git('init', '-q', '-b', 'master'); git('config', 'user.name', 'Test'); git('config', 'user.email', 'test@example.invalid');
-  for (const file of ['tools/paths.js', 'tools/prepush.js', 'tools/install-hooks.js', '.gigacode/hooks/pre-push']) {
+  for (const file of ['tools/paths.js', 'tools/prepush.js', 'tools/install-hooks.js', 'tools/commit-guard.js', '.gigacode/hooks/pre-push', '.gigacode/hooks/pre-commit']) {
     const dest = path.join(cwd, file); fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(path.join(__dirname, '..', file), dest);
   }

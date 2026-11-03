@@ -33,7 +33,7 @@ keyPattern=[A-Z][A-Z0-9]+-[0-9]+, keyFields=заголовок/описание 
 
 ## Выход
 
-code-evidence содержит meta с codeQueryFile и по каждому ключу запись key, prs,
+code-evidence содержит selectionId и records[]; по каждому ключу — запись key, prs,
 prsComplete, commit (если подтверждён), reason (при неполноте). У PR сохранить
 id/url/state и changedPaths. Пустой prs допустим как отрицательное свидетельство
 только при полностью пройденной области поиска и явном prsComplete=true.

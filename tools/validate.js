@@ -417,6 +417,10 @@ function ruleProcesses() {
         if (step.artifact) input.add(step.artifact);
         else if (action.produces && typeof action.produces === 'object') for (const key of Object.keys(action.produces)) input.add(key);
       }
+      if(step?.kind==='process'){
+        try { const ports=require('./process-dependencies').resultPorts(ROOT,step.ref);if(step.artifact&&ports.length)input.add(step.artifact);else if(ports.length===1)input.add(ports[0]); }
+        catch(error){E('контракт',file,step.ln,error.message);}
+      }
       activeFlow.delete(name); cache.set(name, input); return input;
     }
     for (const step of used) after(step.name);
@@ -466,6 +470,8 @@ function ruleActions() {
       const list=d.consumes?.[key];
       if (!Array.isArray(list)||list.some(value=>typeof value!=='string'||!value)||new Set(list).size!==list.length) E('действие', file, 2, `consumes.${key}: нужен список уникальных входов`);
     }
+
+    try { const meta=require('./process-dependencies').action(ROOT,name); for(const ref of Object.values(meta.contracts))if(ref.startsWith('contracts/'))require('./value-contract').loadContract(ROOT,`actions/${name}/${ref}`); } catch(error) { E('контракт',file,0,error.message); }
 
     if (d.kind === 'transform' && !/^none(?: |$)/.test(String(d.adapter))) E('действие', file, 2, 'transform не имеет сетевого adapter');
     if (d.kind === 'source' && (!d.adapter || /^none(?: |$)/.test(String(d.adapter)))) E('действие', file, 2, 'source требует сетевое подключение');

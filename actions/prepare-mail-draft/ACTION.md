@@ -8,6 +8,8 @@ consumes:
   params: [to, subject]
 produces:
   mail-draft: черновик письма
+contracts:
+  mail-draft: text
 ---
 
 # Черновик письма

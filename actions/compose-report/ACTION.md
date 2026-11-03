@@ -8,6 +8,8 @@ consumes:
   params: [template, maxFindingsPerReport]
 produces:
   report-text: готовые тексты по шаблону — общий отчёт или по объектам, смотря что предписывает шаблон
+contracts:
+  report-text: text
 ---
 
 # Действие: составить текст по шаблону

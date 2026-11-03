@@ -45,6 +45,7 @@ function processModel(text) {
     const paramRe = /(?:`|^|\s)(query|template|rule|taskStore|codeStore):\s*([^`\n]+)/g;
     let p;
     while ((p = paramRe.exec(row))) step.params[p[1]] = p[2].trim();
+    for(const match of row.matchAll(/`([A-Za-zА-Яа-яЁё][\wА-Яа-яЁё-]*):\s*([^`]+)`/g))step.params[match[1]]=match[2].trim();
   }
   const names = new Set();
   for (const s of steps) {

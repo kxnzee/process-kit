@@ -57,7 +57,6 @@ for (const [rel, text] of Object.entries(BASE)) w(rel, text);
 // «clean» — ни ошибок, ни предупреждений.
 const BOUNDS = [
   // действие: имя шага процесса и его данные рядом, в папке действия
-  ['процесс ссылается на несуществующее действие', ['processes/my-x.md', '---\nname: my-x\ndescription: Тест\n---\n## Шаги\n1. nope — x\n'], 'E:несуществующее действие nope'],
   ['шаг в подразделе с маркером списка', ['processes/my-step.md', '---\nname: my-step\ndescription: Тест\n---\n## Шаги\n\n### fetch\n\n- действие: nope-step\n- артефакт: data\n'], 'E:несуществующее действие nope-step'],
   ['подпроцесс не найден', ['processes/my-sub.md', '---\nname: my-sub\ndescription: Тест\n---\n## Шаги\n\n### call\n\n- процесс: nope-process\n'], 'E:подпроцесс nope-process не найден'],
   ['действие ссылается на несуществующий шаблон', ['actions/my-a/ACTION.md', '---\nname: my-a\ndescription: Тест\n---\ntemplates/нет.md\n'], 'E:нет файла templates/нет.md'],

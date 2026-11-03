@@ -8,6 +8,8 @@ consumes:
   params: [rule, label, watchPath]
 produces:
   report-data: классифицированные истории и рассчитанные показатели SDD
+contracts:
+  report-data: contracts/result.json
 ---
 
 # Рассчитать SDD

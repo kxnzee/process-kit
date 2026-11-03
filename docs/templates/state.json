@@ -9,5 +9,9 @@
   "artifactHashes": {},
   "identity": null,
   "pending": null,
-  "last_artifact": ""
+  "last_artifact": "",
+  "cursorProcess": "<имя текущего процесса>",
+  "stack": [],
+  "scopeParams": {},
+  "recordedArtifacts": {}
 }

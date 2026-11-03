@@ -18,7 +18,7 @@
 | Что создаёшь | Заготовка | Куда кладётся | Проверка (--only) |
 |---|---|---|---|
 | Процесс | process.md | processes/<префикс><имя>.md | processes |
-| Действие | action/ACTION.md (+ queries/, templates/) | actions/<префикс><имя>/ | actions |
+| Действие | action/ACTION.md (+ queries/, templates/, contract.json для JSON) | actions/<префикс><имя>/ | actions |
 | Подключение | adapter.md | adapters/<префикс><система>.md | adapters |
 | Контекст | context.md | context/<префикс><тема>.md | context |
 | Служебный скилл | skill/SKILL.md | .gigacode/skills/<имя>/SKILL.md | skills |
@@ -52,3 +52,8 @@ compose-report, а text — результатом edit-text. Никакой д�
 docs/reference/runtime-artifacts.md. Он заполняет state/trace/history фактическими
 значениями. Примеры этих файлов нужны для понимания формы, не для ручной сборки
 журнала после выполнения.
+
+Для структурированного выхода создай actions/<имя>/contracts/result.json по
+action/contract.json и укажи его в contracts ACTION.md. Набор поддержанных правил
+явный (type, required, properties, additionalProperties, items, minItems/minLength,
+minimum, enum, anyOf); неизвестное правило блокируется, а не игнорируется.

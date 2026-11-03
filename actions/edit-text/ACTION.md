@@ -8,6 +8,8 @@ consumes:
   params: [text, режим, кому]
 produces:
   report-text: тот же текст после правки, без новых фактов
+contracts:
+  report-text: text
 ---
 
 # Действие: отредактировать текст

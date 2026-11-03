@@ -8,6 +8,8 @@ consumes:
   params: [query, taskStore, dataFile, startDate, endDate, keField]
 produces:
   task-records: отобранные задачи и свидетельства отбора без расчёта SDD
+contracts:
+  task-records: contracts/result.json
 ---
 
 # Прочитать задачи

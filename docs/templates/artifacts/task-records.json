@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "reportTitle": "Пример формы отчёта SDD",
+    "generatedAt": "2026-11-03",
+    "window": "01.11.2026 — 03.11.2026",
+    "label": "SDD",
+    "watchPath": "openspec/changes",
+    "query": "sdd-stories-report",
+    "queryFile": "actions/run-query/queries/sdd-stories-report.md",
+    "demo": true
+  },
+  "stories": [
+    {
+      "key": "DEMO-1",
+      "summary": "Вымышленная история",
+      "url": "https://example.invalid/DEMO-1",
+      "status": "Done",
+      "inProgressAt": "2026-11-01",
+      "assignee": "Демо",
+      "labels": [
+        "SDD"
+      ]
+    }
+  ],
+  "excluded": [],
+  "unverified": [],
+  "selectionId": "edeb143b1b3bc54a2f4205655f7bf35c0ed9ee011ebb6a4ad756e758cdccd769"
+}

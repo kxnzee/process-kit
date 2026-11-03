@@ -5,9 +5,9 @@ function selectionId(tasks){return createHash('sha256').update(JSON.stringify({m
 function unique(rows,label){
  if(!Array.isArray(rows)||rows.some(row=>!row||typeof row.key!=='string'||!row.key)||new Set(rows.map(row=>row.key)).size!==rows.length)throw new Error(label+': нужны уникальные записи с key');
 }
-function splitFixture(fixture){
- if(fixture.query!=='sdd-stories-report'||!Array.isArray(fixture.stories)||!Array.isArray(fixture.excluded)||!Array.isArray(fixture.unverified))throw new Error('фикстура не соответствует запросу sdd-stories-report');
- const tasks={meta:{...structuredClone(fixture.meta||{}),demo:true},stories:[],excluded:structuredClone(fixture.excluded),unverified:structuredClone(fixture.unverified)};
+function splitFixture(fixture,query='sdd-stories-report'){
+ if(typeof query!=='string'||!/^[a-z0-9][a-z0-9-]*$/.test(query)||fixture.query!==query||!Array.isArray(fixture.stories)||!Array.isArray(fixture.excluded)||!Array.isArray(fixture.unverified))throw new Error('фикстура не соответствует выбранному запросу');
+ const tasks={meta:{...structuredClone(fixture.meta||{}),query,demo:true},stories:[],excluded:structuredClone(fixture.excluded),unverified:structuredClone(fixture.unverified)};
  const records=[];
  unique(fixture.stories,'stories');
  for(const original of fixture.stories){
@@ -18,9 +18,18 @@ function splitFixture(fixture){
  tasks.selectionId=selectionId(tasks);
  return {tasks,code:{selectionId:tasks.selectionId,records}};
 }
+function evidenceFromFixture(fixture,tasks){
+ if(!tasks||tasks.selectionId!==selectionId(tasks))throw new Error('Нужен сохранённый task-records');
+ const pair=splitFixture(fixture,tasks.meta.query),keys=new Set(tasks.stories.map(row=>row.key)),known=new Set(pair.tasks.stories.map(row=>row.key));
+ if([...keys].some(key=>!known.has(key)))throw new Error('В фикстуре нет выбранной задачи');
+ return {selectionId:tasks.selectionId,records:pair.code.records.filter(row=>keys.has(row.key))};
+}
 function assessSdd(tasks,code){
  if(!tasks||!code||!tasks.meta||!Array.isArray(tasks.excluded)||!Array.isArray(tasks.unverified))throw new Error('Нужны task-records и code-evidence');
  unique(tasks.stories,'task-records');unique(code.records,'code-evidence');
+ unique(tasks.excluded,'excluded');unique(tasks.unverified,'unverified');
+ const partition=[...tasks.stories,...tasks.excluded,...tasks.unverified].map(row=>row.key);
+ if(new Set(partition).size!==partition.length)throw new Error('Группы stories/excluded/unverified должны быть непересекающимися');
  if(tasks.stories.some(row=>row.labels!==undefined&&(!Array.isArray(row.labels)||row.labels.some(label=>typeof label!=='string'))))throw new Error('Метки должны быть списком строк или отсутствовать');
  if(code.records.some(row=>(row.prsComplete!==undefined&&typeof row.prsComplete!=='boolean')||(row.prs!==undefined&&(!Array.isArray(row.prs)||row.prs.some(pr=>!pr||typeof pr.state!=='string'||(pr.changedPaths!==undefined&&(!Array.isArray(pr.changedPaths)||pr.changedPaths.some(file=>typeof file!=='string'))))))))throw new Error('Неверный формат свидетельств кода');
  if(code.records.some(row=>Object.keys(row).some(key=>!['key','prs','prsComplete','commit','reason'].includes(key))))throw new Error('Свидетельства кода содержат посторонние поля');
@@ -32,7 +41,7 @@ function assessSdd(tasks,code){
  const fixture={meta:structuredClone(tasks.meta),excluded:structuredClone(tasks.excluded),unverified:structuredClone(tasks.unverified),stories:tasks.stories.map(story=>({...structuredClone(story),...structuredClone(index.get(story.key)||{prsComplete:false})}))};
  return classify(fixture);
 }
-function normalizeFixture(fixture){const input=splitFixture(fixture);return assessSdd(input.tasks,input.code);}
+function normalizeFixture(fixture,query='sdd-stories-report'){const input=splitFixture(fixture,query);return assessSdd(input.tasks,input.code);}
 function classify(fixture) {
   const meta = { ...(fixture.meta || {}) };
   const label = String(meta.label || 'SDD').toLowerCase();
@@ -44,7 +53,7 @@ function classify(fixture) {
     const tagged = labelsKnown && story.labels.some(item => String(item).toLowerCase() === label);
     const merged = (Array.isArray(story.prs) ? story.prs : []).filter(pr => pr.state === 'MERGED');
     const hasPr = merged.some(pr => Array.isArray(pr.changedPaths) && pr.changedPaths.some(file => String(file).startsWith(prefix)));
-    const complete = Array.isArray(story.prs) && story.prsComplete !== false && merged.every(pr => Array.isArray(pr.changedPaths));
+    const complete = Array.isArray(story.prs) && story.prsComplete === true && merged.every(pr => Array.isArray(pr.changedPaths));
     if (!tagged && !hasPr && (!complete || !labelsKnown)) {
       unverified.push({ key: story.key, summary: story.summary, reason: 'метки или список файлов PR не подтверждены полностью' }); continue;
     }
@@ -64,4 +73,4 @@ function classify(fixture) {
       labelCount, commitCount, unverifiedCount: unverified.length,
       sddShare: storyCount ? (100 * sddStories.length / storyCount).toFixed(1).replace('.', ',') : '0' } };
 }
-module.exports = { normalizeFixture, splitFixture, assessSdd, selectionId };
+module.exports = { normalizeFixture, splitFixture, evidenceFromFixture, assessSdd, selectionId };

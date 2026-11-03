@@ -7,5 +7,7 @@
   "updated": "<ISO-дата>",
   "artifacts": {},
   "artifactHashes": {},
-  "identity": null
+  "identity": null,
+  "pending": null,
+  "last_artifact": ""
 }

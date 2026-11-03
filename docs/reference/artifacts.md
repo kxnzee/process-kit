@@ -31,11 +31,14 @@ report-data.json/report-text.md оставлена только для чтен�
 - task-records: meta, stories[], excluded[], unverified[], selectionId. Stories — уже
   отобранные задачи с key/summary/url/status/inProgressAt/assignee/responsible/labels.
   Без prs, prsComplete, commit, via и бизнес-счётчиков. Неизвестные labels не равны [].
-  selectionId вычисляется selectionId(tasks) из tools/sdd-data.js по содержимому
-  отбора до добавления id; метаданные после этого не изменяются.
+  selectionId фиксируется run-journal save по окончательному содержимому
+  отбора; метаданные после сохранения не изменяются. В demo код формируется
+  evidenceFromFixture(fixture, savedTasks) по сохранённому входу.
 - code-evidence: тот же selectionId, records[] с уникальными key из task-records,
   prs[] (state, changedPaths и подтверждённые id/url), prsComplete, commit при наличии.
-  Нет записи/нет списка/неполная пагинация — неизвестность, не отрицательный ответ.
+  Нет записи/нет списка/неполная пагинация/отсутствующий prsComplete — неизвестность,
+  не отрицательный ответ. Для отрицательного вывода нужен явный prsComplete=true.
+  Stories, excluded и unverified должны быть уникальны внутри и не пересекаться.
 - Только assess-sdd объединяет свидетельства по key и возвращает report-data по
   контракту выше. Счётчики рассчитываются один раз; compose-report отображает их.
 
@@ -44,3 +47,14 @@ splitFixture разделяет старую общую вымышленную �
 live не получает отметку demo автоматически. normalizeFixture оставлен как обёртка
 для прежних тестов и эталонов. fetch.json теперь эталон шага assess; имя сохранено
 для совместимости check-report.js. Не использовать его как результат чтения.
+
+Обязательные selectors query/template/rule, объявленные в consumes.params действия,
+должны быть разрешены до исполнения через validate.js --process. Отсутствующее, null
+или пустое значение останавливает проверку; соседний файл автоматически не выбирается.
+
+Демо-варианты запроса поддерживаются splitFixture(fixture, selectedQuery): имя
+передаётся явно и должно совпадать с fixture.query. Имя по умолчанию оставлено для
+старого общего запроса. При личном/командном query обновите fixture.query и query
+в fetch.json; check-report сверяет выбранное имя по пути query эталонного набора.
+В task-records.meta.query сохраняется имя исходного запроса. Чтение кода использует
+его для той же фикстуры, а не имя собственного запроса sdd-evidence.

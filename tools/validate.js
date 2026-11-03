@@ -210,6 +210,24 @@ function ruleLevels() {
   const teamSet = team ? treeSet(`origin/team-${team}`) : null;
   const inTree = (set, rel) => set && [...set].some((p) => p === rel || p.startsWith(rel + '/'));
 
+  // Compare inherited content against the incorporated ancestor, not a newer remote tip.
+  // Personal connection values are an explicit local setup; other inherited files stay owned upstream.
+  function checkInherited(ref,skip=new Set()) {
+    const baseline=git(['merge-base','HEAD',ref],ROOT);if(!baseline)return;
+    const files=treeSet(baseline);if(!files)return;
+    for(const rel of files){
+      if(skip.has(rel))continue;
+      const file=path.join(ROOT,rel),stat=fs.lstatSync(file,{throwIfNoEntry:false});
+      const expected=git(['rev-parse',`${baseline}:${rel}`],ROOT);
+      const raw=stat?.isFile()&&!stat.isSymbolicLink()?git(['hash-object','--no-filters','--',rel],ROOT):null;
+      const actual=raw===expected?raw:stat?.isFile()&&!stat.isSymbolicLink()?git(['hash-object','--path',rel,'--',rel],ROOT):null;
+      const entry=git(['ls-tree',baseline,'--',rel],ROOT),mode=entry?.split(' ')[0];
+      if(!stat||actual!==expected||(mode==='100755')!==!!(stat.mode&0o111))E('уровни',file,0,'унаследованный файл изменён или удалён; создайте свой вариант с префиксом');
+    }
+  }
+  checkInherited('origin/master');
+  if(isMine&&teamSet)checkInherited(`origin/team-${team}`,new Set([...master,'config/sources.json']));
+
   for (const it of levelItems()) {
     if (inTree(master, it.rel)) continue;
     if (inTree(teamSet, it.rel)) continue;
@@ -634,11 +652,11 @@ function ruleConnections() {
     if (!s || typeof s !== 'object') continue;
     const ref = s.adapter || (s.kind ? String(s.kind) : '');
     if (!ref) { W('настройки команды', file, 0, `у записи «${s.id}» не задан adapter`); continue; }
-    if (isTodo(ref)) continue;
+    if (isTodo(ref) || isTodo(adapterName(ref))) continue;
     if (!exists(adapterFile(ref))) E('настройки команды', file, 0, `подключение adapters/${adapterName(ref)}.md для «${s.id}» не найдено`);
   }
   const def = (j.defaults || {}).process;
-  if (def && def !== 'TODO' && !exists(path.join(ROOT, 'processes', `${def}.md`))) {
+  if (def && !isTodo(def) && !exists(path.join(ROOT, 'processes', `${def}.md`))) {
     E('настройки команды', file, 0, `defaults.process «${def}» не найден в processes/`);
   }
 }
@@ -719,7 +737,8 @@ function checkSummary(file, names, isProbe) {
   else {
     const v = end[1].trim();
     if (isProbe && !/^Пробный прогон, ничего не отправлено/.test(v)) E('итог', file, 0, 'пробный прогон: «Чем закончилось: Пробный прогон, ничего не отправлено. …»');
-    if (!isProbe && !/^(готово|не получилось:)/i.test(v)) E('итог', file, 0, '«Чем закончилось:» начинается с «готово» или «не получилось: <причина>»');
+    if (!isProbe && /^Пробный прогон, ничего не отправлено/.test(v)) E('итог', file, 0, 'для демо имя папки должно начинаться с <дата>_проба-<задача>, не demo-');
+    else if (!isProbe && !/^(готово|не получилось:)/i.test(v)) E('итог', file, 0, '«Чем закончилось:» начинается с «готово» или «не получилось: <причина>»');
   }
   if (/\$secret:|Bearer\s|Authorization:|x-[a-z]+-token/i.test(t)) E('итог', file, 0, 'в итоге есть данные доступа');
   if (/^\s+at\s.+:\d+:\d+\)?$/m.test(t) || /\b(TypeError|ReferenceError|ECONNREFUSED|stack trace)\b/.test(t)) W('итог', file, 0, 'похоже на текст системной ошибки: причину пишите простыми словами');
@@ -823,7 +842,9 @@ function ruleProcessValues() {
       for (const [key, folder] of Object.entries({ query: 'queries', template: 'templates', rule: 'rules' })) {
         if (!asList(action.consumes?.params).some(p => String(p).split(/[ (]/)[0] === key) && !(key in step.params)) continue;
         const value = parameter(model, step, key, overrides);
-        if (value == null) continue;
+        if (value == null || typeof value === 'string' && !value.trim()) {
+          E('значения', file, step.ln, `нет обязательного параметра ${key} для ${step.ref}`); continue;
+        }
         if (!NAME.test(String(value)) || !exists(path.join(ROOT, 'actions', step.ref, folder, `${value}.md`))) {
           E('значения', file, step.ln, `не найден файл ${folder}/${value}.md для ${step.ref}`);
         }

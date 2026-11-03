@@ -45,7 +45,8 @@
             "src/export.js"
           ]
         }
-      ]
+      ],
+      "prsComplete": true
     },
     {
       "key": "DEMO-202",
@@ -75,7 +76,8 @@
             "openspec/changes/demo-202-rights/specs/access/spec.md"
           ]
         }
-      ]
+      ],
+      "prsComplete": true
     },
     {
       "key": "DEMO-203",
@@ -98,7 +100,8 @@
             "tests/ui/button.test.js"
           ]
         }
-      ]
+      ],
+      "prsComplete": true
     },
     {
       "key": "DEMO-204",
@@ -113,7 +116,8 @@
         "CI03296913"
       ],
       "assignee": "Разработчик Демо",
-      "prs": []
+      "prs": [],
+      "prsComplete": true
     }
   ],
   "excluded": [

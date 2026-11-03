@@ -167,6 +167,7 @@ function checkTestSet(testsDir) {
   let expected = null;
   let demoSet = false;
   let fixture = null;
+  let fixtureQuery = 'sdd-stories-report';
   if (!exists(fetchFile)) {
     fail(rel(fetchFile), 'нет эталона шага fetch');
   } else {
@@ -174,6 +175,10 @@ function checkTestSet(testsDir) {
       const parsed = JSON.parse(read(fetchFile));
       expected = parsed.expected || null;
       fixture = parsed.fixture || null;
+      if(parsed.query!==undefined){
+        if(typeof parsed.query!=='string'||!parsed.query.endsWith('.md'))throw new Error('query должен указывать файл запроса');
+        fixtureQuery=path.basename(parsed.query,'.md');
+      }
       if (!expected || !Array.isArray(expected.sddKeys) || !Array.isArray(expected.plainKeys) ||
           !expected.sddRows || !expected.excluded || !expected.unverified || !expected.via) {
         fail(rel(fetchFile), 'нет корректного expected — нужны группы ключей и словари фактов'); expected = null;
@@ -185,7 +190,7 @@ function checkTestSet(testsDir) {
   }
 
   if (expected) {
-    checkFixture(expected, fixture);
+    checkFixture(expected, fixture, fixtureQuery);
     if (reportData) checkReportData(expected, reportData);
   }
 
@@ -213,7 +218,7 @@ function report(testsDir) {
 
 // --- проверки набора -------------------------------------------------------
 
-function checkFixture(exp, fixture) {
+function checkFixture(exp, fixture, fixtureQuery) {
   if (!fixtureArg && !fixture) return;
   const fixturePath = path.resolve(root, fixtureArg || fixture);
   if (!exists(fixturePath)) {
@@ -227,7 +232,7 @@ function checkFixture(exp, fixture) {
     fail(rel(fixturePath), `не разбирается как JSON: ${e.message}`);
     return;
   }
-  try { checkReportData(exp, normalizeFixture(fx)); }
+  try { checkReportData(exp, normalizeFixture(fx,fixtureQuery)); }
   catch (error) { fail(rel(fixturePath), error.message); }
   checkSet(rel(fixturePath), (fx.stories || []).map((s) => s.key), exp.sddKeys.concat(exp.plainKeys), 'выборка фикстуры против эталона');
   checkSet(rel(fixturePath), (fx.excluded || []).map((s) => s.key), Object.keys(exp.excluded), 'отсев фикстуры против эталона');

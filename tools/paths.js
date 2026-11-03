@@ -53,11 +53,15 @@ const RUN_FOLDER_NAME = /^(\d{4}-\d{2}-\d{2})_([a-zа-яё0-9]+(?:-[a-zа-яё0-
 
 function runFolderParts(name) {
   const m = String(name).match(RUN_FOLDER_NAME);
-  return m ? { date: m[1], short: m[2] } : null;
+  if (!m) return null;
+  const date = new Date(`${m[1]}T00:00:00Z`);
+  const short = m[2].replace(/-([2-9]|[1-9][0-9]+)$/, '');
+  if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== m[1] || short.length > 40 || short.split('-').length > 4) return null;
+  return { date: m[1], short: m[2] };
 }
 
 function validRunFolderName(name) {
-  return RUN_FOLDER_NAME.test(name);
+  return runFolderParts(name) !== null;
 }
 
 function runFolderUnique(base, name) {

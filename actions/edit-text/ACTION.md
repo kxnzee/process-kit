@@ -4,8 +4,8 @@ description: Переписывает готовый текст короче, т
 kind: transform
 adapter: none — шаг не обращается к сети, правит только готовый текст
 consumes:
-  artifacts: [report-text (Markdown, обязательно), report-data (Markdown, необязательно — для сверки)]
-  params: [режим, кому, report-data]
+  artifacts: []
+  params: [text, режим, кому, report-data]
 produces:
   report-text: тот же текст после правки, без новых фактов
 ---

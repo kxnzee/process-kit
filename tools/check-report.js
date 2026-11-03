@@ -10,13 +10,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const { normalizeFixture } = require('./sdd-data');
 
 const args = process.argv.slice(2);
+const flags = new Set(['--root', '--tests', '--process', '--run', '--runDir', '--fixture']);
+for (let i = 0; i < args.length; i += 2) {
+  if (!flags.has(args[i]) || !args[i + 1] || args[i + 1].startsWith('--')) {
+    console.error(`Неверный аргумент: ${args[i]}`); process.exit(2);
+  }
+}
+
 function arg(name, fallback) {
   const i = args.indexOf(name);
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 }
-const has = (name) => args.includes(name);
 
 const root = path.resolve(arg('--root', process.cwd()));
 
@@ -64,7 +71,7 @@ if (explicitTests) {
     }
   }
   const all = subSets(path.join(root, 'tests'));
-  sets = name && all.some((d) => path.basename(d) === name) ? [path.join(root, 'tests', name)] : all;
+  sets = all; // Default checks every set; --process selects a single one.
   setsBase = path.join(root, 'tests');
 }
 if (!sets.length || !sets.some((d) => exists(d))) {
@@ -75,12 +82,15 @@ if (!sets.length || !sets.some((d) => exists(d))) {
 
 const runDirArg = arg('--run', arg('--runDir', ''));
 const fixtureArg = arg('--fixture', '');
+if (runDirArg && sets.length > 1) { console.error('Для сверки прогона выберите один --process или --tests'); process.exit(2); }
 
+
+const initialProblems = problems.slice();
 let failed = 0;
 if (sets.length > 1) console.log(`наборов: ${sets.length}`);
 for (const testsDir of sets) {
   if (sets.length > 1) console.log(`\n== ${rel(testsDir)}`);
-  checkSet(testsDir);
+  checkTestSet(testsDir);
   report(testsDir);
   if (problems.length) failed += 1;
 }
@@ -122,24 +132,32 @@ function plural(n, one, few, many) {
   return many;
 }
 
-function checkSet(testsDir) {
-  problems.length = 0;
+function checkTestSet(testsDir) {
+  problems.splice(0, problems.length, ...initialProblems);
   let reportData = null;
   let reportText = null;
   if (runDirArg) {
     const runDir = path.resolve(root, runDirArg);
-    const dataFile = path.join(runDir, 'report-data.json');
-    const textFile = path.join(runDir, 'report-text.md');
-    if (!exists(dataFile)) {
-      fail(rel(runDir), 'в каталоге прогона нет report-data.json — шаг fetch не оставил артефакт');
-    } else {
-      try {
-        reportData = JSON.parse(read(dataFile));
-      } catch (e) {
-        fail(rel(dataFile), `report-data.json не разбирается как JSON: ${e.message}`);
-      }
+    let artifacts = {};
+    const stateFile = path.join(runDir, 'state.json');
+    if (exists(stateFile)) {
+      try { artifacts = JSON.parse(read(stateFile)).artifacts || {}; }
+      catch { fail(rel(stateFile), 'некорректное состояние прогона'); }
     }
-    if (exists(textFile)) reportText = read(textFile);
+    function artifact(name, extension) {
+      const relative = artifacts[name] || `${name}.${extension}`;
+      const file = path.resolve(runDir, relative);
+      if (path.dirname(file) !== runDir) { fail(name, 'артефакт должен лежать в .run/'); return null; }
+      if (!exists(file)) { fail(rel(file), `нет артефакта ${name}`); return null; }
+      return file;
+    }
+    const dataFile = artifact('report-data', 'json');
+    const textFile = artifact('report-text', 'md');
+    if (dataFile) {
+      try { reportData = JSON.parse(read(dataFile)); }
+      catch { fail(rel(dataFile), 'неверный JSON результата'); }
+    }
+    if (textFile) reportText = read(textFile);
   } else if (sets.length === 1) {
     console.log('каталог прогона не указан (--run <каталог>): сверяю только эталоны между собой');
   }
@@ -148,12 +166,18 @@ function checkSet(testsDir) {
   const fetchFile = path.join(testsDir, 'fetch.json');
   let expected = null;
   let demoSet = false;
+  let fixture = null;
   if (!exists(fetchFile)) {
     fail(rel(fetchFile), 'нет эталона шага fetch');
   } else {
     try {
       const parsed = JSON.parse(read(fetchFile));
       expected = parsed.expected || null;
+      fixture = parsed.fixture || null;
+      if (!expected || !Array.isArray(expected.sddKeys) || !Array.isArray(expected.plainKeys) ||
+          !expected.sddRows || !expected.excluded || !expected.unverified || !expected.via) {
+        fail(rel(fetchFile), 'нет корректного expected — нужны группы ключей и словари фактов'); expected = null;
+      }
       if (parsed.demo === true) demoSet = true;
     } catch (e) {
       fail(rel(fetchFile), `не разбирается как JSON: ${e.message}`);
@@ -161,7 +185,7 @@ function checkSet(testsDir) {
   }
 
   if (expected) {
-    checkFixture(expected);
+    checkFixture(expected, fixture);
     if (reportData) checkReportData(expected, reportData);
   }
 
@@ -169,8 +193,8 @@ function checkSet(testsDir) {
   const reportFile = path.join(testsDir, 'report.md');
   if (!exists(reportFile)) {
     fail(rel(reportFile), 'нет эталона шага compose');
-  } else if (reportText) {
-    checkReportText(read(reportFile), reportText);
+  } else if (reportText !== null) {
+    checkReportText(read(reportFile), reportText, demoSet, reportFile);
   }
 }
 
@@ -189,9 +213,9 @@ function report(testsDir) {
 
 // --- проверки набора -------------------------------------------------------
 
-function checkFixture(exp) {
-  const fixturePath = path.resolve(root, fixtureArg || argFromFetchJson('fixture') || '');
-  if (!fixtureArg && !argFromFetchJson('fixture')) return;
+function checkFixture(exp, fixture) {
+  if (!fixtureArg && !fixture) return;
+  const fixturePath = path.resolve(root, fixtureArg || fixture);
   if (!exists(fixturePath)) {
     fail(rel(fixturePath), 'фикстура, на которой собран эталон, не найдена');
     return;
@@ -203,6 +227,8 @@ function checkFixture(exp) {
     fail(rel(fixturePath), `не разбирается как JSON: ${e.message}`);
     return;
   }
+  try { checkReportData(exp, normalizeFixture(fx)); }
+  catch (error) { fail(rel(fixturePath), error.message); }
   checkSet(rel(fixturePath), (fx.stories || []).map((s) => s.key), exp.sddKeys.concat(exp.plainKeys), 'выборка фикстуры против эталона');
   checkSet(rel(fixturePath), (fx.excluded || []).map((s) => s.key), Object.keys(exp.excluded), 'отсев фикстуры против эталона');
   checkSet(rel(fixturePath), (fx.unverified || []).map((s) => s.key), Object.keys(exp.unverified), 'непроверенные фикстуры против эталона');
@@ -220,29 +246,21 @@ function checkFixture(exp) {
     }
   }
 }
-function argFromFetchJson(key) {
-  try {
-    return JSON.parse(read(fetchFile))[key] || '';
-  } catch {
-    return '';
-  }
-}
-
 function checkReportData(exp, data) {
   const file = 'report-data.json';
   let sdd = asArray(data.sddStories);
   let plain = asArray(data.plainStories);
   let unv = asArray(data.unverified);
   let c = data.counters || {};
-  if (!sdd.length && !plain.length && !Object.keys(c).length && data.expected) {
-    // артефакт шага целиком в форме эталона: группы и счётчики лежат под expected
-    const inner = data.expected;
-    sdd = asArray(inner.sddKeys).map((key) => ({ key, ...(inner.sddRows || {})[key] }));
-    plain = asArray(inner.plainKeys).map((key) => ({ key }));
-    unv = Object.keys(inner.unverified || {}).map((key) => ({ key, reason: inner.unverified[key] }));
-    c = inner;
+  const groups = [sdd, plain, unv, asArray(data.excluded)];
+  const seen = new Set();
+  for (const group of groups) for (const row of group) {
+    if (seen.has(row.key)) fail(file, `задача ${row.key} находится в нескольких группах или повторяется`);
+    seen.add(row.key);
   }
-
+  if (Number(c.storyCount) !== sdd.length + plain.length || Number(c.sddCount) !== sdd.length || Number(c.plainCount) !== plain.length) {
+    fail(file, 'счётчики не соответствуют фактическим группам');
+  }
   for (const name of ['storyCount', 'sddCount', 'plainCount', 'labelCount', 'commitCount', 'unverifiedCount']) {
     if (c[name] === undefined) {
       fail(file, `в счётчиках нет поля ${name}`);
@@ -259,6 +277,8 @@ function checkReportData(exp, data) {
 
   checkSet(file, sdd.map((s) => s.key), exp.sddKeys, 'группа «по SDD»');
   checkSet(file, plain.map((s) => s.key), exp.plainKeys, 'группа «без SDD»');
+  checkSet(file, asArray(data.excluded).map(s => s.key), Object.keys(exp.excluded), 'исключённые задачи');
+  for (const item of asArray(data.excluded)) if (!contains(item.reason, exp.excluded[item.key])) fail(file, `неверная причина отсева ${item.key}`);
   checkSet(file, unv.map((s) => s.key), Object.keys(exp.unverified), 'раздел «проверить не удалось»');
 
   for (const s of sdd) {
@@ -271,7 +291,7 @@ function checkReportData(exp, data) {
     const want = exp.via[s.key];
     if (want && !sameVia(s.via, want)) fail(file, `«${s.key}»: засчитано по «${s.via}», в эталоне «${want}»`);
     if (!s.url) fail(file, `«${s.key}»: нет url — ссылку нельзя собрать`);
-    if (sdd === data.sddStories && s === data.sddStories[0] && !('commit' in s)) {
+    if (!('commit' in s)) {
       fail(file, 'в элементах sddStories нет поля commit (допустимо «—», но поле обязано быть)');
     }
   }
@@ -301,7 +321,7 @@ function contains(text, needle) {
   return String(text || '').toLowerCase().includes(String(needle || '').toLowerCase());
 }
 
-function checkReportText(expText, gotText) {
+function checkReportText(expText, gotText, demoSet, reportFile) {
   const file = 'report-text.md';
   const expRows = rowsOf(expText);
   const gotRows = rowsOf(gotText);
@@ -314,7 +334,7 @@ function checkReportText(expText, gotText) {
     const line = row.cells.join(' | ');
     if (!row.key) {
       const ok = gotRows.some((r) =>
-        row.cells.every((cell) => normalize(r.cells.join(' | ')).includes(normalize(cell)))
+        row.cells.every((cell) => cellMatches(r.cells.join(' | '), cell))
       );
       if (!ok) fail(file, `нет строки из эталона: «${line}»`);
       continue;
@@ -326,7 +346,7 @@ function checkReportText(expText, gotText) {
     }
     const hits = found.filter((r) => {
       const text = normalize(r.cells.join(' | '));
-      return row.cells.every((cell) => normalize(text).includes(normalize(cell)));
+      return row.cells.every((cell) => cellMatches(text, cell));
     });
     if (!hits.length) {
       fail(file, `«${row.key}»: строка не совпадает с эталоном «${line}», в отчёте «${found[0].cells.join(' | ')}»`);
@@ -341,6 +361,12 @@ function checkReportText(expText, gotText) {
   if (expectedDemo !== gotDemo) {
     fail(file, gotDemo ? 'в отчёте пометка «ДАННЫЕ ДЕМО» есть, а эталон ждёт живой прогон' : 'в отчёте нет пометки «ДАННЫЕ ДЕМО», хотя набор проверяется на демо-прогоне');
   }
+}
+
+function cellMatches(text, cell) {
+  const needle = normalize(cell), hay = normalize(text);
+  if (/^\d+(?:[,.]\d+)?$/.test(needle)) return hay.split(' | ').some(value => value === needle || value.startsWith(needle + ' —'));
+  return hay.includes(needle);
 }
 
 function normalize(text) {
@@ -368,6 +394,7 @@ function rowsOf(text) {
 function checkSet(file, got, want, label) {
   const g = (got || []).slice().sort();
   const w = (want || []).slice().sort();
+  if (new Set(g).size !== g.length) fail(file, `${label}: повтор ключа`);
   const missing = w.filter((k) => !g.includes(k));
   const extra = g.filter((k) => !w.includes(k));
   if (missing.length) fail(file, `${label}: нет ${missing.join(', ')}`);

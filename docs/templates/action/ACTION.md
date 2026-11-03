@@ -5,7 +5,7 @@ description: <что делает действие, одной фразой пр
 # source — обращается к системе, transform — работает с артефактами без сети,
 # act — внешний эффект, только после явного «да» человека.
 kind: <source | transform | act>
-adapter: <имя системы из config/sources.json: taskStores[].adapter / codeStores[].adapter; для transform и act — none и почему>
+adapter: <имя системы из config/sources.json: taskStores[].adapter / codeStores[].adapter; для transform — none; для act — существующее подключение>
 consumes:
   artifacts: [<артефакт предыдущего шага>]
   params: [<параметр>, <параметр>]

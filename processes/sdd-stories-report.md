@@ -1,17 +1,26 @@
 ---
 name: sdd-stories-report
+version: 1.0.0
+area: отчётность
+status: действует
+requires:
+  actions: [run-query, compose-report, send-mail]
+  context: [common.md, writing-style.md]
+  taskFields: [baseUrl, issueUrlTemplate, projects, modules[].name, modules[].code]
+  codeFields: [baseUrl, repositories[].projectKey, repositories[].slug, repositories[].defaultBranch, acceptTargetBranches]
 title: Доля стори, выполненных по SDD
 description: >
-  Считает стори проекта, заданного в координатах подключения к системе задач, у которых
-  в поле «КЭ» есть одна из КЭ отбора (их список — там же) и которые дошли до тестирования
-  в окне отбора, и делит их на выполненные по SDD (есть метка SDD или коммит с правками в папке
-  openspec/changes) и выполненные без SDD. В конце — процент SDD от общего числа.
-  Название КЭ в отчёт не выводится: только код.
+  Считает долю историй проекта, выполненных по SDD: начало работы в заданном окне,
+  текущий статус от тестирования и далее, отбор по КЭ команды. SDD подтверждается
+  меткой или изменениями спецификаций в принятом запросе на изменения.
 example: посчитай долю стори, выполненных по SDD, с 01.01.2026
+examples:
+  - посчитай долю историй по SDD с начала года
+  - покажи отчёт SDD и подготовь письмо по историям без SDD
 entry: fetch
 params:
   startDate: 01.01.2026
-  endDate: 29.10.2026 (текущая дата прогона)
+  endDate: today
   label: SDD
   watchPath: openspec/changes
   keField: customfield_18300
@@ -76,5 +85,5 @@ params:
 
 ### end
 
-Терминальный шаг: маршрут закончен. Результат для человека — текст отчёта последнего шага;
-письмо остаётся черновиком `mail-draft`, отправка — отдельное «да» человека.
+Терминальный шаг: маршрут закончен. Если письмо не запрошено, результат — report-text. Если запрошено, последний шаг
+возвращает mail-draft: в поставке нет почтового подключения, ничего не отправляется.

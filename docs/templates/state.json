@@ -1,1 +1,11 @@
-{ "last_step": 1, "last_step_name": "<имя шага>", "params": { "<параметр>": "<значение>" }, "updated": "<ГГГГ-ММ-ДДTЧЧ:ММ:СС>" }
+{
+  "last_step": 0,
+  "last_step_name": "",
+  "next_step": "<entry>",
+  "status": "running",
+  "params": {},
+  "updated": "<ISO-дата>",
+  "artifacts": {},
+  "artifactHashes": {},
+  "identity": null
+}

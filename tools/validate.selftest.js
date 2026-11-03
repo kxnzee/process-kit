@@ -130,3 +130,4 @@ for (const [name, step, want] of BOUNDS) {
 
 try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* держится процессом — не результат проверки */ }
 console.log(`\nОк ${passed}, с границами не сошлось ${failed}.`);
+process.exitCode = failed ? 1 : 0;

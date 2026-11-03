@@ -22,14 +22,17 @@
 
 const fs = require('fs');
 const path = require('path');
+const { processModel, parameter, allowedReference, NAME } = require('./process-model');
 const { execFileSync } = require('child_process');
 
 // ---------- аргументы и корень ----------
 
 const args = process.argv.slice(2);
-const opt = { json: false, only: null, root: null, team: null, process: null, level: null };
+const opt = { json: false, only: null, root: null, team: null, process: null, level: null, demo: false, params: null };
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--json') opt.json = true;
+  if (args[i] === '--demo') opt.demo = true;
+  else if (args[i] === '--params') opt.params = args[++i];
+  else if (args[i] === '--json') opt.json = true;
   else if (args[i] === '--only') opt.only = args[++i];
   else if (args[i] === '--process') opt.process = args[++i];
   else if (args[i].startsWith('--process=')) opt.process = args[i].slice(10);
@@ -38,7 +41,14 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i].startsWith('--team=')) opt.team = args[i].slice(7);
   else if (args[i] === '--level') opt.level = args[++i];
   else if (args[i].startsWith('--level=')) opt.level = args[i].slice(8);
+  else { console.error(`Неизвестный аргумент: ${args[i]}`); process.exit(2); }
 }
+
+for (const flag of ['--only', '--process', '--root', '--team', '--level', '--params']) {
+  const i = args.indexOf(flag);
+  if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) { console.error(`Нужно значение ${flag}`); process.exit(2); }
+}
+if ((opt.demo || opt.params) && !opt.process) { console.error('--demo/--params требуют --process'); process.exit(2); }
 
 function git(argv, cwd) {
   try {
@@ -54,23 +64,12 @@ function findRoot() {
     const paths = require('./paths');
     if (typeof paths.root === 'function') return paths.root();
     if (typeof paths.ROOT === 'string') return paths.ROOT;
-  } catch (e) { /* paths.js нет — считаем сами */ }
-  return git(['rev-parse', '--show-toplevel'], process.cwd()) || process.cwd();
+  } catch (e) { throw new Error('Не найден корень Git: передайте --root <папка>'); }
 }
 
 const ROOT = findRoot();
 
-// Имя папки запуска берётся из того же места, что и у исполнителя: одно правило
-// на генерацию имени и на его проверку. Нет paths.js — правило считается встроенным.
-const pathsLib = (() => {
-  try { return require('./paths'); } catch (e) { return null; }
-})();
-const runFolderParts = pathsLib && typeof pathsLib.runFolderParts === 'function'
-  ? pathsLib.runFolderParts
-  : (name) => {
-    const m = String(name).match(/^(\d{4}-\d{2}-\d{2})_([a-zа-яё0-9]+(?:-[a-zа-яё0-9]+)*)$/);
-    return m ? { date: m[1], short: m[2] } : null;
-  };
+const { runFolderParts } = require('./paths');
 
 const issues = [];
 function report(level, entity, file, line, msg) {
@@ -87,7 +86,7 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const ls = (p) => (isDir(p) ? fs.readdirSync(p) : []);
 const lines = (text) => text.split(/\r?\n/);
 
-const SECRET_REF = /\$secret:[\w.-]+\/[\w.-]+/;
+const SECRET_REF = /^(?:Bearer )?\$secret:[\w.-]+\/[\w.-]+$/;
 const ACCESS_KEY = /(token|password|passwd|secret|api[-_]?key|authorization|auth)/i;
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
@@ -95,84 +94,7 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 // Подмножество YAML: key: value, key: [a, b], key: { … } (строкой),
 // вложенные блоки по отступу, списки «- элемент».
 
-function parseScalar(v) {
-  v = v.trim();
-  if (v === '') return '';
-  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) return v.slice(1, -1);
-  if (v.startsWith('[') && v.endsWith(']')) {
-    const inner = v.slice(1, -1).trim();
-    if (!inner) return [];
-    return inner.split(',').map((s) => parseScalar(s));
-  }
-  return v;
-}
-
-// Многострочный скаляр YAML «ключ: >» — строки с большим отступом склеиваются через пробел.
-function parseFold(rows, start, indent) {
-  const parts = [];
-  let i = start;
-  for (; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row.trim()) continue;
-    if (row.length - row.trimStart().length <= indent) break;
-    parts.push(row.trim());
-  }
-  return { value: parts.join(' '), next: i };
-}
-
-function parseYamlBlock(rows, start, indent) {
-  const obj = {};
-  let i = start;
-  while (i < rows.length) {
-    const raw = rows[i];
-    if (!raw.trim() || raw.trim().startsWith('#')) { i++; continue; }
-    const ind = raw.length - raw.trimStart().length;
-    if (ind < indent) break;
-    const m = raw.trim().match(/^([^:]+):(.*)$/);
-    if (!m) { i++; continue; }
-    const key = m[1].trim();
-    const rest = m[2];
-    const fold = rest.trim().match(/^([>|])[+-]?$/);
-    if (fold) {
-      const block = parseFold(rows, i + 1, ind);
-      obj[key] = block.value; i = block.next; continue;
-    }
-    if (rest.trim() !== '') { obj[key] = parseScalar(rest); i++; continue; }
-    // вложенный блок
-    let j = i + 1;
-    while (j < rows.length && !rows[j].trim()) j++;
-    if (j < rows.length) {
-      const ind2 = rows[j].length - rows[j].trimStart().length;
-      if (ind2 > ind && rows[j].trim().startsWith('- ')) {
-        const list = [];
-        while (j < rows.length) {
-          const r = rows[j];
-          const ri = r.length - r.trimStart().length;
-          if (!r.trim()) { j++; continue; }
-          if (ri < ind2 || !r.trim().startsWith('- ')) break;
-          list.push(parseScalar(r.trim().slice(2)));
-          j++;
-        }
-        obj[key] = list; i = j; continue;
-      }
-      if (ind2 > ind) {
-        const sub = parseYamlBlock(rows, j, ind2);
-        obj[key] = sub.obj; i = sub.next; continue;
-      }
-    }
-    obj[key] = ''; i++;
-  }
-  return { obj, next: i };
-}
-
-function parseFrontmatter(text) {
-  const rows = lines(text);
-  if (rows[0] !== '---') return { data: null, body: text, bodyLine: 1 };
-  const end = rows.indexOf('---', 1);
-  if (end < 0) return { data: null, body: text, bodyLine: 1, error: 'шапка не закрыта строкой ---' };
-  const data = parseYamlBlock(rows.slice(1, end), 0, 0).obj;
-  return { data, body: rows.slice(end + 1).join('\n'), bodyLine: end + 2 };
-}
+const { parseFrontmatter } = require('./markdown');
 
 const asList = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -212,7 +134,7 @@ function branchInfo() {
   const { branch, base, promote } = own
     ? { branch: raw, base: own.base, promote: false }
     : normalizeBranch(raw);
-  let team = opt.team || null;
+  let team = opt.team || (/^team-[a-z0-9]+$/.test(base || '') ? base.slice(5) : null);
   // Команду называют --team и processkit.team: то, что записала настройка. Из имени
   // рабочего места переноса — когда она в имени, иначе из ветки, когда та точно
   // командная: <код>-work или origin/team-<код> есть.
@@ -258,9 +180,11 @@ function levelItems() {
   add('actions', 'dir');
   add('adapters', 'file');
   add('context', 'file');
-  add('context/core', 'file');
-  add('config/fixtures', 'file');
+  add('tests', 'dir');
   add('.gigacode/skills', 'dir');
+  for (const action of ls(path.join(ROOT, 'actions'))) for (const folder of ['queries', 'templates', 'rules']) {
+    for (const name of ls(path.join(ROOT, 'actions', action, folder))) items.push({ rel: `actions/${action}/${folder}/${name}`, name });
+  }
   return items;
 }
 
@@ -271,14 +195,14 @@ function ruleLevels() {
   // (локальная работа, свежий клон без fetch) префиксы всё равно проверяются.
   if (base === 'master' || base.startsWith('master-')) {
     for (const it of levelItems()) {
-      if (it.name.startsWith('my-')) E('уровни', path.join(ROOT, it.rel), 0, 'личный файл my-* в общей ветке');
+      if (/^(my-|team-)/.test(it.name)) E('уровни', path.join(ROOT, it.rel), 0, 'файл личного или командного уровня в общей ветке');
     }
     return;
   }
   // Личный уровень — только ветка my; рабочая ветка команды (имя не team-<код>)
   // личной не является, иначе все её файлы требовали бы префикс my-.
   // Префикс командного файла — имя ветки целиком: в ветке team-sws это team-sws-.
-  const isMine = branch === 'my';
+  const isMine = base === 'my';
   const own = isMine ? 'my-' : team ? `team-${team}-` : null;
   if (!own) return; // команда не названа: об этом уже сказано в раскладке
   const master = treeSet('origin/master');
@@ -375,39 +299,11 @@ function ruleSkills() {
 // В разделе «## Шаги» подраздел «### <шаг>» даёт действие маркером списка
 // «- действие» / «- процесс», а строка нумерованного списка «1. <действие>» — шаг сразу.
 // Строки «- параметры:» внутри подраздела нужны сбору ссылок на поля конфига.
-function processSteps(text) {
-  const fm = parseFrontmatter(text);
-  if (!fm.data) return null;
-  const rows = lines(fm.body);
-  const from = rows.findIndex((l) => /^##\s+Шаги/.test(l));
-  if (from < 0) return null;
-  const steps = [];
-  let current = null;
-  for (let i = from + 1; i < rows.length; i++) {
-    const l = rows[i];
-    // Следующий раздел «## …» заканчивает шаги.
-    if (/^##\s+/.test(l)) break;
-    const head = l.match(/^###\s+([\w-]+)\s*$/);
-    if (head) { current = { name: head[1], ln: fm.bodyLine + i, kind: null, paramsFrom: [] }; continue; }
-    let m = l.match(/^\s*\d+\.\s+([a-z0-9][\w-]*)/i);
-    if (m) { steps.push({ name: m[1], ref: m[1], ln: fm.bodyLine + i, kind: 'action', paramsFrom: [] }); continue; }
-    m = l.match(/^\s*(?:[-*]\s*)?(действие|процесс):\s*([^\s`]*)/);
-    if (m) {
-      if (!/^[\w-]+$/.test(m[2])) continue;
-      const step = current || { name: null, ln: fm.bodyLine + i, kind: null, paramsFrom: [] };
-      step.kind = m[1] === 'процесс' ? 'process' : 'action';
-      step.ref = m[2];
-      steps.push(step);
-      current = null;
-      continue;
-    }
-    if (current) current.paramsFrom.push({ text: l, ln: fm.bodyLine + i });
-  }
-  return { data: fm.data, steps };
-}
+function processSteps(text) { return processModel(text); }
 
 function ruleProcesses() {
   const dir = path.join(ROOT, 'processes');
+  for (const child of ls(dir)) if (isDir(path.join(dir, child))) E('процесс', path.join(dir, child), 0, 'подпапок в processes/ нет');
   for (const n of ls(dir)) {
     if (!n.endsWith('.md') || ['FORMAT.md', 'CATALOG.md', 'README.md'].includes(n)) continue;
     const file = path.join(dir, n);
@@ -421,12 +317,13 @@ function ruleProcesses() {
     const desc = String(d.description || '');
     if (!desc) E('процесс', file, 2, 'нет description: по нему помощник находит процесс');
     else if (desc.length > 400) W('процесс', file, 2, 'description длиннее 400 символов');
-    if (!d.version) W('процесс', file, 2, 'нет version (манифест, пункт 4)');
-    else if (!SEMVER.test(String(d.version))) W('процесс', file, 2, 'version не в формате X.Y.Z');
+    if (!d.version) E('процесс', file, 2, 'нет version');
+    else if (!SEMVER.test(String(d.version))) E('процесс', file, 2, 'version не в формате X.Y.Z');
     const ex = asList(d.examples).length ? asList(d.examples) : asList(d.example);
-    if (!ex.length) W('процесс', file, 2, 'нет examples (2–5 примеров запроса, пункт 4)');
+    if (!ex.length) E('процесс', file, 2, 'нет examples или example');
     else if (d.examples && (ex.length < 2 || ex.length > 5)) W('процесс', file, 2, 'examples: нужно от 2 до 5');
-    if (!d.area) W('процесс', file, 2, 'нет area (пункт 4)');
+    if (!d.area) E('процесс', file, 2, 'нет area');
+    if (!d.status) E('процесс', file, 2, 'нет status');
     if (d.status && !['действует', 'устарел'].includes(d.status)) E('процесс', file, 2, 'status: «действует» или «устарел»');
     if (d.status === 'устарел' && !d.replaced_by) W('процесс', file, 2, 'устаревший процесс без replaced_by');
 
@@ -435,6 +332,7 @@ function ruleProcesses() {
     for (const c of asList(req.context)) {
       const p = c.startsWith('context/') ? c : `context/${c}`;
       if (!exists(path.join(ROOT, p))) E('процесс', file, 2, `requires.context: нет файла ${p}`);
+      if (!allowedReference(base, path.basename(p, '.md'))) E('уровни', file, 2, `контекст нижнего уровня ${p}`);
     }
     for (const r of asList(req.data)) {
       if (r.includes('<') || r.includes('$')) continue;
@@ -446,14 +344,64 @@ function ruleProcesses() {
     const bodyRows = lines(fm.body);
     const stepsAt = bodyRows.findIndex((l) => /^##\s+Шаги/.test(l));
     if (stepsAt < 0) { E('процесс', file, fm.bodyLine, 'нет раздела «## Шаги»'); continue; }
-    const used = (processSteps(text) || { steps: [] }).steps;
+    const model = processSteps(text);
+    for (const error of model.errors) E('маршрут', file, 0, error);
+    const used = model.steps;
     if (!used.length) W('процесс', file, fm.bodyLine + stepsAt, 'в разделе «Шаги» не найдено ни одного шага');
     for (const u of used) {
+      if (u.ref && !allowedReference(base, u.ref)) E('уровни', file, u.ln, `ссылка вниз по уровням: ${base} → ${u.ref}`);
+      if (u.kind === 'action') {
+        const af = path.join(ROOT, 'actions', u.ref, 'ACTION.md');
+        const action = exists(af) ? parseFrontmatter(read(af)).data || {} : {};
+        if (u.artifact && action.produces && typeof action.produces === 'object' && !Array.isArray(action.produces) && !(u.artifact in action.produces)) {
+          E('контракт', file, u.ln, `артефакт ${u.artifact} не объявлен в produces действия ${u.ref}`);
+        }
+        for (const [key, folder] of Object.entries({ query: 'queries', template: 'templates', rule: 'rules' })) {
+          if (!asList(action.consumes?.params).some(p => String(p).split(/[ (]/)[0] === key) && !(key in u.params)) continue;
+          const value = parameter(model, u, key);
+          if (value == null) continue;
+          if (!NAME.test(String(value))) { E('процесс', file, u.ln, `параметр ${key}: нужно явное имя файла данных`); continue; }
+          const data = path.join(ROOT, 'actions', u.ref, folder, `${value}.md`);
+          if (!exists(data)) E('процесс', file, u.ln, `нет данных действия ${u.ref}/${folder}/${value}.md`);
+          if (!allowedReference(base, value)) E('уровни', file, u.ln, `ссылка на данные нижнего уровня: ${value}`);
+        }
+      }
       if (u.kind === 'action' && !exists(path.join(ROOT, 'actions', u.ref, 'ACTION.md'))) E('процесс', file, u.ln, `шаг ссылается на несуществующее действие ${u.ref}`);
       if (u.kind === 'process' && !exists(path.join(ROOT, 'processes', `${u.ref}.md`))) E('процесс', file, u.ln, `подпроцесс ${u.ref} не найден`);
     }
     const reqA = asList(req.actions);
-    if (reqA.length) for (const u of used) if (u.kind === 'action' && !reqA.includes(u.ref)) W('процесс', file, u.ln, `действие ${u.ref} не перечислено в requires.actions`);
+    if (!req.actions) E('процесс', file, 2, 'нет requires.actions');
+    if (reqA.length) for (const u of used) if (u.kind === 'action' && !reqA.includes(u.ref)) E('процесс', file, u.ln, `действие ${u.ref} не перечислено в requires.actions`);
+
+    // Required input artifacts must be available on every incoming route.
+    const predecessors = new Map(used.map(step => [step.name, []]));
+    for (const step of used) for (const target of step.kind === 'branch' ? step.targets : step.next ? [step.next] : []) {
+      if (predecessors.has(target)) predecessors.get(target).push(step.name);
+    }
+    const cache = new Map(), activeFlow = new Set();
+    function after(name) {
+      if (cache.has(name)) return cache.get(name);
+      if (activeFlow.has(name)) return new Set();
+      activeFlow.add(name);
+      const step = used.find(step => step.name === name);
+      const parents = predecessors.get(name) || [];
+      let input = new Set();
+      if (parents.length && name !== model.entry) {
+        input = new Set(after(parents[0]));
+        for (const parent of parents.slice(1)) { const available = after(parent); input = new Set([...input].filter(key => available.has(key))); }
+      }
+      if (step?.kind === 'action') {
+        const af = path.join(ROOT, 'actions', step.ref, 'ACTION.md');
+        const action = exists(af) ? parseFrontmatter(read(af)).data || {} : {};
+        for (const artifact of asList(action.consumes?.artifacts)) {
+          if (NAME.test(String(artifact)) && !input.has(artifact)) E('контракт', file, step.ln, `вход ${artifact} недоступен на всех путях к шагу ${name}`);
+        }
+        if (step.artifact) input.add(step.artifact);
+        else if (action.produces && typeof action.produces === 'object') for (const key of Object.keys(action.produces)) input.add(key);
+      }
+      activeFlow.delete(name); cache.set(name, input); return input;
+    }
+    for (const step of used) after(step.name);
 
     // маршрут: entry, следующий, goto указывают на существующие шаги
     const stepNames = bodyRows.slice(stepsAt + 1)
@@ -493,8 +441,12 @@ function ruleActions() {
     if (!desc) E('действие', file, 2, 'нет description (что делает действие)');
     if (!d.kind) E('действие', file, 2, 'нет kind');
     else if (!['source', 'transform', 'act'].includes(String(d.kind))) E('действие', file, 2, `kind должен быть source | transform | act (найдено: ${d.kind})`);
-    if (!d.consumes) W('действие', file, 2, 'нет consumes (что принимает)');
-    if (!d.produces) W('действие', file, 2, 'нет produces (что отдаёт)');
+    if (!d.consumes) E('действие', file, 2, 'нет consumes (что принимает)');
+    if (!d.produces) E('действие', file, 2, 'нет produces (что отдаёт)');
+
+    if (d.kind === 'transform' && !/^none(?: |$)/.test(String(d.adapter))) E('действие', file, 2, 'transform не имеет сетевого adapter');
+    if (d.kind === 'source' && (!d.adapter || /^none(?: |$)/.test(String(d.adapter)))) E('действие', file, 2, 'source требует сетевое подключение');
+    if (d.kind === 'act' && (!d.adapter || /^none(?: |$)/.test(String(d.adapter)))) E('действие', file, 2, 'act требует существующее подключение, черновик — transform');
 
     // ссылки на свои файлы — относительно папки действия
     lines(text).forEach((l, i) => {
@@ -533,7 +485,7 @@ function walkStrings(obj, fn, key = '', trail = '') {
   if (obj && typeof obj === 'object') for (const [k, v] of Object.entries(obj)) walkStrings(v, fn, k, trail ? `${trail}.${k}` : k);
 }
 
-const isTodo = (v) => /TODO/i.test(String(v));
+const isTodo = (v) => /^TODO(?::|$)/i.test(String(v));
 
 // Запись конфига указывает адаптер путём шаблона (adapters/TODO.md) или именем
 // системы (jira); и то и другое сводится к файлу adapters/<имя>.md.
@@ -562,11 +514,14 @@ function ruleSources() {
   if (!exists(file)) return;
   const j = loadJson('настройки команды', file);
   if (!j) return;
+  if (typeof j !== 'object' || Array.isArray(j)) { E('настройки команды', file, 0, 'настройки должны быть объектом'); return; }
+  for (const key of ['taskStores', 'codeStores']) if (j[key] !== undefined && !Array.isArray(j[key])) E('настройки команды', file, 0, `${key}: нужен массив`);
   // Форма поставки: taskStores (системы задач) и codeStores (репозитории).
   // Прежний массив sources не поддерживается: его записи никто не читает.
   if (Array.isArray(j.sources)) {
     E('настройки команды', file, 0, 'массив sources устарел: системы задач — в taskStores, репозитории — в codeStores');
   }
+  if (j.overlay) E('настройки команды', file, 0, 'overlay не поддерживается: конфиг один в текущей ветке');
   const ids = new Set();
   const stores = storeEntries(j);
   if (!stores.length) W('настройки команды', file, 0, 'нет ни одной записи taskStores/codeStores: подключений к системам нет');
@@ -598,6 +553,11 @@ function ruleSettings() {
   if (!exists(file)) { E('настройки GigaCode', file, 0, 'нет .gigacode/settings.json'); return; }
   const j = loadJson('настройки GigaCode', file);
   if (!j) return;
+  function settingsValues(value, key = '', trail = '') {
+    if (value && typeof value === 'object') { for (const [k, v] of Object.entries(value)) settingsValues(v, k, trail ? `${trail}.${k}` : k); return; }
+    if (ACCESS_KEY.test(key) && typeof value !== 'string') E('настройки GigaCode', file, 0, `${trail}: значение доступа должно быть ссылкой $secret:`);
+  }
+  settingsValues(j);
   walkStrings(j, (k, v, trail) => {
     if (/ВАШ_ТОКЕН|\$\{?PK_/.test(v)) E('настройки GigaCode', file, 0, `${trail}: устаревшая заглушка, нужна ссылка $secret:<имя>/<ключ>`);
     else if ((ACCESS_KEY.test(k) || /^Bearer\s/i.test(v)) && !SECRET_REF.test(v)) {
@@ -656,8 +616,6 @@ function storeEntries(j) {
   return [].concat(
     asList((j || {}).taskStores).map((s) => ['taskStores', s]),
     asList((j || {}).codeStores).map((s) => ['codeStores', s]),
-    asList(((j || {}).overlay || {}).taskStores).map((s) => ['overlay.taskStores', s]),
-    asList(((j || {}).overlay || {}).codeStores).map((s) => ['overlay.codeStores', s]),
   );
 }
 
@@ -668,6 +626,7 @@ function ruleConnections() {
   const j = loadJson('настройки команды', file);
   if (!j) return;
   for (const [, s] of storeEntries(j)) {
+    if (!s || typeof s !== 'object') continue;
     const ref = s.adapter || (s.kind ? String(s.kind) : '');
     if (!ref) { W('настройки команды', file, 0, `у записи «${s.id}» не задан adapter`); continue; }
     if (isTodo(ref)) continue;
@@ -683,7 +642,7 @@ function ruleConnections() {
 
 function ruleContext() {
   const files = [];
-  for (const d of ['context', 'context/core']) {
+  for (const d of ['context']) {
     for (const n of ls(path.join(ROOT, d))) {
       const full = path.join(ROOT, d, n);
       if (isDir(full)) E('контекст', full, 0, 'подпапок в context/ нет: командные и личные файлы лежат рядом, отличаются префиксом');
@@ -741,7 +700,8 @@ function checkRunFolder(p, short) {
     checkRunDir(path.join(p, '.run'));
   } else if (names.includes('итог.md')) {
     checkSummary(path.join(p, 'итог.md'), names, isProbe);
-  }
+  } else if (!isSetup && !isRequest) E('outputs', p, 0, 'нет итог.md у запуска');
+  for (const name of names) if (/^\d{2}-/.test(name)) E('outputs', path.join(p, name), 0, 'артефакт шага должен лежать в .run/');
 }
 
 function checkSummary(file, names, isProbe) {
@@ -775,6 +735,7 @@ function checkRunDir(dir) {
   for (const n of ls(dir)) {
     const f = path.join(dir, n);
     if (['run.md', 'trace.jsonl', 'state.json'].includes(n)) continue;
+    if (n === 'inputs' && isDir(f)) continue;
     if (!/^\d{2}-[a-z0-9][\w-]*\.\w+$/i.test(n)) W('прогон', f, 0, 'файл шага: <NN>-<имя шага>.<расширение>, например 01-jira-search.json');
   }
   const st = path.join(dir, 'state.json');
@@ -782,8 +743,13 @@ function checkRunDir(dir) {
   else {
     const j = loadJson('прогон', st);
     if (j) {
-      if (typeof j.last_step !== 'number') E('прогон', st, 0, 'state.json: last_step — номер последнего завершённого шага');
+      if (!Number.isInteger(j.last_step) || j.last_step < 0) E('прогон', st, 0, 'state.json: last_step — номер последнего завершённого шага');
       if (typeof j.last_step_name !== 'string') E('прогон', st, 0, 'state.json: last_step_name — имя шага');
+      if (j.artifacts) for (const [name, relative] of Object.entries(j.artifacts)) {
+        if (typeof relative !== 'string' || path.basename(relative) !== relative || !exists(path.join(dir, relative))) {
+          E('прогон', st, 0, `артефакт ${name}: файл отсутствует или путь вне .run/`);
+        }
+      }
     }
   }
   const tr = path.join(dir, 'trace.jsonl');
@@ -808,6 +774,7 @@ function checkJsonl(entity, file, required) {
     if (!l.trim()) return;
     let j;
     try { j = JSON.parse(l); } catch (e) { E(entity, file, i + 1, 'строка не JSON'); return; }
+    if (!j || typeof j !== 'object' || Array.isArray(j)) { E(entity, file, i + 1, 'строка должна быть объектом'); return; }
     for (const k of required) if (!(k in j)) E(entity, file, i + 1, `нет поля ${k}`);
     if (required.includes('output') && j.output && !isDir(path.join(ROOT, 'outputs', j.output))) {
       W(entity, file, i + 1, `папки outputs/${j.output} нет (удалена или перенесена)`);
@@ -820,141 +787,78 @@ function ruleHistory() {
   if (exists(file)) checkJsonl('история', file, ['ts', 'process', 'output']);
 }
 
-// ---------- предпусковая проверка значений конфига ----------
-//
-// Проверяются только те значения config/sources.json, на которые ссылается запускаемый
-// процесс: его шаги, действия этих шагов и данные действий (queries/, templates/, rules/).
-// Ссылка — путь вида taskStores[].projects, defaults.taskStore, config/sources.json → overlay.
-// Незаполненное значение по ссылке — ошибка; поля, на которые никто не ссылается, не
-// проверяются: чужое подключение с TODO не должно блокировать работающий процесс.
-
-// Значение по пути вида taskStores[].projects. Конфиг устроен как
-// {taskStores[], codeStores[], overlay:{taskStores[], codeStores[]}}.
-function resolveConfigPath(config, ref) {
-  const m = String(ref).match(/^(\S*?)(taskStores|codeStores)\[\]\.(.+)$/);
-  if (!m) return null;
-  const prefix = m[1];
-  const store = m[2];
-  const field = m[3].replace(/[.,;:]+$/, '');
-  if (prefix && prefix !== 'overlay.' && prefix !== 'config/sources.json') return null;
-  const src = prefix === 'overlay.' ? ((config.overlay || {})[store]) : config[store];
-  if (!Array.isArray(src)) return [];
-  return src.map((s) => ({ store, id: (s || {}).id, value: s ? s[field] : undefined, trail: `${prefix || ''}${store}[].${field}` }));
-}
-
-// Пути ссылок в тексте: имя массива, [] и поля. Хвостовая точка и запятая не входят.
-const CONFIG_REF_RE = /(?:overlay\.)?(?:taskStores|codeStores)\[\]\.[A-Za-z][\w.-]*/g;
-
-function configRefs(text) {
-  const refs = [];
-  lines(text).forEach((l, i) => {
-    if (!/sources\.json|taskStores|codeStores/.test(l)) return;
-    const seen = new Set();
-    let m;
-    CONFIG_REF_RE.lastIndex = 0;
-    while ((m = CONFIG_REF_RE.exec(l))) {
-      const ref = m[0].replace(/\.+$/, '');
-      if (!seen.has(ref)) { seen.add(ref); refs.push({ ref, line: i + 1 }); }
-    }
-  });
-  return refs;
-}
-
-// Имена записей по умолчанию: «- taskStore: tasks» в параметрах шага и «defaults.taskStore».
-// Слово «store» в общем виде не ловим: так в выборку попадают имена не тех записей.
-function defaultIds(text) {
-  const ids = [];
-  const push = (v) => { if (v && !/TODO|^\{/.test(v)) ids.push(v); };
-  const re = /(?:defaults\.\s*)?(taskStore|codeStore)\b\s*[:=]\s*["']?([A-Za-z0-9_-]+)/g;
-  let m;
-  while ((m = re.exec(text))) {
-    const [kind, id] = [m[1], m[2]];
-    ids.push({ kind, id });
-  }
-  return ids;
-}
-
-// Запись по id среди ссылок: сверяем адреса уже по той записи, которую использует процесс.
-// Возвращает запись, null (имя названо, но такой записи нет) или undefined (имя не названо —
-// тогда берётся первая, как и в запросе).
-function pickEntry(entries, ids, store) {
-  const kind = store === 'taskStores' ? 'taskStore' : 'codeStore';
-  const named = ids.filter((d) => d.kind === kind);
-  if (!named.length) return undefined;
-  const hit = named.map((d) => entries.find((e) => String(e.id) === d.id)).find(Boolean);
-  return hit || null;
-}
-
+// ---------- предпусковая проверка: только объявленные зависимости ----------
 function ruleProcessValues() {
-  const proc = opt.process;
-  // Проверка предпусковая: без имени процесса правило не запускается (см. разбор аргументов).
-  if (!proc) return;
-  const pfile = path.join(ROOT, 'processes', `${proc}.md`);
-  if (!exists(pfile)) { E('значения', pfile, 0, `нет процесса ${proc}: имя берётся из processes/<имя>.md`); return; }
-  const parsed = processSteps(read(pfile));
-  if (!parsed) { E('значения', pfile, 0, 'не удалось прочитать шаги процесса'); return; }
-  const cfgFile = path.join(ROOT, 'config/sources.json');
-  if (!exists(cfgFile)) { E('значения', cfgFile, 0, 'нет config/sources.json: адреса систем не заданы, нужна настройка'); return; }
-  const config = loadJson('значения', cfgFile);
-  if (!config) return;
-
-  // Что читает этот процесс: текст процесса, файлы его действий и данные действий.
-  const sources = [{ file: pfile, text: read(pfile), line: 0 }];
-  for (const step of parsed.steps) {
-    if (step.kind !== 'action') continue;
-    const adir = path.join(ROOT, 'actions', step.ref);
-    const afile = path.join(adir, 'ACTION.md');
-    if (!exists(afile)) continue; // про несуществующее действие говорит правило «процесс»
-    sources.push({ file: afile, text: read(afile), line: 0 });
-    for (const n of ls(adir)) {
-      const sub = path.join(adir, n);
-      if (!isDir(sub)) continue;
-      for (const f of ls(sub)) {
-        if (!f.endsWith('.md')) continue;
-        const full = path.join(sub, f);
-        sources.push({ file: full, text: read(full), line: 0 });
-      }
+  if (!opt.process) return;
+  if (!NAME.test(opt.process)) { E('значения', null, 0, 'недопустимое имя процесса'); return; }
+  let overrides = {};
+  if (opt.params) {
+    overrides = loadJson('параметры', path.resolve(opt.params));
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+      E('параметры', null, 0, '--params должен содержать JSON-объект'); return;
     }
   }
-
-  const stepText = (parsed.steps || []).map((s) => (s.paramsFrom || []).map((p) => p.text).join('\n')).join('\n');
-  const ids = defaultIds(`${stepText}\n${sources.map((s) => s.text).join('\n')}`);
-
-  let checked = 0;
-  const seenRef = new Set();
-  for (const src of sources) {
-    for (const { ref, line } of configRefs(src.text)) {
-      const entries = resolveConfigPath(config, ref);
-      if (!entries) continue;
-      const key = `${src.file}:${ref}`;
-      if (seenRef.has(key)) continue;
-      seenRef.add(key);
-      checked += 1;
-      if (!entries.length) {
-        E('значения', src.file, line, `ссылка ${ref}: массив ${ref.split('[]')[0]} пуст в config/sources.json`);
-        continue;
+  let config;
+  const configFile = path.join(ROOT, 'config/sources.json');
+  const visiting = new Set();
+  function scan(name, depth = 1) {
+    if (depth > 5 || visiting.has(name)) { E('маршрут', null, 0, `цикл или глубина подпроцесса больше 5: ${name}`); return; }
+    visiting.add(name);
+    const file = path.join(ROOT, 'processes', `${name}.md`);
+    if (!exists(file)) { E('значения', file, 0, `нет процесса ${name}`); visiting.delete(name); return; }
+    const model = processModel(read(file));
+    for (const error of model.errors) E('маршрут', file, 0, error);
+    const req = model.data.requires || {};
+    for (const step of model.steps) {
+      if (step.kind === 'process') { scan(step.ref, depth + 1); continue; }
+      if (step.kind !== 'action') continue;
+      const af = path.join(ROOT, 'actions', step.ref, 'ACTION.md');
+      if (!exists(af)) { E('значения', af, 0, `нет действия ${step.ref}`); continue; }
+      const action = parseFrontmatter(read(af)).data || {};
+      for (const [key, folder] of Object.entries({ query: 'queries', template: 'templates', rule: 'rules' })) {
+        if (!asList(action.consumes?.params).some(p => String(p).split(/[ (]/)[0] === key) && !(key in step.params)) continue;
+        const value = parameter(model, step, key, overrides);
+        if (value == null) continue;
+        if (!NAME.test(String(value)) || !exists(path.join(ROOT, 'actions', step.ref, folder, `${value}.md`))) {
+          E('значения', file, step.ln, `не найден файл ${folder}/${value}.md для ${step.ref}`);
+        }
       }
-      const picked = pickEntry(entries, ids, ref.includes('codeStores') ? 'codeStores' : 'taskStores');
-      if (picked === null) {
-        const kind = ref.includes('codeStores') ? 'codeStore' : 'taskStore';
-        E('значения', src.file, line, `ссылка ${ref}: записи ${kind} из параметров этого процесса нет в config/sources.json`);
-        continue;
+      if (opt.demo || action.kind === 'transform' || /^none(?: |$)/.test(String(action.adapter))) continue;
+      const fields = { taskStore: asList(req.taskFields), codeStore: asList(req.codeFields) };
+      if (!fields.taskStore.length && !fields.codeStore.length) {
+        E('значения', file, 0, 'сетевой процесс должен объявить requires.taskFields/codeFields'); continue;
       }
-      const entry = picked || entries[0];
-      const at = `${entry.trail}${entry.id ? ` (запись «${entry.id}»)` : ''}`;
-      if (entry.value === undefined) {
-        E('значения', src.file, line, `ссылка ${ref}: в config/sources.json нет поля ${at}`);
-        continue;
+      if (config === undefined) config = exists(configFile) ? loadJson('значения', configFile) : null;
+      if (!config) { E('значения', configFile, 0, 'нет корректного config/sources.json: нужна настройка'); continue; }
+      for (const [key, required] of Object.entries(fields)) {
+        if (!required.length) continue;
+        const collection = key === 'taskStore' ? 'taskStores' : 'codeStores';
+        const id = parameter(model, step, key, overrides) ?? config.defaults?.[key];
+        const entry = (config[collection] || []).find(item => item?.id === id);
+        if (!entry) { E('значения', file, 0, `не найдена выбранная запись ${collection}: ${id || 'id не задан'}`); continue; }
+        if (entry.enabled === false) { E('значения', file, 0, `подключение ${id} выключено`); continue; }
+        function values(obj, parts) {
+          if (!parts.length) return [obj];
+          const [part, ...rest] = parts;
+          if (part.endsWith('[]')) {
+            const array = obj?.[part.slice(0, -2)];
+            return Array.isArray(array) && array.length ? array.flatMap(item => values(item, rest)) : [undefined];
+          }
+          return values(obj?.[part], rest);
+        }
+        for (const field of ['adapter', 'mcpServer', ...required]) {
+          const vals = values(entry, String(field).split('.'));
+          const empty = value => value == null || value === '' || isTodo(value) ||
+            (Array.isArray(value) && (!value.length || value.some(empty)));
+          if (String(field).startsWith('modules[]') && Array.isArray(entry.modules) && entry.modules.length === 0) continue;
+          if (vals.some(empty)) E('значения', file, 0, `${collection}[${id}].${field} не заполнено`);
+        }
+        if (!isTodo(entry.adapter) && !exists(adapterFile(entry.adapter))) E('значения', file, 0, `нет подключения ${entry.adapter}`);
       }
-      const empty = Array.isArray(entry.value)
-        ? !entry.value.length || entry.value.every((v) => !String(v).trim() || isTodo(v))
-        : !String(entry.value).trim() || isTodo(entry.value);
-      if (empty) E('значения', src.file, line, `поле ${at} не заполнено, а ${proc} без него не выполнится`);
     }
+    visiting.delete(name);
   }
-  if (!checked) {
-    W('значения', pfile, 0, `процесс ${proc} не ссылается ни на одно поле config/sources.json: проверять нечего`);
-  }
+  scan(opt.process);
 }
 
 // ---------- запуск ----------
@@ -963,7 +867,19 @@ const RULES = {
   layout: ruleLayout,
   levels: ruleLevels,
   skills: ruleSkills,
-  processes: ruleProcesses,
+  processes: () => {
+    ruleProcesses();
+    const active = new Set();
+    function visit(name, depth) {
+      if (active.has(name) || depth > 5) { E('маршрут', null, 0, `цикл или глубина подпроцесса больше 5: ${name}`); return; }
+      const file = path.join(ROOT, 'processes', `${name}.md`);
+      if (!exists(file)) return;
+      active.add(name);
+      for (const step of processModel(read(file)).steps) if (step.kind === 'process') visit(step.ref, depth + 1);
+      active.delete(name);
+    }
+    for (const file of ls(path.join(ROOT, 'processes'))) if (file.endsWith('.md')) visit(file.slice(0, -3), 1);
+  },
   actions: ruleActions,
   adapters: ruleAdapters,
   sources: ruleSources,

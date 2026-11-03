@@ -1,124 +1,58 @@
 #!/usr/bin/env node
-// Самопроверка hook pre-push: во временной папке собирается репозиторий, и hook
-// вызывается напрямую на наборах «что отправляется» — как это сделал бы git.
-// Ничего никуда не отправляется, адреса вымышленные.
-// Запуск: node tools/check-prepush.js
-// Хук — файл sh, его запускает git; для проверки нужна sh из состава Git
-// (в windows — вместе с ним). Без sh набор не прогоняется: проверка не зелёная.
-
+// Integration: real git push to local disposable bare repositories; no network.
 'use strict';
-
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const { execFileSync } = require('child_process');
-
-const HOOK = path.join(__dirname, '..', '.gigacode', 'hooks', 'pre-push');
-const ZERO = '0000000000000000000000000000000000000000';
-const C = '1111111111111111111111111111111111111111';
-const COMMON = 'ssh://common/repo.git';
-const MINE = 'ssh://mine/repo.git';
-
-function findSh() {
-  const names = process.platform === 'win32' ? ['sh.exe', 'sh'] : ['sh'];
-  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
-    if (!dir) continue;
-    for (const n of names) {
-      const p = path.join(dir, n);
-      try {
-        if (fs.statSync(p).isFile()) return p;
-      } catch (e) { /* нет такого — смотрим дальше */ }
-    }
-  }
-  for (const p of [
-    'C:\\Program Files\\Git\\bin\\sh.exe',
-    'C:\\Program Files\\Git\\usr\\bin\\sh.exe',
-    'C:\\Program Files (x86)\\Git\\bin\\sh.exe',
-  ]) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
-
-const sh = findSh();
-if (!sh) {
-  console.log('Не нашёл sh (нужна sh из состава Git): набор hook не проверен.');
-  process.exit(2);
-}
-
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pk-prepush-'));
-
-function git(...args) {
-  return execFileSync('git', args, { cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-}
-
-function unset(key) {
-  try { git('config', '--unset', key); } catch (e) { /* нечего снимать */ }
-}
-
-// args — то, что git передаёт хуку: адрес, флаги; вывод — его код выхода.
-function push(refs, ...args) {
-  try {
-    execFileSync(sh, [HOOK, ...args], {
-      cwd: tmp, input: `${refs}\n`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    return { code: 0, out: '' };
-  } catch (e) {
-    if (e.status === null || e.status === undefined) throw e;
-    return { code: e.status, out: `${e.stdout || ''}${e.stderr || ''}` };
-  }
-}
-
-let failed = 0;
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'pk-hooks-'));
+const cwd = path.join(temp, 'kit');
+fs.mkdirSync(cwd);
 let passed = 0;
-
-function run(name, [refs, args, want]) {
-  const { code, out } = push(refs, ...args);
-  if (code === want) {
-    passed += 1;
-    console.log(`  ok   ${name}`);
-  } else {
-    failed += 1;
-    console.log(`  FAIL ${name}: ожидали код ${want}, получили ${code}`);
-    for (const line of out.trim().split('\n')) if (line) console.log(`       ${line}`);
-  }
+function cmd(binary, args, expected = 0, location = cwd) {
+  const result = spawnSync(binary, args, { cwd: location, encoding: 'utf8', env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null' } });
+  if (expected === 0) assert.equal(result.status, 0, `${binary} ${args.join(' ')}: ${result.stderr}`);
+  else assert.notEqual(result.status, 0, `${args.join(' ')} unexpectedly succeeded`);
+  return result;
 }
-
+const git = (...args) => cmd('git', args).stdout.trim();
+function test(name, args, succeeds) { cmd('git', args, succeeds ? 0 : 1); passed++; console.log(`✓ ${name}`); }
 try {
-  git('init', '-q', '-b', 'master');
-  git('config', 'user.email', 't@t');
-  git('config', 'user.name', 't');
-  git('config', 'remote.mine.url', MINE);
-
-  // Ветка my отправляется только в свой репозиторий: для общего он не настроен.
-  console.log('Запрещено в общий репозиторий:');
-  run('личная ветка my', [`refs/heads/my ${C} refs/heads/my ${C}`, ['origin', COMMON], 1]);
-  run('локальные заметки', [`refs/notes/gigacode ${C} refs/notes/gigacode ${ZERO}`, ['origin', COMMON], 1]);
-  run('удаление ветки', [`(delete) ${ZERO} refs/heads/team-x ${C}`, ['origin', COMMON], 1]);
-  run('удаление заметок', [`(delete) ${ZERO} refs/notes/gigacode ${C}`, ['origin', COMMON], 1]);
-  run('--force', [`refs/heads/master-x ${C} refs/heads/master-x ${C}`, ['origin', COMMON, '--force'], 1]);
-  run('--force-with-lease', [`refs/heads/master-x ${C} refs/heads/master-x ${C}`, ['origin', COMMON, '--force-with-lease'], 1]);
-  run('--mirror', [`refs/heads/master-x ${C} refs/heads/master-x ${C}`, ['origin', COMMON, '--mirror'], 1]);
-  run('+refspec', [`refs/heads/master-x ${C} refs/heads/master-x ${C}`, ['origin', COMMON, '+refs/heads/master-x:refs/heads/master-x'], 1]);
-
-  console.log('Разрешено:');
-  run('новая своя ветка', [`refs/heads/master-x ${C} refs/heads/master-x ${ZERO}`, ['origin', COMMON], 0]);
-  run('обновление своей ветки', [`refs/heads/master-x ${C} refs/heads/master-x ${C}`, ['origin', COMMON], 0]);
-
-  console.log('Собственный репозиторий (mine):');
+  git('init', '-q', '-b', 'master'); git('config', 'user.name', 'Test'); git('config', 'user.email', 'test@example.invalid');
+  for (const file of ['tools/paths.js', 'tools/prepush.js', 'tools/install-hooks.js', '.gigacode/hooks/pre-push']) {
+    const dest = path.join(cwd, file); fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(__dirname, '..', file), dest);
+  }
+  fs.writeFileSync(path.join(cwd, 'file'), 'base'); git('add', '.'); git('commit', '-qm', 'base');
+  const base = git('rev-parse', 'HEAD');
+  for (const name of ['origin', 'mine']) {
+    const bare = path.join(temp, `${name}.git`); cmd('git', ['init', '--bare', '-q', bare]); git('remote', 'add', name, bare);
+  }
+  cmd(process.execPath, ['tools/install-hooks.js']);
+  cmd(process.execPath, ['tools/install-hooks.js']);
+  test('новая ветка', ['push', 'origin', 'master:master-check'], true);
+  fs.writeFileSync(path.join(cwd, 'file'), 'next'); git('add', 'file'); git('commit', '-qm', 'next');
+  test('обычный fast-forward', ['push', 'origin', 'master:master-check'], true);
+  git('branch', 'my');
+  test('my в общий', ['push', 'origin', 'my'], false);
+  test('my под другим именем', ['push', 'origin', 'my:renamed'], false);
+  test('другая ветка в удалённую my', ['push', 'origin', 'master:my'], false);
+  git('notes', '--ref=ai', 'add', '-m', 'local note');
+  test('заметки', ['push', 'origin', 'refs/notes/ai'], false);
+  test('удаление', ['push', 'origin', '--delete', 'master-check'], false);
+  git('checkout', '-qb', 'master-divergent', base);
+  fs.writeFileSync(path.join(cwd, 'other'), 'divergent'); git('add', 'other'); git('commit', '-qm', 'divergent');
+  test('реальный force с перезаписью истории', ['push', '--force', 'origin', 'master-divergent:master-check'], false);
   git('config', 'branch.my.pushRemote', 'mine');
-  run('my в свой репозиторий', [`refs/heads/my ${C} refs/heads/my ${C}`, ['origin', MINE], 0]);
-  run('удаление ветки в своём', [`(delete) ${ZERO} refs/heads/team-x ${C}`, ['origin', MINE], 0]);
-  git('config', 'branch.my.pushRemote', 'no_push');
-  run('при no_push общий адрес защищён', [`refs/heads/my ${C} refs/heads/my ${C}`, ['origin', COMMON], 1]);
-  unset('branch.my.pushRemote');
-} catch (e) {
-  failed += 1;
-  console.log(`✗ набор не выполнился: ${e.message}`);
-} finally {
-  try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* держится процессом — не результат проверки */ }
-}
-
-if (failed === 0) console.log(`\nВсе проверки hook прошли (${passed}).`);
-else console.log(`\nПровалено: ${failed}, прошло: ${passed}.`);
-process.exit(failed === 0 ? 0 : 1);
+  test('my в собственный', ['push', 'mine', 'my'], true);
+  git('remote', 'set-url', 'mine', git('remote', 'get-url', 'origin'));
+  test('mine совпадает с общим адресом', ['push', 'mine', 'my'], false);
+  const hook = path.join(cwd, '.git/hooks/pre-push');
+  fs.writeFileSync(hook, '#!/bin/sh\nexit 1\n'); fs.chmodSync(hook, 0o755);
+  cmd(process.execPath, ['tools/install-hooks.js']);
+  cmd(process.execPath, ['tools/install-hooks.js']);
+  test('прежний hook сохранён и блокирует', ['push', 'origin', 'master-divergent:master-new'], false);
+  assert.match(fs.readFileSync(`${hook}.before-process-kit`, 'utf8'), /exit 1/);
+  console.log(`Проверки реальной отправки: ${passed} пройдено.`);
+} finally { fs.rmSync(temp, { recursive: true, force: true }); }

@@ -1,0 +1,192 @@
+{
+  "comment": "Вымышленные входные записи задач и свидетельства кода; результаты оценки не содержатся.",
+  "query": "processes/sdd-stories-report/queries/stories.md",
+  "result": {
+    "meta": {
+      "reportTitle": "Доля стори, выполненных по SDD",
+      "generatedAt": "2026-01-20",
+      "window": "01.01.2026 — 20.01.2026",
+      "label": "SDD",
+      "watchPath": "openspec/changes",
+      "statusesAccepted": "IFT, Ready for UAT, Done, Resolved",
+      "modules": [
+        {
+          "name": "Открытые данные",
+          "code": "CI03296913"
+        },
+        {
+          "name": "К2",
+          "code": "CI07692618"
+        }
+      ],
+      "taskStoreName": "Задачи команды (демо)",
+      "codeStoreName": "Репозитории команды (демо)",
+      "queryFile": "processes/sdd-stories-report/queries/stories.md"
+    },
+    "records": [
+      {
+        "key": "DEMO-201",
+        "summary": "Выгрузка справочника в файл",
+        "url": "http://example.invalid/browse/DEMO-201",
+        "status": "IFT",
+        "inProgressAt": "2026-01-08",
+        "labels": [
+          "SDD"
+        ],
+        "modules": [
+          "CI03296913"
+        ],
+        "assignee": "Аналитик Демо"
+      },
+      {
+        "key": "DEMO-202",
+        "summary": "Проверка прав на просмотр отчёта",
+        "url": "http://example.invalid/browse/DEMO-202",
+        "status": "Done",
+        "inProgressAt": "2026-01-09",
+        "labels": [],
+        "modules": [
+          "CI07692618"
+        ],
+        "assignee": "Аналитик Демо Второй"
+      },
+      {
+        "key": "DEMO-203",
+        "summary": "Правка подписи кнопки",
+        "url": "http://example.invalid/browse/DEMO-203",
+        "status": "Resolved",
+        "inProgressAt": "2026-01-12",
+        "labels": [],
+        "modules": [
+          "CI03296913"
+        ],
+        "assignee": "Разработчик Демо"
+      },
+      {
+        "key": "DEMO-204",
+        "summary": "Новый экран настроек",
+        "url": "http://example.invalid/browse/DEMO-204",
+        "status": "Ready for UAT",
+        "inProgressAt": "2026-01-15",
+        "labels": [
+          "SDD"
+        ],
+        "modules": [
+          "CI03296913"
+        ],
+        "assignee": "Разработчик Демо"
+      }
+    ],
+    "excluded": [
+      {
+        "key": "DEMO-301",
+        "summary": "Согласование макета",
+        "url": "http://example.invalid/browse/DEMO-301",
+        "status": "Done",
+        "reason": "в поле КЭ нет кода из списка отбора"
+      },
+      {
+        "key": "DEMO-302",
+        "summary": "Экспорт в CSV",
+        "url": "http://example.invalid/browse/DEMO-302",
+        "status": "Done",
+        "reason": "переведена в работу до начала окна (2025-12-20)"
+      },
+      {
+        "key": "DEMO-303",
+        "summary": "Вернуть старую форму отчёта",
+        "url": "http://example.invalid/browse/DEMO-303",
+        "status": "To Do",
+        "reason": "вернулась в статус до работы"
+      },
+      {
+        "key": "DEMO-304",
+        "summary": "Почистить устаревшие справочники",
+        "url": "http://example.invalid/browse/DEMO-304",
+        "status": "In Progress",
+        "reason": "статус не дошёл до тестирования"
+      },
+      {
+        "key": "DEMO-305",
+        "summary": "Переименование раздела меню",
+        "url": "http://example.invalid/browse/DEMO-305",
+        "status": "Done",
+        "reason": "тип задачи не Story"
+      }
+    ],
+    "unverified": [
+      {
+        "key": "DEMO-401",
+        "summary": "Импорт справочника из файла",
+        "reason": "история статусов не прочиталась: поле changelog не отдалось"
+      },
+      {
+        "key": "DEMO-402",
+        "summary": "Экспорт журнала операций",
+        "reason": "список файлов PR не получен: ответ усечён, состав изменений не подтверждён"
+      }
+    ]
+  },
+  "codeEvidence": {
+    "records": [
+      {
+        "key": "DEMO-201",
+        "prs": [
+          {
+            "id": 41,
+            "state": "MERGED",
+            "target": "master",
+            "changedPaths": [
+              "openspec/changes/demo-201-export/specs/export/spec.md",
+              "src/export.js"
+            ]
+          }
+        ],
+        "prsComplete": true
+      },
+      {
+        "key": "DEMO-202",
+        "prs": [
+          {
+            "id": 42,
+            "state": "MERGED",
+            "target": "master",
+            "changedPaths": [
+              "openspec/changes/demo-202-rights/specs/access/spec.md"
+            ]
+          },
+          {
+            "id": 43,
+            "state": "MERGED",
+            "target": "branch/SBAR-01049-01",
+            "changedPaths": [
+              "openspec/changes/demo-202-rights/specs/access/spec.md"
+            ]
+          }
+        ],
+        "prsComplete": true
+      },
+      {
+        "key": "DEMO-203",
+        "prs": [
+          {
+            "id": 44,
+            "state": "MERGED",
+            "target": "master",
+            "changedPaths": [
+              "src/ui/button.js",
+              "tests/ui/button.test.js"
+            ]
+          }
+        ],
+        "prsComplete": true
+      },
+      {
+        "key": "DEMO-204",
+        "prs": [],
+        "prsComplete": true
+      }
+    ],
+    "queryFile": "processes/sdd-stories-report/queries/code-evidence.md"
+  }
+}

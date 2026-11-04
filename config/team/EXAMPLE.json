@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "team": {
+    "id": "TODO",
+    "name": "TODO: название команды",
+    "owners": []
+  },
+  "taskStores": [
+    {
+      "id": "tasks",
+      "kind": "TODO",
+      "adapter": "adapters/TODO/ADAPTER.md",
+      "displayName": "TODO: как хранилище называть в отчётах",
+      "mcpServer": "TODO: имя MCP-сервера, подключённого в сессии",
+      "enabled": false,
+      "baseUrl": "TODO: корень веб-интерфейса",
+      "issueUrlTemplate": "TODO: ссылка на задачу, например {baseUrl}/browse/{key}",
+      "projects": [
+        "TODO: проекты команды"
+      ],
+      "issueTypes": [
+        "TODO: имена типов задач этой инстансы; до подтверждения живым вызовом значения не годятся для фильтра"
+      ],
+      "statusesExclude": [
+        "TODO: закрытые статусы как в этой инстансе"
+      ],
+      "modules": [
+        {
+          "comment": "КЭ команды: записи {name, code} — нужны не только отчётам. name — для человека, в отчёты не выводится; code — вида CI03296913, в поиск уходит только цифровая часть (3296913). Пустой список — отбора по КЭ нет",
+          "name": "TODO: как КЭ называть в разговоре с человеком",
+          "code": "TODO: код КЭ вида CI00000000"
+        }
+      ],
+      "capabilities": [
+        "searchIssues",
+        "getIssues",
+        "getIssue",
+        "addComment"
+      ],
+      "limits": {
+        "jqlMustIncludeIssueType": true,
+        "getIssuesBatchMax": 20,
+        "pageSize": 50
+      }
+    }
+  ],
+  "codeStores": [
+    {
+      "id": "code",
+      "kind": "TODO",
+      "adapter": "adapters/TODO/ADAPTER.md",
+      "displayName": "TODO: как хранилище называть в отчётах",
+      "mcpServer": "TODO: имя MCP-сервера, подключённого в сессии",
+      "enabled": false,
+      "baseUrl": "TODO: корень веб-интерфейса",
+      "pullRequestUrlTemplate": "TODO: ссылка на PR",
+      "repositories": [
+        {
+          "projectKey": "TODO",
+          "slug": "TODO",
+          "defaultBranch": "TODO",
+          "url": "TODO: ссылка на репозиторий"
+        }
+      ],
+      "acceptTargetBranches": [
+        "TODO: ветки приёмки, в которые попадают смерженные PR"
+      ],
+      "pullRequest": {
+        "pageSize": 25,
+        "keyExtraction": {
+          "fields": [
+            "TODO: поля PR, из которых берётся ключ задачи"
+          ],
+          "pattern": "[A-Z][A-Z0-9]+-[0-9]+",
+          "ignorePatterns": [
+            "TODO: шаблоны ключей, которые ключом задачи не являются (релизные метки, имена сборок)"
+          ]
+        }
+      },
+      "capabilities": [
+        "listPullRequests",
+        "getPullRequest",
+        "getPullRequestDiff",
+        "listCommits",
+        "getCommitChanges"
+      ]
+    }
+  ],
+  "defaults": {
+    "taskStore": "tasks",
+    "codeStore": "code"
+  }
+}

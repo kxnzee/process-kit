@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": [
+    "data",
+    "templateFile"
+  ],
+  "properties": {
+    "data": {
+      "type": "string",
+      "minLength": 1
+    },
+    "templateFile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "maxFindingsPerReport": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "required": [
+    "queryFile",
+    "codeStore",
+    "parameters"
+  ],
+  "properties": {
+    "queryFile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "codeStore": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "dataFile": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

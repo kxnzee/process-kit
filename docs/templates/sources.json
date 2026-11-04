@@ -1,6 +1,0 @@
-{
-  "schemaVersion": 1,
-  "taskStores": [],
-  "codeStores": [],
-  "defaults": { "runs_keep_days": 30 }
-}

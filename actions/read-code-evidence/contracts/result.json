@@ -2,7 +2,8 @@
   "type": "object",
   "required": [
     "selectionId",
-    "records"
+    "records",
+    "queryFile"
   ],
   "properties": {
     "selectionId": {
@@ -79,6 +80,10 @@
         },
         "additionalProperties": false
       }
+    },
+    "queryFile": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "additionalProperties": false

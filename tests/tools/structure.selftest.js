@@ -27,7 +27,7 @@ try {
   check('previous hooks preserve arguments, stdin and failure status', () => {
     const {runHook,invocation}=require('../../tools/lib/git/git-hook');
     const result=runHook(process.execPath,['-e',"process.stdout.write(require('node:fs').readFileSync(0,'utf8')+'|'+process.argv[1]);process.exitCode=7",'argument with spaces'],{cwd:tmp,input:'hook input',encoding:'utf8'});
-    assert.equal(result.status,7,result.error?.message);assert.equal(result.stdout,'hook input|argument with spaces');
+    assert.equal(result.status,7,JSON.stringify({error:result.error?.message,stderr:result.stderr,stdout:result.stdout}));assert.equal(result.stdout,'hook input|argument with spaces');
     const call=invocation('C:/Repo With Spaces/hook',['remote','address with spaces'],'win32',tmp);
     assert.deepEqual(call.args,['-c','exec "$@"','process-kit-hook','C:/Repo With Spaces/hook','remote','address with spaces']);
   });

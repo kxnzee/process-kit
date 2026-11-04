@@ -13,7 +13,8 @@ try{
  check('public commands resolve entities, inspect config and complete a local process',()=>{
   execFileSync('git',['init'],{cwd:tmp,stdio:'ignore'});
   assert.equal(call(['check','--root',tmp,'--only','actions']).status,0);
-  assert.equal(JSON.parse(call(['config','--json']).stdout).schemaVersion,2);
+  const config=call(['config','--json']);assert.equal(config.status,0,JSON.stringify({error:config.error?.message,stderr:config.stderr,stdout:config.stdout}));
+  assert.equal(JSON.parse(config.stdout).schemaVersion,2);
   const manifest=call(['entities','example','local']);assert.equal(manifest.status,0,manifest.stderr);assert.equal(JSON.parse(manifest.stdout).ready,true);
   let number=0;
   const run=(command,spec)=>{const file=path.join(tmp,`spec-${number++}.json`);fs.writeFileSync(file,JSON.stringify(spec));const result=call(['run',command,file]);assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};

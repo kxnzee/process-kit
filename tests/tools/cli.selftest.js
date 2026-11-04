@@ -13,7 +13,11 @@ try{
  check('public commands resolve entities, inspect config and complete a local process',()=>{
   execFileSync('git',['init'],{cwd:tmp,stdio:'ignore'});
   assert.equal(call(['check','--root',tmp,'--only','actions']).status,0);
-  const config=call(['config','--json']);assert.equal(config.status,0,JSON.stringify({error:config.error?.message,stderr:config.stderr,stdout:config.stdout}));
+  const master=path.join(tmp,'config/master/config.json');
+  assert.ok(fs.existsSync(master),JSON.stringify({tmp,source,entries:fs.readdirSync(tmp),config:fs.existsSync(path.join(tmp,'config'))?fs.readdirSync(path.join(tmp,'config')):null}));
+  const config=call(['config','--json']);
+  const diagnostics=config.status===0?null:spawnSync(process.execPath,['-e',"const fs=require('node:fs');console.log(JSON.stringify({cwd:process.cwd(),entries:fs.readdirSync('.'),exists:fs.existsSync('config/master/config.json')}))"],{cwd:tmp,encoding:'utf8'});
+  assert.equal(config.status,0,JSON.stringify({error:config.error?.message,stderr:config.stderr,stdout:config.stdout,parentMasterExists:fs.existsSync(master),childDiagnostics:diagnostics?.stdout,childError:diagnostics?.stderr}));
   assert.equal(JSON.parse(config.stdout).schemaVersion,2);
   const manifest=call(['entities','example','local']);assert.equal(manifest.status,0,manifest.stderr);assert.equal(JSON.parse(manifest.stdout).ready,true);
   let number=0;

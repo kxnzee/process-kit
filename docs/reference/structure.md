@@ -80,7 +80,7 @@ $ git ls-remote origin team-urmepk
 ├── tools/
 │   ├── validate.js                  правила раскладки и структуры
 │   ├── validate.selftest.js         самопроверка правил
-│   ├── check-prepush.js             самопроверка установленного pre-push
+│   ├── prepush.selftest.js             интеграционная проверка pre-push во временных репозиториях
 │   ├── check-report.js              сверка наборов tests/<имя>/ и артефактов прогона
 │   ├── check-layout.js              прежнее имя, вызывает validate.js
 │   └── paths.js                     единственное место, где код вычисляет ROOT

@@ -29,7 +29,18 @@ function validate(args, success, contains) {
   if (contains) assert.ok(result.stdout.includes(contains), result.stdout);
 }
 function model(body) { return processModel(`---\nname: sample\nentry: a\n---\n## Шаги\n${body}`); }
-if(copy)for (const dir of ['processes', 'actions', 'context', 'config', 'adapters', '.gigacode', 'tools']) fs.cpSync(path.join(source, dir), path.join(tmp, dir), { recursive: true });
+// Explicit traversal keeps Unicode destination handling consistent across Node versions.
+function copyTree(from,to){
+ fs.mkdirSync(to,{recursive:true});
+ for(const item of fs.readdirSync(from,{withFileTypes:true})){
+  const src=path.join(from,item.name),dst=path.join(to,item.name);
+  if(item.isDirectory())copyTree(src,dst);
+  else if(item.isFile())fs.copyFileSync(src,dst);
+  else throw new Error('Unsupported fixture entry: '+src);
+ }
+}
+if(copy)for(const dir of ['processes','actions','context','config','adapters','.gigacode','tools'])copyTree(path.join(source,dir),path.join(tmp,dir));
+
 return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter, close: () => fs.rmSync(tmp, {recursive:true,force:true}) };
 };
 

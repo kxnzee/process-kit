@@ -271,7 +271,7 @@ function ruleLayout() {
   const gi = path.join(ROOT, '.gitignore');
   if (!exists(gi)) { E('раскладка', gi, 0, 'нет .gitignore'); return; }
   const g = lines(read(gi)).map((l) => l.trim());
-  for (const need of ['outputs/', '.history/']) if (!g.includes(need)) E('раскладка', gi, 0, `нет строки ${need}`);
+  for (const need of ['/outputs/', '/.history/']) if (!g.includes(need)) E('раскладка', gi, 0, `нет строки ${need}`);
   for (const old of ['Process Kit/', '.runs/']) if (!g.includes(old)) W('раскладка', gi, 0, `нет строки ${old} (старое имя, держим одну версию)`);
 
   // Team identity belongs to the team config.

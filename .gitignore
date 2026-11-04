@@ -25,8 +25,8 @@ Thumbs.db
 process-kit.local.json
 
 # Данные человека: результаты запусков и журнал прогонов в git не попадают
-outputs/
-.history/
+/outputs/
+/.history/
 
 # старые имена папок результатов, удалить в следующей версии
 Process Kit/

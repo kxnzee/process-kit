@@ -8,7 +8,7 @@ function resource(cwd,processName,value){
  const parts=value.split('/');
  if(parts[0]==='actions'){const model=require('../entities/process-model').processModel(fs.readFileSync(inside(cwd,`processes/${processName}/PROCESS.md`),'utf8'));if(!model.data.requires?.actions?.includes(parts[1]))throw new Error('Экшен не объявлен в requires.actions: '+parts[1]);}
  if(!['actions','processes','context','adapters'].includes(parts[0])||!allowedReference(processName,parts[1]))throw new Error('Недопустимый ресурс '+value);
- if(!fs.statSync(inside(cwd,value)).isFile())throw new Error('Нет ресурса '+value);return value;
+ if(!fs.statSync(inside(cwd,value),{throwIfNoEntry:false})?.isFile())throw new Error('Нет ресурса '+value);return value;
 }
 function object(value){if(typeof value==='string')value=JSON.parse(value);if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Нужен объект аргументов');return value;}
 const read=(cwd,file)=>JSON.parse(fs.readFileSync(inside(cwd,file),'utf8'));

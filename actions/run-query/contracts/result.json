@@ -2,7 +2,7 @@
   "type": "object",
   "required": [
     "meta",
-    "stories",
+    "records",
     "excluded",
     "unverified",
     "selectionId"
@@ -11,34 +11,9 @@
     "meta": {
       "type": "object",
       "required": [
-        "generatedAt",
-        "window",
-        "label",
-        "watchPath",
-        "query",
         "queryFile"
       ],
       "properties": {
-        "generatedAt": {
-          "type": "string",
-          "minLength": 1
-        },
-        "window": {
-          "type": "string",
-          "minLength": 1
-        },
-        "label": {
-          "type": "string",
-          "minLength": 1
-        },
-        "watchPath": {
-          "type": "string",
-          "minLength": 1
-        },
-        "query": {
-          "type": "string",
-          "minLength": 1
-        },
         "queryFile": {
           "type": "string",
           "minLength": 1
@@ -46,50 +21,15 @@
       },
       "additionalProperties": true
     },
-    "stories": {
+    "records": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
-          "key",
-          "summary",
-          "url",
-          "status",
-          "inProgressAt"
+          "key"
         ],
         "properties": {
           "key": {
-            "type": "string",
-            "minLength": 1
-          },
-          "summary": {
-            "type": "string",
-            "minLength": 1
-          },
-          "url": {
-            "type": "string",
-            "minLength": 1
-          },
-          "status": {
-            "type": "string",
-            "minLength": 1
-          },
-          "inProgressAt": {
-            "type": "string",
-            "minLength": 1
-          },
-          "labels": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            }
-          },
-          "assignee": {
-            "type": "string",
-            "minLength": 1
-          },
-          "responsible": {
             "type": "string",
             "minLength": 1
           }
@@ -128,10 +68,6 @@
         ],
         "properties": {
           "key": {
-            "type": "string",
-            "minLength": 1
-          },
-          "summary": {
             "type": "string",
             "minLength": 1
           },

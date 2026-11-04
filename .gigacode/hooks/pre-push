@@ -1,5 +1,5 @@
 #!/bin/sh
-# Process Kit pre-push v2. Bootstrap only; policy is in tools/prepush.js.
+# Process Kit pre-push v2. Bootstrap only; policy is in tools/lib/git/prepush.js.
 set -eu
 root=$(git rev-parse --show-toplevel) || exit 1
-exec node "$root/tools/prepush.js" "$@"
+exec node "$root/tools/lib/git/prepush.js" "$@"

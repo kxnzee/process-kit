@@ -102,6 +102,7 @@ mail-draft как письмо.md; полный отчёт остаётся от
 - параметры:
   - `data: {report-data}`
   - `templateFile: {params.templateFile}`
+  - `rendererFile: processes/sdd-stories-report/renderers/report.js`
 - артефакт: sdd-report
 - следующий: gate
 
@@ -128,6 +129,7 @@ mail-draft как письмо.md; полный отчёт остаётся от
 - параметры:
   - `data: {mail-data}`
   - `templateFile: processes/sdd-stories-report/templates/mail.md`
+  - `rendererFile: processes/sdd-stories-report/renderers/mail.js`
 - артефакт: report-text
 - следующий: notify
 

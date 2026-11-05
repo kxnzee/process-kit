@@ -3,8 +3,9 @@
 // The only public CLI. Libraries under lib/ are not agent-facing tools.
 const path=require('node:path'),{spawnSync}=require('node:child_process');
 const commands={
+ action:{file:'lib/actions/invoke.js',usage:'<spec.json>',purpose:'Выполнить локальный экшен без создания процесса',scope:'local-write'},
  entities:{file:'lib/entities/entities.js',usage:'<process> [local|demo|live] [params.json]',purpose:'Разрешить сущности и подключения процесса',scope:'read-only'},
- run:{file:'lib/runtime/run-journal.js',usage:'<start|begin|save|enter|leave|finish|fail> <spec.json>',purpose:'Сохранить состояние и результаты запуска',scope:'local-write'},
+ run:{file:'lib/runtime/run-journal.js',usage:'<start|next|execute|begin|save|enter|leave|finish|fail> <spec.json>',purpose:'Сохранить состояние и результаты запуска',scope:'local-write'},
  config:{file:'lib/config/config.js',usage:'--json | --process <name> [--params <file>]',purpose:'Проверить настройки и выбор подключений',scope:'read-only'},
  check:{file:'lib/validation/validate.js',usage:'[--process <name>] [--demo] [--params <file>] [--json]',purpose:'Проверить структуру или готовность процесса',scope:'read-only'},
  test:{file:'../tests/run.js',usage:'',purpose:'Запустить тесты разработки; не нужен для обычной задачи',scope:'temporary-files'},

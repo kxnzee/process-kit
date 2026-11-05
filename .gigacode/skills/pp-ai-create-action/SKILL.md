@@ -150,4 +150,6 @@ items, minItems, minLength, minimum, enum, anyOf, description. Опиши вло
 Не добавляй в общий движок условия по имени экшена. Возвращаемый артефакт процесса
 может быть псевдонимом единственного produces функции. Критерии и формулы конкретного
 процесса передаются явно: evaluate-data принимает inputs, rulesFile, parameters,
-resultContract; compose-report принимает data и templateFile; edit-text — styleFile.
+resultContract; compose-report принимает data/templateFile и необязательный rendererFile;
+edit-text принимает text или inputText и styleFile. Локальные функции можно вызывать
+через node tools/kit.js action <spec.json> без сохранённого процесса.

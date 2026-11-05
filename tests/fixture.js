@@ -18,6 +18,17 @@ function declare(text){
  let extra=data.requires.context===undefined&&contexts.length?'  context: ['+contexts.join(', ')+']\n':'';for(const key of ['actions','processes'])if(data.requires[key]===undefined)extra+='  '+key+': ['+wanted[key].join(', ')+']\n';
  return text.replace('requires:\n','requires:\n'+extra);
 }
+function copyProject(from,to){
+ function tree(src,dst){
+  fs.mkdirSync(dst,{recursive:true});
+  for(const item of fs.readdirSync(src,{withFileTypes:true})){
+   const original=path.join(src,item.name),target=path.join(dst,item.name);
+   if(/^config\/(my|team)\/config\.json$/.test(path.relative(from,original).split(path.sep).join('/')))continue;
+   if(item.isDirectory())tree(original,target);else if(item.isFile())fs.copyFileSync(original,target);else throw new Error('Unsupported fixture entry: '+original);
+  }
+ }
+ for(const name of ['processes','actions','context','config','adapters','.gigacode','tools'])if(fs.existsSync(path.join(from,name)))tree(path.join(from,name),path.join(to,name));
+}
 module.exports = function fixture({copy=true,prefix='pk-contracts-'}={}) {
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 const write = (file, text) => { fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true }); fs.writeFileSync(path.join(tmp, file), file.endsWith('/PROCESS.md')?declare(text):text); };
@@ -29,19 +40,11 @@ function validate(args, success, contains) {
   if (contains) assert.ok(result.stdout.includes(contains), result.stdout);
 }
 function model(body) { return processModel(`---\nname: sample\nentry: a\n---\n## Шаги\n${body}`); }
-// Explicit traversal keeps Unicode destination handling consistent across Node versions.
-function copyTree(from,to){
- fs.mkdirSync(to,{recursive:true});
- for(const item of fs.readdirSync(from,{withFileTypes:true})){
-  const src=path.join(from,item.name),dst=path.join(to,item.name);
-  if(item.isDirectory())copyTree(src,dst);
-  else if(item.isFile())fs.copyFileSync(src,dst);
-  else throw new Error('Unsupported fixture entry: '+src);
- }
-}
-if(copy)for(const dir of ['processes','actions','context','config','adapters','.gigacode','tools'])copyTree(path.join(source,dir),path.join(tmp,dir));
+if(copy)copyProject(source,tmp);
 
 return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter, close: () => fs.rmSync(tmp, {recursive:true,force:true}) };
 };
 
 module.exports.declare=declare;
+
+module.exports.copyProject=copyProject;

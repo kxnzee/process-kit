@@ -20,12 +20,16 @@ try {
     journal.operation(tmp,'save',{output:run.output,step:'assess',artifact:'report-data',extension:'json',content:report,next:'compose'});
     assert.equal(readPort('report-data').counters.sddShare,'75,0');
     journal.operation(tmp,'begin',{output:run.output,step:'compose'});
-    journal.operation(tmp,'save',{output:run.output,step:'compose',artifact:'sdd-report',extension:'md',content:'ДАННЫЕ ДЕМО. Общий отчёт: 75,0%.',next:'gate'});
+    assert.throws(()=>journal.operation(tmp,'save',{output:run.output,step:'compose',artifact:'sdd-report',extension:'md',content:'# —\nДоля: — %\nПроверить не удалось: нет записей',next:'gate'}),/Отчёт не соответствует/);
+    journal.execute(tmp,{output:run.output,step:'compose'});
+    const composedState=JSON.parse(fs.readFileSync(statePath));
+    const reportBody=fs.readFileSync(path.join(tmp,'outputs',run.output,'.run',composedState.artifacts['sdd-report']),'utf8');
+    for(const fact of ['75,0','DEMO-401','DEMO-402','ДАННЫЕ ДЕМО',report.meta.window])assert.ok(reportBody.includes(fact),fact);
     if(!wantsMail){
       journal.operation(tmp,'finish',{output:run.output,resultName:'отчёт.md',decision:'Письмо не запрошено'});
       const finished=JSON.parse(fs.readFileSync(statePath));
       assert.equal(finished.status,'completed');assert.ok(!finished.artifacts['mail-draft']);
-      assert.equal(fs.readFileSync(path.join(tmp,'outputs',run.output,'отчёт.md'),'utf8'),'ДАННЫЕ ДЕМО. Общий отчёт: 75,0%.');
+      assert.equal(fs.readFileSync(path.join(tmp,'outputs',run.output,'отчёт.md'),'utf8'),reportBody);
       continue;
     }
     journal.operation(tmp,'begin',{output:run.output,step:'prepare-mail-data',decision:'Запрошен черновик; есть истории без SDD'});
@@ -35,7 +39,7 @@ try {
     assert.ok(mail.to);
     journal.operation(tmp,'save',{output:run.output,step:'prepare-mail-data',artifact:'mail-data',extension:'json',content:mail,next:'compose-mail'});
     journal.operation(tmp,'begin',{output:run.output,step:'compose-mail'});
-    const body='ДАННЫЕ ДЕМО. Уточните причины отсутствия SDD: '+mail.stories.map(row=>row.key).join(', ');
+    const body=require('../../../processes/sdd-stories-report/renderers/mail').render(mail);
     journal.operation(tmp,'save',{output:run.output,step:'compose-mail',artifact:'report-text',extension:'md',content:body,next:'notify'});
     journal.operation(tmp,'begin',{output:run.output,step:'notify'});
     journal.operation(tmp,'save',{output:run.output,step:'notify',artifact:'mail-draft',extension:'md',content:body,next:'end'});

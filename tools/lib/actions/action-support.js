@@ -2,11 +2,11 @@
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path'),{allowedReference}=require('../entities/process-model');
 const {loadContract,validateValue}=require('../contracts/value-contract');
-function resource(cwd,processName,value){
+function resource(cwd,processName,value,declared){
  if(typeof value!=='string'||value.includes('\\')||value.split('/').some(x=>!x||x==='.'||x==='..'))throw new Error('Нужен точный путь ресурса');
- if(value.startsWith('context/')){const model=require('../entities/process-model').processModel(fs.readFileSync(inside(cwd,`processes/${processName}/PROCESS.md`),'utf8'));const level=value.split('/')[1];if(!model.data.requires?.context?.includes(level))throw new Error('Контекст не объявлен в requires.context: '+level);return require('../entities/context').contextFile(cwd,processName,value);}
+ if(value.startsWith('context/')){const model=declared?{data:{requires:declared}}:require('../entities/process-model').processModel(fs.readFileSync(inside(cwd,`processes/${processName}/PROCESS.md`),'utf8'));const level=value.split('/')[1];if(!model.data.requires?.context?.includes(level))throw new Error('Контекст не объявлен в requires.context: '+level);return require('../entities/context').contextFile(cwd,processName,value);}
  const parts=value.split('/');
- if(parts[0]==='actions'){const model=require('../entities/process-model').processModel(fs.readFileSync(inside(cwd,`processes/${processName}/PROCESS.md`),'utf8'));if(!model.data.requires?.actions?.includes(parts[1]))throw new Error('Экшен не объявлен в requires.actions: '+parts[1]);}
+ if(parts[0]==='actions'){const model=declared?{data:{requires:declared}}:require('../entities/process-model').processModel(fs.readFileSync(inside(cwd,`processes/${processName}/PROCESS.md`),'utf8'));if(!model.data.requires?.actions?.includes(parts[1]))throw new Error('Экшен не объявлен в requires.actions: '+parts[1]);}
  if(!['actions','processes','context','adapters'].includes(parts[0])||!allowedReference(processName,parts[1]))throw new Error('Недопустимый ресурс '+value);
  if(!fs.statSync(inside(cwd,value),{throwIfNoEntry:false})?.isFile())throw new Error('Нет ресурса '+value);return value;
 }

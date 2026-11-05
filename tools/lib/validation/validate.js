@@ -691,6 +691,14 @@ function ruleOutputs() {
 
 function checkRunFolder(p, short) {
   const names = ls(p);
+  if(names.includes('.action.json')){
+    try{
+      const meta=JSON.parse(read(path.join(p,'.action.json'))),action=require('../entities/process-dependencies').action(ROOT,meta.action);
+      if(meta.schemaVersion!==1||meta.mode!=='local'||action.kind!=='transform'||!Object.hasOwn(action.contracts,meta.port)||!require('../core/paths').validResultName(meta.resultName)||meta.resultName==='итог.md'||names.some(name=>!['.action.json',meta.resultName].includes(name)))throw new Error('Некорректный результат прямого экшена');
+      const file=path.join(p,meta.resultName),bytes=fs.readFileSync(file);if(require('node:crypto').createHash('sha256').update(bytes).digest('hex')!==meta.sha256)throw new Error('Изменён результат прямого экшена');
+      const contract=action.contracts[meta.port];if(contract==='text'){if(!bytes.toString().trim())throw new Error('Пустой результат');}else require('../contracts/value-contract').validateValue(require('../contracts/value-contract').loadContract(ROOT,`actions/${meta.action}/${contract}`),JSON.parse(bytes));
+    }catch(error){E('outputs',p,0,error.message);}return;
+  }
   const hasRun = names.includes('.run');
   const isSetup = /^настройка(-\d+)?$/.test(short);
   const isRequest = short.startsWith('заявка-');

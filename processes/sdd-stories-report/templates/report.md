@@ -1,9 +1,11 @@
+Авторитетная форма: renderers/report.js. Данные: meta.*, counters.* и массивы историй. При наличии rendererFile используйте штатный execute; этот файл объясняет структуру и не является программой подстановки.
+
 <!--
 Словарь данных для подстановки (больше ничего агент в отчёт не выдумывает):
 
-Мета:  {{reportTitle}} {{generatedAt}} {{window}} {{label}} {{statusesAccepted}}
-       {{taskStoreName}} {{codeStoreName}} {{queryFile}} {{templateFile}}
-Счётчики: {{storyCount}} {{sddCount}} {{plainCount}} {{labelCount}} {{commitCount}} {{sddShare}} {{unverifiedCount}}
+Мета:  {{meta.reportTitle}} {{meta.generatedAt}} {{meta.window}} {{meta.label}} {{meta.statusesAccepted}}
+       {{meta.taskStoreName}} {{meta.codeStoreName}} {{meta.queryFile}} {{params.templateFile}}
+Счётчики: {{counters.storyCount}} {{counters.sddCount}} {{counters.plainCount}} {{counters.labelCount}} {{counters.commitCount}} {{counters.sddShare}} {{counters.unverifiedCount}}
 Цикл:  {{#each …}} … {{/each}}   Условие: {{#if …}} … {{/if}}
 
 sddStories[]  — выполнены по SDD: key, summary, url, status, inProgressAt,
@@ -18,21 +20,21 @@ responsible — то, что пишется в колонке «Ответств
 Ссылки в ячейках — только ключом задачи плоским текстом; адреса собрать списком под таблицей.
 -->
 
-# {{reportTitle}}
+# {{meta.reportTitle}}
 
-Дата: {{generatedAt}} · Окно: {{window}} · Метка: `{{label}}` · Засчитаны статусы: {{statusesAccepted}}
-Задачи: {{taskStoreName}} · Код: {{codeStoreName}}
-Запрос: `{{queryFile}}` · Шаблон: `{{templateFile}}`
+Дата: {{meta.generatedAt}} · Окно: {{meta.window}} · Метка: `{{meta.label}}` · Засчитаны статусы: {{meta.statusesAccepted}}
+Задачи: {{meta.taskStoreName}} · Код: {{meta.codeStoreName}}
+Запрос: `{{meta.queryFile}}` · Шаблон: `{{params.templateFile}}`
 
 ## Итог
 
 | Показатель | Значение |
 |---|---|
-| Стори в выборке (прошли отбор) | {{storyCount}} |
-| Выполнено по SDD | {{sddCount}} — из них с меткой {{labelCount}}, через PR с артефактами {{commitCount}} |
-| Выполнено без SDD | {{plainCount}} |
-| **Доля SDD от общего числа** | **{{sddShare}} %** |
-| Проверить не удалось (в расчёт не входят) | {{unverifiedCount}} |
+| Стори в выборке (прошли отбор) | {{counters.storyCount}} |
+| Выполнено по SDD | {{counters.sddCount}} — из них с меткой {{counters.labelCount}}, через PR с артефактами {{counters.commitCount}} |
+| Выполнено без SDD | {{counters.plainCount}} |
+| **Доля SDD от общего числа** | **{{counters.sddShare}} %** |
+| Проверить не удалось (в расчёт не входят) | {{counters.unverifiedCount}} |
 
 ## Стори, выполненные по SDD
 
@@ -52,7 +54,7 @@ responsible — то, что пишется в колонке «Ответств
 
 ## Проверить не удалось
 
-{{#if unverifiedCount}}
+{{#if counters.unverifiedCount}}
 
 | Задача | Причина |
 |---|---|
@@ -74,6 +76,6 @@ responsible — то, что пишется в колонке «Ответств
 ## Как читать этот отчёт
 
 - В выборку попадают стори, переведённые в работу в окне и дошедшие до тестирования.
-- «Выполнено по SDD» — есть метка `{{label}}` **или** стори упомянута в слитом PR, в котором есть коммит с изменениями папки спецификаций; достаточно одного.
+- «Выполнено по SDD» — есть метка `{{meta.label}}` **или** стори упомянута в слитом PR, в котором есть коммит с изменениями папки спецификаций; достаточно одного.
 - «Выполнено без SDD» — ни метки, ни такого PR.
 - Доля SDD считается от числа прошедших отбор: непроверенные стори в знаменатель не входят.

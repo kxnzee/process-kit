@@ -196,3 +196,7 @@ evaluate-data с SDD-правилом процесса → report-data; compose-
 prepare-mail-draft → mail-draft (необязательно). Контракт — processes/sdd-stories-report/reference.md.
 
 Каталог команд и назначение каждого внутреннего модуля: docs/tools.md.
+
+Одиночная локальная утилита: kit.js action, без процесса-обёртки. Исполнитель процесса:
+kit.js run next/execute либо begin/save для работы модели. Формирование и проверка
+предметного отчёта принадлежат renderers/ процесса, общий compose-report переиспользуется.

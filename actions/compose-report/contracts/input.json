@@ -16,6 +16,10 @@
     "maxFindingsPerReport": {
       "type": "integer",
       "minimum": 1
+    },
+    "rendererFile": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "additionalProperties": false

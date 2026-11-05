@@ -7,7 +7,7 @@ const read=f=>fs.readFileSync(path.join(cwd,f),'utf8'),write=(f,t)=>{fs.mkdirSyn
 const process=(name,steps,entry='call')=>`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\ndescription: Тестовый процесс\nexample: test\nentry: ${entry}\nrequires:\n  actions: [${[...new Set([...steps.matchAll(/- действие: ([a-z0-9-]+)/g)].map(m=>m[1]))].join(', ')}]\n  context: [master]\nparams:\n  режим: проще\n---\n## Шаги\n${steps}\n`;
 const spec={process:'my-parent',mode:'local',date:'2026-11-03',slug:'вложенный',inputText:'12 задач DEMO-42.'};
 try{
- for(const dir of ['actions','processes','context','config','adapters','.gigacode','tools'])fs.cpSync(path.join(source,dir),path.join(cwd,dir),{recursive:true});
+ require('../fixture').copyProject(source,cwd);
  write('processes/my-editor/PROCESS.md',process('my-editor','### edit\n- действие: edit-text\n- параметры: `text: {params.input}`\n- артефакт: report-text\n- следующий: end','edit').replace('режим: проще','режим: коротко\n  styleFile: context/master/writing-style/CONTEXT.md'));
  write('processes/my-parent/PROCESS.md',process('my-parent','### call\n- процесс: my-editor\n- следующий: after\n### after\n- действие: prepare-mail-draft\n- параметры: `to: Демо`\n- параметры: `subject: Тест`\n- артефакт: mail-draft\n- следующий: end'));
  const dep=dependencies(cwd,'my-parent',{},'local');

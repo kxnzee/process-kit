@@ -70,7 +70,11 @@ $ git ls-remote origin team-urmepk
 │       ├── pp-ai-create-adapter/SKILL.md
 │       ├── pp-ai-promote-changes-team/SKILL.md
 │       └── pp-ai-promote-changes-master/SKILL.md
-├── processes/<имя>/PROCESS.md       общие, team-<команда>-*, my-*
+├── processes/<имя>/                 общие, team-<команда>-*, my-*
+│   ├── PROCESS.md                  точка входа и маршрут
+│   ├── queries/, rules/            запросы и предметные вычисления, если нужны
+│   ├── contracts/, templates/      схемы данных и инструкции оформления, если нужны
+│   └── renderers/                  формирование и проверка точного текста, если нужны
 ├── actions/<имя>/ACTION.md          общие, team-<команда>-*, my-*
 ├── adapters/<имя>/ADAPTER.md
 ├── context/<master|team|my>/<тема>/CONTEXT.md          уровни master/team/my, без префиксов у тем
@@ -102,14 +106,15 @@ $ git ls-remote origin team-urmepk
 ├── .history/                        в .gitignore
 │   ├── runs.jsonl                   память помощника, не чистится
 │   └── cache/                       можно удалить в любой момент
-└── outputs/                         в .gitignore; см. docs/runtime.md
+└── outputs/                         в .gitignore; см. docs/ARCHITECTURE.md
 ```
 
 В корне нет: system/, team/, user/, process-kit.local.json, «Process Kit/», .runs/,
 runs/, trace.jsonl, run.md, .gigacode/.env. Отдельного каталога `config/fixtures/` тоже
 нет: вымышленные данные лежат в файле `processes/<имя>/fixture.json`.
 У каждой фикстуры должно быть соответствующее определение `processes/<имя>/PROCESS.md`.
-Данные действия хранятся в `actions/<имя>/`: queries/, rules/, templates/, contracts/.
+Ресурсы экшена хранятся в `actions/<имя>/`; запросы, правила и оформление конкретного
+сценария — в `processes/<имя>/`. Создавай только используемые подпапки.
 В tests/ хранится только тестовый код; рабочие данные остаются у процессов и экшенов. Общая fixtures/ не используется.
 
 ## .gitignore (обязательные строки)
@@ -178,7 +183,7 @@ error: failed to push some refs ...
 - Контексты master/team/my подключаются уровнями; аргументы выбирают темы внутри них.
   Чужие уровни/команды не загружаются, тексты не сливаются по приоритету.
 - Физический артефакт — .run/<NN>-<шаг>.<ext>, логическое имя сопоставляется через
-  state.artifacts. Продолжение требует identity и хеши; подробности — docs/runtime.md.
+  state.artifacts. Продолжение требует identity и хеши; подробности — docs/ARCHITECTURE.md.
 - Конфиг нужен только сетевому live. Transform/demo не требуют адресов или секретов.
 - Данные и запросы переиспользуются по точной ссылке, не обязаны повторять имя процесса.
 
@@ -195,7 +200,7 @@ SDD 1.1: run-query → task-records; read-code-evidence → code-evidence;
 evaluate-data с SDD-правилом процесса → report-data; compose-report → report-text;
 prepare-mail-draft → mail-draft (необязательно). Контракт — processes/sdd-stories-report/reference.md.
 
-Каталог команд и назначение каждого внутреннего модуля: docs/tools.md.
+Устройство CLI и группы внутренних модулей: docs/ARCHITECTURE.md.
 
 Одиночная локальная утилита: kit.js action, без процесса-обёртки. Исполнитель процесса:
 kit.js run next/execute либо begin/save для работы модели. Формирование и проверка

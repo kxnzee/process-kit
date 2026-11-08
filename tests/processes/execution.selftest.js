@@ -16,7 +16,18 @@ try{
  check('direct begin cannot bypass the caller process node',()=>assert.throws(()=>journal.operation(cwd,'begin',{output,process:'my-editor',step:'edit'}),/enter/));
  journal.operation(cwd,'enter',{output,step:'call'});
  check('enter saves a parent continuation and child defaults',()=>{assert.equal(state(output).cursorProcess,'my-editor');assert.equal(state(output).stack[0].next,'after');assert.equal(state(output).params.режим,'коротко');});
- journal.operation(cwd,'begin',{output,step:'edit'});journal.operation(cwd,'save',{output,step:'edit',artifact:'report-text',extension:'md',content:'12 задач DEMO-42.',next:'end'});
+ check('execute on an agent step preserves the run and tells the agent to begin',()=>{
+  const before=state(output),card=journal.operation(cwd,'next',{output});assert.equal(card.operation,'begin');
+  assert.throws(()=>journal.execute(cwd,card.spec),/run begin.*run save/);
+  assert.deepEqual(state(output),before);assert.equal(journal.operation(cwd,'next',{output}).operation,'begin');
+ });
+ journal.operation(cwd,'begin',{output,step:'edit'});
+ check('execute on a pending agent step preserves it for save without restarting',()=>{
+  const before=state(output),card=journal.operation(cwd,'next',{output});assert.equal(card.operation,'model');
+  assert.throws(()=>journal.execute(cwd,card.spec),/Шаг уже начат.*run save/);
+  assert.deepEqual(state(output),before);assert.equal(journal.operation(cwd,'next',{output}).operation,'model');
+ });
+ journal.operation(cwd,'save',{output,step:'edit',artifact:'report-text',extension:'md',content:'12 задач DEMO-42.',next:'end'});
  check('a child ending cannot finish the root run',()=>assert.throws(()=>journal.operation(cwd,'finish',{output,resultName:'текст.md'}),/leave/));
  journal.operation(cwd,'leave',{output});
  check('leave returns exactly to the parent continuation and restores params',()=>{assert.equal(state(output).cursorProcess,'my-parent');assert.equal(state(output).next_step,'after');assert.equal(state(output).params.режим,'проще');assert.equal(state(output).stack.length,0);assert.ok(state(output).artifacts['report-text']);});

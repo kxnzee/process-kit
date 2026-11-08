@@ -192,7 +192,10 @@ function execute(cwd,spec){
   if(target?.kind!=='action')throw new Error('Выбранный шаг не относится к развилке');
  }else if(card.operation==='done')throw new Error('Прогон завершён: новый шаг не выполняется, нужен новый запуск');
  else if(spec.step!==card.spec?.step)throw new Error('Текущий шаг карточки — '+card.spec?.step+': передайте его spec без изменений');
- else if(card.operation!=='execute'){const reason='Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md';failStep(cwd,spec.output,reason);throw Object.assign(new Error(reason),{summaryFile:card.summaryFile});}
+ else if(card.operation!=='execute'){
+  const instruction=card.operation==='begin'?'Вызовите run begin с spec карточки next, выполните ACTION.md и сохраните результат через run save.':card.operation==='model'?'Шаг уже начат: выполните ACTION.md и сохраните результат через run save.':`Вызовите run next и выполните указанную операцию ${card.operation}.`;
+  throw Object.assign(new Error('Этот шаг не имеет штатного локального вычисления. '+instruction),{summaryFile:card.summaryFile});
+ }
  try{
   let state=json(inside(dir,'state.json'));
   if(state.status!=='running')throw new Error('Прогон уже завершён: '+state.status);

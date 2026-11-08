@@ -62,9 +62,13 @@ $ git ls-remote origin team-urmepk
 │   ├── settings.json                ссылки $secret:…, значений доступа нет
 │   ├── hooks/pre-push               исходник; копия ставится в .git/hooks/
 │   └── skills/
-│       ├── pp-ai-mentor/SKILL.md
-│       ├── pp-ai-init/SKILL.md
+│       ├── pp-ai-mentor/SKILL.md   общение с человеком
+│       ├── pp-ai-dispatch/SKILL.md выбор операций и исполнителя
+│       ├── pp-ai-guide/SKILL.md
+│       ├── pp-ai-init/SKILL.md     факты через setup-status; детали в references/
+│       ├── pp-ai-diagnose/SKILL.md
 │       ├── pp-ai-run-process/SKILL.md
+│       ├── pp-ai-run-action/SKILL.md
 │       ├── pp-ai-create-process/SKILL.md
 │       ├── pp-ai-create-action/SKILL.md
 │       ├── pp-ai-create-adapter/SKILL.md

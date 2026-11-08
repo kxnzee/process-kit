@@ -6,6 +6,8 @@ function action(cwd,name){
  if(!NAME.test(name||''))throw new Error('Неверное действие');const data=parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${name}/ACTION.md`),'utf8')).data;
  if(!data||data.name!==name||!data.produces||typeof data.produces!=='object'||Array.isArray(data.produces)||Object.keys(data.produces).length!==1||Object.entries(data.produces).some(([key,value])=>!NAME.test(key)||typeof value!=='string'||!value.trim()))throw new Error('Неверное определение действия '+name);
  if(!['source','transform','act'].includes(data.kind)||!data.consumes||!['artifacts','params'].every(k=>Array.isArray(data.consumes[k])&&data.consumes[k].every(v=>typeof v==='string')&&new Set(data.consumes[k]).size===data.consumes[k].length))throw new Error('Неверный вход действия '+name);
+ if(data.adapter==='environment-tool'&&data.kind!=='source')throw new Error('environment-tool допустим только для source');
+ if(data.adapter==='environment-tool'&&data.consumes.params.some(p=>['taskStore','codeStore'].includes(p)))throw new Error('environment-tool не заменяет объявленное подключение');
  if(!data.contracts||Object.keys(data.contracts).length!==1||Object.keys(data.produces).some(k=>!Object.hasOwn(data.contracts,k)))throw new Error('Нужен контракт каждого выхода '+name);
  for(const ref of Object.values(data.contracts))if(ref!=='text'&&!/^contracts\/[a-z0-9][a-z0-9.-]*\.json$/.test(ref))throw new Error('Неверный путь контракта '+name);
  if(data.runtime&&data.runtime!=='runtime.js')throw new Error('runtime должен быть runtime.js');

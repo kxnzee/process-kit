@@ -739,7 +739,7 @@ function checkSummary(file, names, isProbe) {
   }
   if (/\$secret:|Bearer\s|Authorization:|x-[a-z]+-token/i.test(t)) E('итог', file, 0, 'в итоге есть данные доступа');
   if (/^\s+at\s.+:\d+:\d+\)?$/m.test(t) || /\b(TypeError|ReferenceError|ECONNREFUSED|stack trace)\b/.test(t)) W('итог', file, 0, 'похоже на текст системной ошибки: причину пишите простыми словами');
-  const others = names.filter((n) => !n.startsWith('.') && n !== 'итог.md');
+  const others = names.filter((n) => !n.startsWith('.') && n !== 'итог.md' && !/^диагностика(?:-\d+)?\.md$/.test(n));
   const listAt = rows.findIndex((r) => /^Файлы в этой папке:/.test(r));
   if (others.length && listAt < 0) W('итог', file, 0, 'нет списка «Файлы в этой папке:»');
   if (listAt >= 0) {
@@ -854,7 +854,7 @@ function ruleProcessValues() {
         const policy=require('../actions/action-runtime').runtime(ROOT,step.ref,action);
         policy.dependencies?.({cwd:ROOT,processName:name,actionName:step.ref,meta:action,params:effective,mode:opt.demo?'demo':'live',preflight:true});
       } catch(error){E('значения',file,step.ln,error.message);}
-      if (opt.demo || action.kind === 'transform' || /^none(?: |$)/.test(String(action.adapter))) continue;
+      if (opt.demo || action.kind === 'transform' || (action.kind === 'source' && action.adapter === 'environment-tool') || /^none(?: |$)/.test(String(action.adapter))) continue;
       const slots=asList(action.consumes?.params);
       if(!Array.isArray(req.config)||!req.config.length){E('значения',file,0,'requires.config не объявлен для сетевого шага');continue;}
       try{

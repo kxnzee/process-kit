@@ -9,8 +9,9 @@ function splitFixture(fixture,query=fixture.query){
  return {tasks,code:evidenceFromFixture(fixture,tasks,fixture.codeEvidence?.queryFile)};
 }
 const {evidenceFromFixture}=require('../../../tools/lib/actions/code-data');
-function assessSdd(tasks,code,parameters={label:tasks?.meta?.label,watchPath:tasks?.meta?.watchPath}){
+function assessSdd(tasks,code,parameters={label:tasks?.meta?.label,watchPath:tasks?.meta?.watchPath,statusesAccepted:tasks?.meta?.statusesAccepted}){
  if(typeof parameters.label!=='string'||!parameters.label.trim()||typeof parameters.watchPath!=='string'||!parameters.watchPath.trim())throw new Error('Нужны явные label и watchPath');
+ if(typeof parameters.statusesAccepted!=='string'||!parameters.statusesAccepted.trim())throw new Error('Нужны явные statusesAccepted: засчитанные статусы «тестирование и далее»');
  if(!tasks||!code||!tasks.meta||!Array.isArray(tasks.excluded)||!Array.isArray(tasks.unverified))throw new Error('Нужны task-records и code-evidence');
  if(tasks.records?.some(row=>['key','summary','url','status','inProgressAt'].some(key=>typeof row[key]!=='string'||!row[key].trim())))throw new Error('Для оценки SDD нужны key, summary, url, status, inProgressAt');
  unique(tasks.records,'task-records');unique(code.records,'code-evidence');
@@ -25,7 +26,7 @@ function assessSdd(tasks,code,parameters={label:tasks?.meta?.label,watchPath:tas
  if(code.records.some(row=>!keys.has(row.key)))throw new Error('В коде есть чужой ключ');
  if(tasks.records.some(row=>['prs','prsComplete','commit','via'].some(key=>Object.hasOwn(row,key))))throw new Error('Источник задач содержит расчёт или свидетельства кода');
  const index=new Map(code.records.map(row=>[row.key,row]));
- const fixture={meta:{...structuredClone(tasks.meta),label:parameters.label,watchPath:parameters.watchPath},excluded:structuredClone(tasks.excluded),unverified:structuredClone(tasks.unverified),stories:tasks.records.map(story=>({...structuredClone(story),...structuredClone(index.get(story.key)||{prsComplete:false})}))};
+ const fixture={meta:{...structuredClone(tasks.meta),label:parameters.label,watchPath:parameters.watchPath,statusesAccepted:parameters.statusesAccepted},excluded:structuredClone(tasks.excluded),unverified:structuredClone(tasks.unverified),stories:tasks.records.map(story=>({...structuredClone(story),...structuredClone(index.get(story.key)||{prsComplete:false})}))};
  return classify(fixture);
 }
 function normalizeFixture(fixture,query=fixture.query){const input=splitFixture(fixture,query);return assessSdd(input.tasks,input.code);}

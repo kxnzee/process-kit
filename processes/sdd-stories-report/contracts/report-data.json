@@ -16,6 +16,7 @@
         "window",
         "label",
         "watchPath",
+        "statusesAccepted",
         "queryFile"
       ],
       "properties": {
@@ -32,6 +33,10 @@
           "minLength": 1
         },
         "watchPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statusesAccepted": {
           "type": "string",
           "minLength": 1
         },

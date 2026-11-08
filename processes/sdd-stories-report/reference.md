@@ -4,7 +4,8 @@
 Источники отдают свидетельства, не читают шаблон и не рассчитывают группы.
 report-data — JSON-объект:
 - meta: reportTitle, generatedAt, window, label, watchPath, statusesAccepted,
-  taskStoreName, codeStoreName, queryFile, demo;
+  taskStoreName, codeStoreName, queryFile, demo. statusesAccepted приходит из параметра
+  процесса и пишется в meta правилом; собственного значения процесса в расчёте нет;
 - sddStories[], plainStories[]: key, summary, url, status, inProgressAt, assignee,
   responsible. У SDD дополнительно via и commit (допустимо «—»);
 - excluded[]: key, reason; unverified[]: key, summary, reason;
@@ -27,6 +28,7 @@ queryFile процесса, result — записи задач, codeEvidence —
 - task-records: meta, records[], excluded[], unverified[], selectionId. Records — уже
   отобранные задачи с key/summary/url/status/inProgressAt/assignee/responsible/labels.
   Без prs, prsComplete, commit, via и бизнес-счётчиков. Неизвестные labels не равны [].
+  statusesAccepted — эффективный аргумент запроса: передан процессом, сохранён в meta.
   selectionId фиксируется run-journal save по окончательному содержимому
   отбора; метаданные после сохранения не изменяются. В demo код формируется
   evidenceFromFixture(fixture, savedTasks, codeQueryFile) из tools/lib/actions/code-data.js по сохранённому входу.

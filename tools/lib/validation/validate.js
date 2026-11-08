@@ -728,13 +728,13 @@ function checkSummary(file, names, isProbe) {
   const t = read(file);
   const rows = lines(t);
   if (!/^# .+/.test(rows[0] || '')) E('итог', file, 1, 'первая строка — «# <задача словами человека>»');
-  if (!/^Дата:\s*\d{4}-\d{2}-\d{2}/m.test(t)) E('итог', file, 0, 'нет строки «Дата: ГГГГ-ММ-ДД ЧЧ:ММ»');
+  if (!/^Дата:\s*\d{1,2}\s+[а-яё]+\s+\d{4}/mi.test(t)) E('итог', file, 0, 'нет строки «Дата: 5 ноября 2026»');
   const end = t.match(/^Чем закончилось:\s*(.*)$/m);
   if (!end) E('итог', file, 0, 'нет строки «Чем закончилось: …»');
   else {
     const v = end[1].trim();
-    if (isProbe && !/^Пробный прогон, ничего не отправлено/.test(v)) E('итог', file, 0, 'пробный прогон: «Чем закончилось: Пробный прогон, ничего не отправлено. …»');
-    if (!isProbe && /^Пробный прогон, ничего не отправлено/.test(v)) E('итог', file, 0, 'для демо имя папки должно начинаться с <дата>_проба-<задача>, не demo-');
+    if (isProbe && !/^пробный прогон/i.test(v)) E('итог', file, 0, 'пробный прогон: «Чем закончилось: пробный прогон …, ничего не отправлялось»');
+    if (!isProbe && /^пробный прогон/i.test(v)) E('итог', file, 0, 'для демо имя папки должно начинаться с <дата>_проба-<задача>, не demo-');
     else if (!isProbe && !/^(готово|не получилось:)/i.test(v)) E('итог', file, 0, '«Чем закончилось:» начинается с «готово» или «не получилось: <причина>»');
   }
   if (/\$secret:|Bearer\s|Authorization:|x-[a-z]+-token/i.test(t)) E('итог', file, 0, 'в итоге есть данные доступа');
@@ -745,7 +745,7 @@ function checkSummary(file, names, isProbe) {
   if (listAt >= 0) {
     if (/\.run\//.test(rows.slice(listAt).join('\n'))) E('итог', file, listAt + 1, 'в списке файлов не упоминается .run/');
     for (let i = listAt + 1; i < rows.length; i++) {
-      const m = rows[i].match(/^-\s+(\S+)\s+—/);
+      const m = rows[i].match(/^-\s+(\S+)$/);
       if (!m) { if (rows[i].trim() && !rows[i].startsWith('-')) break; continue; }
       if (!names.includes(m[1])) W('итог', file, i + 1, `в списке есть ${m[1]}, а в папке его нет`);
     }

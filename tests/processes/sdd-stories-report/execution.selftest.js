@@ -15,7 +15,7 @@ try {
     const tasks=readPort('task-records'),code=require('../../../tools/lib/actions/code-data').evidenceFromFixture(fx,tasks,'processes/sdd-stories-report/queries/code-evidence.md');
     journal.operation(tmp,'begin',{output:run.output,step:'read-code'});
     journal.operation(tmp,'save',{output:run.output,step:'read-code',artifact:'code-evidence',extension:'json',content:code,next:'assess'});
-    const report=sdd.assessSdd(tasks,readPort('code-evidence'),{label:'SDD',watchPath:'openspec/changes'});
+    const report=sdd.assessSdd(tasks,readPort('code-evidence'),{label:'SDD',watchPath:'openspec/changes',statusesAccepted:run.state.params.statusesAccepted});
     journal.operation(tmp,'begin',{output:run.output,step:'assess'});
     journal.operation(tmp,'save',{output:run.output,step:'assess',artifact:'report-data',extension:'json',content:report,next:'compose'});
     assert.equal(readPort('report-data').counters.sddShare,'75,0');
@@ -49,7 +49,10 @@ try {
     assert.equal(fs.readFileSync(path.join(tmp,'outputs',run.output,'письмо.md'),'utf8'),body);
     assert.ok(finished.artifacts['sdd-report']);
 
-    assert.equal(sdd.assessSdd(tasks,readPort('code-evidence'),{label:'other',watchPath:'elsewhere'}).counters.sddShare,'0,0');
+    assert.equal(sdd.assessSdd(tasks,readPort('code-evidence'),{label:'other',watchPath:'elsewhere',statusesAccepted:run.state.params.statusesAccepted}).counters.sddShare,'0,0');
+    assert.equal(readPort('report-data').meta.statusesAccepted,run.state.params.statusesAccepted);
+    assert.throws(()=>sdd.assessSdd(tasks,readPort('code-evidence'),{label:'SDD',watchPath:'openspec/changes'}),/statusesAccepted/);
+    assert.throws(()=>sdd.assessSdd(tasks,readPort('code-evidence'),{label:'SDD',watchPath:'openspec/changes',statusesAccepted:' '}),/statusesAccepted/);
     assert.throws(()=>queryFixture(fx,'processes/my-other/queries/select.md'));
     }
   });

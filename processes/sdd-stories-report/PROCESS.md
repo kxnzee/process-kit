@@ -24,6 +24,7 @@ params:
   label: SDD
   watchPath: openspec/changes
   keField: customfield_18300
+  statusesAccepted: IFT, Ready for UAT, Done, Resolved
   taskQueryFile: processes/sdd-stories-report/queries/stories.md
   codeQueryFile: processes/sdd-stories-report/queries/code-evidence.md
   recipients: ""
@@ -51,10 +52,11 @@ params:
 
 ## Вход и завершение
 
-Период, label, watchPath и keField — аргументы этого процесса. taskQueryFile и
-codeQueryFile задают независимые запросы, templateFile — общий отчёт; параметры
-конкретных функций передаются каждым шагом явно. Подключения выбираются по переданным
-id либо сохранённым defaults. При отсутствии необходимых значений — остановка и уточнение.
+Период, label, watchPath, keField и statusesAccepted — аргументы этого процесса.
+statusesAccepted задаёт статусы «тестирование и далее»: стори в другом текущем статусе
+из выборки выпадает. taskQueryFile и codeQueryFile задают независимые запросы,
+templateFile — общий отчёт; параметры конкретных функций передаются каждым шагом явно.
+Подключения выбираются по переданным id либо сохранённым defaults. При отсутствии необходимых значений — остановка и уточнение.
 
 Если письмо запрошено, recipients может явно задать строку получателей. Иначе берутся
 только ответственные из группы без SDD; пустой результат требует уточнения, адреса не
@@ -62,7 +64,8 @@ id либо сохранённым defaults. При отсутствии нео�
 не отправляется адресатам вместо него. Отправки нет, результат — только черновик.
 
 Без письма finish сохраняет sdd-report как отчёт.md. С письмом finish сохраняет
-mail-draft как письмо.md; полный отчёт остаётся отдельным артефактом compose в .run/.
+mail-draft как письмо.md, а отчёт sdd-report дополнительно публикуется рядом как
+отчёт.md; сам отчёт при этом остаётся артефактом compose в .run/.
 
 
 ## Шаги
@@ -72,7 +75,7 @@ mail-draft как письмо.md; полный отчёт остаётся от
 - действие: run-query
 - параметры:
   - `queryFile: {params.taskQueryFile}`
-  - `parameters: {"startDate":"{params.startDate}","endDate":"{params.endDate}","keField":"{params.keField}"}`
+  - `parameters: {"startDate":"{params.startDate}","endDate":"{params.endDate}","keField":"{params.keField}","statusesAccepted":"{params.statusesAccepted}"}`
 - артефакт: task-records
 - следующий: read-code
 
@@ -91,7 +94,7 @@ mail-draft как письмо.md; полный отчёт остаётся от
 - параметры:
   - `inputs: {"tasks":"{task-records}","code":"{code-evidence}"}`
   - `rulesFile: processes/sdd-stories-report/rules/sdd.js`
-  - `parameters: {"label":"{params.label}","watchPath":"{params.watchPath}"}`
+  - `parameters: {"label":"{params.label}","watchPath":"{params.watchPath}","statusesAccepted":"{params.statusesAccepted}"}`
   - `resultContract: processes/sdd-stories-report/contracts/report-data.json`
 - артефакт: report-data
 - следующий: compose
@@ -146,4 +149,6 @@ mail-draft как письмо.md; полный отчёт остаётся от
 
 Терминальный шаг: маршрут закончен. Если письмо не запрошено, результат — sdd-report. Если запрошено, последний шаг
 возвращает mail-draft: в поставке нет почтового подключения, ничего не отправляется.
+Что сохранить человеку: без письма — отчёт.md из sdd-report; с письмом — письмо.md из
+mail-draft, затем отчёт.md из sdd-report.
 Демоданные: `processes/sdd-stories-report/fixture.json` (передать как `dataFile` только для demo).

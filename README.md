@@ -165,8 +165,7 @@ GigaCode. Они ни на что не влияют и не отправляют
 
 Глобальные настройки не меняются: ни `~/.gitconfig`, ни `~/.gigacode/`, ни глобальные
 hooks (`core.hooksPath`), ни credential helper, ни профиль оболочки. `git config`
-используется только без `--global` и `--system`; `tools/lib/validation/validate.js` проверяет, что в
-текстах скиллов таких команд нет.
+используется только без `--global` и `--system`.
 
 Настройки разделены на master/team/my: [поля и приоритет](config/team/README.md).
 

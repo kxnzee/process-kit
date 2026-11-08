@@ -27,7 +27,25 @@ function effectiveParams(cwd,spec,defaults={}){
  }
  return params;
 }
-function summary(cwd,output,state,spec={}){const folder=inside(cwd,'outputs/'+output),demo=state.identity.mode==='demo',status=state.status==='completed'?'готово':state.status==='failed'?'не получилось: '+(spec.reason||'шаг остановлен'):'выполняется';atomic(inside(folder,'итог.md'),`# ${state.title}\nДата: ${state.updated}\nЧем закончилось: ${demo?'Пробный прогон, ничего не отправлено. ':''}${status}\nЧто сделано: ${spec.summary||'Завершено шагов: '+state.last_step+'.'}\nОткуда данные: ${demo?'тестовые данные выбранной фикстуры':state.identity.mode==='local'?(state.sourceDescription||'локальные файлы и артефакты процесса'):'объявленные подключения'}\nЧто отправлено и кому: ${state.identity.mode==='live'?'см. подтверждённые результаты шагов':'ничего не отправлено'}\n${state.result?'Файлы в этой папке:\n- '+state.result+' — результат\n':''}`);}
+function humanDate(value){const date=new Date(value);if(Number.isNaN(+date))return String(value);return date.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});}
+// Файлы для человека вне .run/: имя артефакта → имя файла, заданное при finish.
+function humanFiles(state){const result=state.result?{[state.stepResult||'result']:state.result}:{};return {...result,...(state.published||{})};}
+// Факты для выбора на развилке: только счётчики из уже сохранённых артефактов, без чтения служебных файлов агентом.
+function facts(artifacts){
+ const result=[];
+ for(const file of Object.values(artifacts)){
+  if(!file.endsWith('.json'))continue;
+  let data;try{data=JSON.parse(fs.readFileSync(file,'utf8'));}catch{continue;}
+  const c=data?.counters;if(!c||typeof c!=='object')continue;
+  if(Number.isInteger(c.plainCount))result.push(`историй без SDD: ${c.plainCount}`);
+  if(typeof c.sddShare==='string')result.push(`доля SDD: ${c.sddShare} %`);
+ }
+ return result;
+}
+function summary(cwd,output,state,spec={}){
+ const folder=inside(cwd,'outputs/'+output),demo=state.identity.mode==='demo',status=state.status==='completed'?'готово':state.status==='failed'?'не получилось: '+(spec.reason||'шаг остановлен'):'выполняется',files=humanFiles(state);
+ const listed=[...new Set(Object.values(files))];
+ atomic(inside(folder,'итог.md'),`# ${state.title}\nДата: ${humanDate(state.identity.date||state.updated)}\nЧем закончилось: ${demo&&status==='готово'?'пробный прогон на вымышленных данных, ничего не отправлялось':demo?'пробный прогон, ничего не отправлялось; '+status:status}\nЧто сделано: ${spec.summary||'Завершено шагов: '+state.last_step+'.'}\nОткуда данные: ${demo?'тестовые данные выбранной фикстуры':state.identity.mode==='local'?(state.sourceDescription||'локальные файлы и артефакты процесса'):'объявленные подключения'}\nЧто отправлено и кому: ${state.identity.mode==='live'?'см. подтверждённые результаты шагов':'ничего не отправлено'}\n${listed.length?'Файлы в этой папке:\n'+listed.map(name=>'- '+name).join('\n')+'\n':''}`);}
 function start(cwd,spec){
  const current=new Date();spec={...spec,date:spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
@@ -42,7 +60,7 @@ function start(cwd,spec){
  const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&file!=='.gigacode/settings.json')throw new Error('Недопустимый файл снимка');snapshots[file]=hash(fs.readFileSync(inside(cwd,file)));}
  fs.mkdirSync(dir,{recursive:true});
  if(spec.inputText!==undefined){if(typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');atomic(inside(dir,'inputs/input.md'),spec.inputText);params.input=path.relative(cwd,inside(dir,'inputs/input.md'));snapshots[params.input]=hash(spec.inputText);}
- const state={sourceDescription:spec.inputText!==undefined?'переданный текст пользователя':'локальные файлы и артефакты процесса',last_step:0,last_step_name:'',next_step:model.entry,status:'running',params,updated:now(),artifacts:{},artifactHashes:{},recordedArtifacts:{},pending:null,cursorProcess:spec.process,stack:[],scopeParams:structuredClone(params),title:String(spec.title||model.data.title||model.data.description||spec.process).replace(/[\r\n]/g,' '),identity:{process:spec.process,mode:spec.mode,extraFiles:spec.files||[],overrides,params:structuredClone(params),hashAlgorithm:'sha256',files:snapshots}};
+ const state={sourceDescription:spec.inputText!==undefined?'переданный текст пользователя':'локальные файлы и артефакты процесса',last_step:0,last_step_name:'',next_step:model.entry,status:'running',params,updated:now(),artifacts:{},artifactHashes:{},recordedArtifacts:{},published:{},pending:null,cursorProcess:spec.process,stack:[],scopeParams:structuredClone(params),title:String(spec.title||model.data.title||model.data.description||spec.process).replace(/[\r\n]/g,' '),identity:{process:spec.process,mode:spec.mode,date:spec.date,extraFiles:spec.files||[],overrides,params:structuredClone(params),hashAlgorithm:'sha256',files:snapshots}};
  atomic(inside(dir,'state.json'),state);atomic(inside(dir,'run.md'),'# Прогон '+spec.process+'\nGigaCode исполняет шаги; скрипт сохраняет состояние.\n');event(dir,'started',{process:spec.process,mode:spec.mode});summary(cwd,output,state);return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),state,connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(snapshots),note:'Используйте state.params как единственные эффективные параметры. Вы — исполнитель. Продолжайте через run next/execute до finish либо зафиксированного fail; preflight не завершает задачу.'};
 }
 function operation(cwd,command,spec){
@@ -63,7 +81,7 @@ function operation(cwd,command,spec){
    if(state.status!=='running')return {...responsePaths,status:state.status,operation:'done',output:spec.output,result:state.result||null,failure:state.failure||null};
    if(state.next_step==='end')return {...responsePaths,status:state.status,operation:state.stack.length?'leave':'finish',spec:{output:spec.output},lastArtifact:state.last_artifact};
    const step=model.steps.find(item=>item.name===state.next_step);
-   if(step.kind==='branch'){const text=fs.readFileSync(inside(cwd,`processes/${state.cursorProcess}/PROCESS.md`),'utf8');return {...responsePaths,status:state.status,operation:'choose',targets:step.targets,branch:text.split('### '+step.name)[1].split('### ')[0].trim(),instruction:'Выберите переход по просьбе пользователя и данным; передайте decision в execute/begin/finish/enter/leave.'};}
+   if(step.kind==='branch'){const text=fs.readFileSync(inside(cwd,`processes/${state.cursorProcess}/PROCESS.md`),'utf8');return {...responsePaths,status:state.status,operation:'choose',targets:step.targets,step:step.name,branch:text.split('### '+step.name)[1].split('### ')[0].trim(),facts:facts(Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,inside(dir,file)]))),instruction:'Выберите переход по просьбе пользователя и данным; передайте decision в execute/begin/finish/enter/leave.'};}
    if(step.kind==='process')return {...responsePaths,status:state.status,operation:'enter',spec:{output:spec.output,step:step.name},process:step.ref};
    const meta=action(cwd,step.ref),params=state.pending?.params||stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))]))),context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,mode:state.identity.mode};
    const policy=require('../actions/action-runtime').runtime(cwd,step.ref,meta),automatic=meta.kind!=='act'&&typeof policy.execute==='function'&&(policy.canExecute?.(context)??true);
@@ -98,6 +116,7 @@ function operation(cwd,command,spec){
   }else if(command==='begin'){
    const step=selected('action'),meta=action(cwd,step.ref);
    for(const input of meta.consumes.artifacts||[])if(!Object.hasOwn(state.artifacts,input))throw new Error('Нет входного артефакта '+input);
+   if(state.status==='completed')throw new Error('Завершённый прогон нельзя продолжить: нужен новый запуск');
    const params=stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,f])=>[name,path.relative(cwd,inside(dir,f))])));
    const inputs=Object.fromEntries(meta.consumes.artifacts.map(name=>[name,state.artifacts[name].endsWith('.json')?json(inside(dir,state.artifacts[name])):fs.readFileSync(inside(dir,state.artifacts[name]),'utf8')]));
    const context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,inputs,mode:state.identity.mode};
@@ -133,31 +152,59 @@ function operation(cwd,command,spec){
     if(spec.resultName==='итог.md'||/^\d{2}-/.test(spec.resultName||''))throw new Error('Зарезервированное имя результата');
     if(!require('../core/paths').validResultName(spec.resultName))throw new Error('Нужно имя файла для человека');
     const last=state.artifacts[state.last_artifact],bytes=fs.readFileSync(inside(dir,last)),human=inside(cwd,`outputs/${spec.output}/${spec.resultName}`);
-    if(fs.existsSync(human)&&!fs.readFileSync(human).equals(bytes))throw new Error('Другой результат уже существует');if(!fs.existsSync(human))fs.writeFileSync(human,bytes,{flag:'wx',mode:0o600});state.result=spec.resultName;state.next_step='end';state.status='completed';
+    if(fs.existsSync(human)&&!fs.readFileSync(human).equals(bytes))throw new Error('Другой результат уже существует');if(!fs.existsSync(human))fs.writeFileSync(human,bytes,{flag:'wx',mode:0o600});state.result=spec.resultName;state.stepResult='result:'+state.last_artifact;state.next_step='end';state.status='completed';
    }else{if(state.status==='completed')throw new Error('Завершённый прогон нельзя объявить неудачным');state.status='failed';state.failure={reason:spec.reason||'шаг остановлен'};}
    if(!rows(dir).some(e=>e.type==='finished'&&e.status===state.status))event(dir,'finished',{status:state.status});
+  }else if(command==='publish'){
+   if(state.status!=='completed')throw new Error('Публиковать файлы можно только в завершённом прогоне');
+   if(!Object.hasOwn(state.artifacts,spec.artifact))throw new Error('Нет сохранённого артефакта '+spec.artifact);
+   if(!require('../core/paths').validResultName(spec.name)||spec.name==='итог.md'||/^\d{2}-/.test(spec.name))throw new Error('Нужно незанятое имя файла для человека');
+   const bytes=fs.readFileSync(inside(dir,state.artifacts[spec.artifact])),human=inside(cwd,`outputs/${spec.output}/${spec.name}`);
+   if(fs.existsSync(human)&&!fs.readFileSync(human).equals(bytes))throw new Error('Другой файл уже существует');
+   if(!fs.existsSync(human))fs.writeFileSync(human,bytes,{flag:'wx',mode:0o600});
+   state.published={...(state.published||{}),[spec.artifact]:spec.name};
+   state.updated=now();atomic(inside(dir,'state.json'),state);summary(cwd,spec.output,state,spec);
+   return {...state,summaryFile:path.join(path.dirname(dir),'итог.md'),outputDir:path.dirname(dir),resultFile:state.result?path.join(path.dirname(dir),state.result):null};
   }else throw new Error('Неизвестная операция');
   state.updated=now();atomic(inside(dir,'state.json'),state);summary(cwd,spec.output,state,spec);
   if(['completed','failed'].includes(state.status))updateHistory(cwd,{ts:state.updated,process:state.identity.process,режим:state.identity.mode,output:spec.output,итог:(state.identity.mode==='demo'?'Пробный прогон, ничего не отправлено. ':'')+(state.status==='completed'?'готово':'не получилось: '+(spec.reason||'шаг остановлен')),outcome:state.status==='completed'?(state.last_artifact==='mail-draft'?'draft':'success'):'failed'});
   return {...state,summaryFile:path.join(path.dirname(dir),'итог.md'),outputDir:path.dirname(dir),resultFile:state.result?path.join(path.dirname(dir),state.result):null};
  }finally{fs.rmdirSync(lock);}
 }
+// Отказ шага при известной позиции завершает прогон: иначе он остаётся «выполняется» без записи в истории.
+// Неизвестный output, чужой путь или нарушенная целостность отказом шага не считаются.
+function failStep(cwd,output,reason){
+ let dir;
+ try{dir=inside(cwd,`outputs/${output}/.run`);const state=json(inside(dir,'state.json'));if(state.status!=='running')return;operation(cwd,'fail',{output,reason});}
+ catch(error){
+  const integrity=['Изменён вход: ','Изменён сохранённый шаг: ','Изменены параметры','Изменён результат: ','Изменён состав зависимостей'];
+  if(!dir||integrity.some(part=>error.message.startsWith(part)))throw error;
+ }
+}
 function execute(cwd,spec){
- const dir=inside(cwd,`outputs/${spec.output}/.run`);
- const card=operation(cwd,'next',{output:spec.output});
+ const dir=inside(cwd,`outputs/${spec.output}/.run`),card=operation(cwd,'next',{output:spec.output});
  if(card.operation==='choose'){
-  if(!spec.step||!card.targets.includes(spec.step)||!spec.decision)throw new Error('Нужны выбранный step и decision из ветвления');
- }else if(card.operation!=='execute'||spec.step!==card.spec.step)throw new Error('Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md');
+  if(!spec.step)throw new Error('Сейчас развилка '+card.step+': укажите выбранный step из '+card.targets.join(', ')+' и decision');
+  if(!card.targets.includes(spec.step))throw new Error('Шаг '+spec.step+' не относится к развилке. Выберите один из: '+card.targets.join(', '));
+  if(!spec.decision)throw new Error('Нужны выбранный step и decision из ветвления');
+  if(spec.step==='end')throw new Error('Завершение маршрута на развилке: используйте finish или leave');
+  const target=processModel(fs.readFileSync(inside(cwd,`processes/${json(inside(dir,'state.json')).cursorProcess}/PROCESS.md`),'utf8')).steps.find(item=>item.name===spec.step);
+  if(target?.kind!=='action')throw new Error('Выбранный шаг не относится к развилке');
+ }else if(card.operation==='done')throw new Error('Прогон завершён: новый шаг не выполняется, нужен новый запуск');
+ else if(spec.step!==card.spec?.step)throw new Error('Текущий шаг карточки — '+card.spec?.step+': передайте его spec без изменений');
+ else if(card.operation!=='execute'){const reason='Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md';failStep(cwd,spec.output,reason);throw Object.assign(new Error(reason),{summaryFile:card.summaryFile});}
  try{
   let state=json(inside(dir,'state.json'));
+  if(state.status!=='running')throw new Error('Прогон уже завершён: '+state.status);
+  if(!state.pending&&state.next_step!==spec.step)throw new Error('Текущий шаг карточки — '+state.next_step+': передайте его spec без изменений');
   if(!state.pending)operation(cwd,'begin',spec);
   state=json(inside(dir,'state.json'));
   const model=processModel(fs.readFileSync(inside(cwd,`processes/${state.cursorProcess}/PROCESS.md`),'utf8')),step=model.steps.find(item=>item.name===state.pending.step),meta=action(cwd,step.ref),inputs=Object.fromEntries(meta.consumes.artifacts.map(name=>[name,state.artifacts[name].endsWith('.json')?json(inside(dir,state.artifacts[name])):fs.readFileSync(inside(dir,state.artifacts[name]),'utf8')]));
   const context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params:state.pending.params,inputs,mode:state.identity.mode},policy=require('../actions/action-runtime').runtime(cwd,step.ref,meta);
-  if(meta.kind==='act'||typeof policy.execute!=='function'||!(policy.canExecute?.(context)??true))throw new Error('Шаг выполняется моделью либо через MCP по ACTION.md');
+  if(meta.kind==='act'||typeof policy.execute!=='function'||!(policy.canExecute?.(context)??true))throw new Error('Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md');
   const value=policy.execute(context),extension=meta.contracts[Object.keys(meta.produces)[0]]==='text'?'md':'json';
   return operation(cwd,'save',{output:spec.output,step:step.name,artifact:step.artifact,extension,content:value,next:step.next});
- }catch(error){try{operation(cwd,'fail',{output:spec.output,reason:error.message});}catch{}error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
+ }catch(error){failStep(cwd,spec.output,error.message);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
 }
-module.exports={start,operation,execute,effectiveParams};
-if(require.main===module){try{const [cmd,file,...rest]=process.argv.slice(2);if(rest.length||!file||!['start','next','execute','enter','leave','begin','save','finish','fail'].includes(cmd))throw new Error('node tools/kit.js run <start|next|execute|begin|save|enter|leave|finish|fail> <spec.json>');const spec=json(file);console.log(JSON.stringify(cmd==='start'?start(root(),spec):cmd==='execute'?execute(root(),spec):operation(root(),cmd,spec),null,2));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}
+module.exports={start,operation,execute,failStep,effectiveParams};
+if(require.main===module){try{const [cmd,file,...rest]=process.argv.slice(2);if(rest.length||!file||!['start','next','execute','enter','leave','begin','save','finish','fail','publish'].includes(cmd))throw new Error('node tools/kit.js run <start|next|execute|begin|save|enter|leave|finish|publish|fail> <spec.json>');const spec=json(file);console.log(JSON.stringify(cmd==='start'?start(root(),spec):cmd==='execute'?execute(root(),spec):operation(root(),cmd,spec),null,2));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}

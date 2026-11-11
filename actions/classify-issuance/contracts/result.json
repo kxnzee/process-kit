@@ -1,0 +1,232 @@
+{
+  "type": "object",
+  "description": "Результат классификации ОДНОЙ выборки одной инсталляции задач. Форма общая: шаг расчёта и сборки отчёта читают эти ключи. Счётчики обязаны сходиться: сумма byClass по классам, сумма byAgreement и длина items равны между собой; byClass.total — число классифицированных задач входной выборки.",
+  "required": [
+    "policyFile",
+    "rulesFile",
+    "mode",
+    "store",
+    "relatedDepth",
+    "commentsLimit",
+    "releaseCount",
+    "byClass",
+    "byAgreement",
+    "conflicts",
+    "weak",
+    "questions",
+    "compositionUnread",
+    "rulesGaps",
+    "understandingInsufficient",
+    "understandingInsufficientReason",
+    "items"
+  ],
+  "properties": {
+    "policyFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Фактически прочитанное пожелание владельца о понимании задач"
+    },
+    "rulesFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Фактически прочитанный файл признаков сверки, выбранный параметром rules"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["live", "demo"],
+      "description": "Откуда материал: live — чтение подключения задач, demo — только переданный dataFile"
+    },
+    "store": {
+      "type": "string",
+      "minLength": 1,
+      "description": "id разрешённого подключения задач, из которого читали связанный материал; одна инсталляция на артефакт"
+    },
+    "relatedDepth": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Глубина переходов по связям задач, применённая фактически"
+    },
+    "commentsLimit": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Предел прочитанных комментариев на задачу, применённый фактически"
+    },
+    "releaseCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Сколько релизов во входной выборке; задачи классифицируются по составу этих релизов"
+    },
+    "compositionUnread": {
+      "type": "array",
+      "description": "Релизы, у которых не удалось прочитать весь состав: это «не проверено» про состав, а не «состав пуст»",
+      "items": {
+        "type": "object",
+        "required": ["key", "reason"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "byClass": {
+      "type": "object",
+      "description": "Счётчики по классам; total — число строк items",
+      "required": ["total", "contained", "technical", "unknown"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "contained": { "type": "integer", "minimum": 0 },
+        "technical": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "byAgreement": {
+      "type": "object",
+      "description": "Счётчики по статусам сверки понимания с правилами",
+      "required": ["confirmed", "reasoned", "conflict", "weak", "question"],
+      "properties": {
+        "confirmed": { "type": "integer", "minimum": 0 },
+        "reasoned": { "type": "integer", "minimum": 0 },
+        "conflict": { "type": "integer", "minimum": 0 },
+        "weak": { "type": "integer", "minimum": 0 },
+        "question": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Ключи задач со статусом conflict: правило другого класса, нужен разбор человеком",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "weak": {
+      "type": "array",
+      "description": "Ключи задач со статусом weak: класс держится только на слабом признаке, решение за человеком. Без этого списка задача молча считается решённой",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "questions": {
+      "type": "array",
+      "description": "Ключи задач со статусом question: смысл не установлен, в отчёт идут с вопросом",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "rulesGaps": {
+      "type": "array",
+      "description": "Понимание есть, ни один признак не сработал: какие формулировки стоит дописать в файл правил. Файл правит человек, шаг его не меняет.",
+      "items": {
+        "type": "object",
+        "required": ["key", "classification", "suggested"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "classification": { "type": "string", "enum": ["contained", "technical"] },
+          "suggested": { "type": "string", "minLength": 1, "description": "Предлагаемая формулировка признака" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "understandingInsufficient": {
+      "type": "boolean",
+      "description": "true — задач без основания больше половины: материал для понимания неполный, отчёт будет малоинформативным"
+    },
+    "understandingInsufficientReason": {
+      "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+      "description": "Причина при understandingInsufficient: true; null — признака нет"
+    },
+    "items": {
+      "type": "array",
+      "description": "По одной строке на классифицированную задачу состава; порядок наследует порядок релизов и их составов во входной выборке",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "release",
+          "classification",
+          "subtype",
+          "basis",
+          "understanding",
+          "rulesMatched",
+          "ruleId",
+          "agreement",
+          "noDescription",
+          "question",
+          "material"
+        ],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "release": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ключ релиза, из состава которого задача; по нему шаг расчёта собирает группы"
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["contained", "technical", "unknown"],
+            "description": "Класс по пониманию: содержательная, техническая или не установлен"
+          },
+          "subtype": {
+            "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+            "description": "Подтип из файла правил (инфраструктура, сборка и поставка, данные, метод API…); null — подтипа нет"
+          },
+          "basis": {
+            "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+            "description": "Дословная цитата-основание из заголовка, описания, комментария или связанной задачи; null — основания не нашлось, класс тогда unknown"
+          },
+          "understanding": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Одно предложение: что изменится у читателя либо почему задача внутренняя; сюда же — почему признак не учитён"
+          },
+          "rulesMatched": {
+            "type": "array",
+            "description": "Id сработавших признаков сверки; пусто — ни один не сработал",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "ruleId": {
+            "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+            "description": "Главный сработавший признак, если он есть; null — признаков нет"
+          },
+          "agreement": {
+            "type": "string",
+            "enum": ["confirmed", "reasoned", "conflict", "weak", "question"],
+            "description": "Статус сверки понимания с правилами"
+          },
+          "noDescription": {
+            "type": "boolean",
+            "description": "true — описание пустое или повторяет заголовок; это не признак техничности"
+          },
+          "question": {
+            "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+            "description": "Что уточнить у человека одной строкой; заполнено при agreement question, conflict и weak (человек решает по ним, а следующий шаг не знает, в какую сторону расхождение), иначе null"
+          },
+          "material": {
+            "type": "object",
+            "description": "Что прочитано и что осталось непрочитанным; списки не смешиваются",
+            "required": ["read", "unread"],
+            "properties": {
+              "read": {
+                "type": "array",
+                "description": "Прочитанный материал: заголовок, описание, метки, тип, связанные задачи и комментарии в пределах пределов шага",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "unread": {
+                "type": "array",
+                "description": "Что не удалось прочитать; не читается как «там ничего нет»",
+                "items": {
+                  "type": "object",
+                  "required": ["what", "reason"],
+                  "properties": {
+                    "what": { "type": "string", "minLength": 1 },
+                    "reason": { "type": "string", "minLength": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

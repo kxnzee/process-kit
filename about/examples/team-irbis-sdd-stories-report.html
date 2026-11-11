@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Доля стори, выполненных по SDD — 01.07.2026 — 08.11.2026</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2b313d;
+    --ink:#e8eaee; --muted:#9aa3b2; --acc:#63b3ed; --acc2:#f6ad55; --ok:#68d391; --warn:#f6ad55;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+  header h1{font-size:26px;margin:0 0 6px}
+  header p{color:var(--muted);margin:0 0 18px}
+  nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;position:sticky;top:0;
+    background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+  nav button{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+  nav button[aria-current="true"]{background:var(--acc);color:#0b1220;border-color:var(--acc);font-weight:600}
+  section{display:none}
+  section.on{display:block}
+  h2{font-size:20px;margin:4px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 2px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:13px}
+  .chip b{color:var(--acc);font-size:16px;display:block}
+  table{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:14px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+  code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px}
+  .node{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 9px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+  .node.src{border-color:#3f6f9e} .node.tr{border-color:#5c6b3f}
+  .node.act{border-color:#8b5e2a} .node.gate{border-color:#7a4a6a}
+  .arrow{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:20px} li{margin:4px 0}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.vis{color:var(--ok);border-color:#2f6b4a}
+  .tag.svc{color:var(--warn);border-color:#7a5c2a}
+  .note{background:var(--panel2);border-left:3px solid var(--acc);padding:10px 13px;
+    border-radius:0 8px 8px 0;color:var(--muted);font-size:14px;margin:14px 0}
+  .lvl{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .lvl div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px}
+  .lvl b{display:block;color:var(--ink);margin-bottom:3px}
+</style>
+<style>:root{--dim:#5d6675}.chip i{display:block;color:var(--muted);font-style:normal;font-size:12px;margin-top:2px}.chip{min-width:150px}.chips{margin:14px 0 6px}.small{color:var(--muted);font-size:13px}td.dim,.dim{color:var(--dim)}nav button .n{color:var(--muted);font-weight:400}nav button[aria-current="true"] .n{color:#0b1220}details{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin:12px 0;font-size:14px;color:var(--muted)}details summary{cursor:pointer;color:var(--ink)}td,th{font-size:13.5px}td a,li a,p a{color:var(--acc);text-decoration:none}td a:hover,li a:hover,p a:hover{text-decoration:underline}td:first-child,th:first-child{white-space:nowrap}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Доля стори, выполненных по SDD</h1>
+  <p>Окно 01.07.2026 — 08.11.2026 · командный маршрут IRBIS · прогон 08.11.2026</p>
+</header>
+<nav>
+  <button data-go="sum" aria-current="true">Итог</button>
+  <button data-go="ke">По КЭ</button>
+  <button data-go="sdd">По SDD <span class="n">26</span></button>
+  <button data-go="nosdd">Без SDD <span class="n">14</span></button>
+  <button data-go="excl">Исключено <span class="n">29</span></button>
+  <button data-go="notes">Оговорки и сверка</button>
+  <button data-go="read">Как читать</button>
+  <button data-go="links">Ссылки <span class="n">40</span></button>
+</nav>
+<section id="sum" class="on">
+  <h2>Итог</h2>
+<div class="chips"><span class="chip"><b>40</b>Стори в выборке<i>прошли отбор</i></span><span class="chip"><b>26</b>Выполнено по SDD<i>с меткой или связью</i></span><span class="chip"><b>14</b>Выполнено без SDD<i>ни метки, ни связи</i></span><span class="chip"><b>65,0 %</b>Доля SDD от общего числа<i>от прошедших отбор</i></span><span class="chip"><b>0</b>Проверить не удалось<i>вне знаменателя</i></span><span class="chip"><b>29</b>Исключено из расчёта<i>не попали в выборку</i></span></div>
+<div class="lvl">
+  <div><b>Окно</b>01.07.2026 — 08.11.2026</div>
+  <div><b>Дата прогона</b>08.11.2026</div>
+  <div><b>Метка SDD</b><code>SDD</code></div>
+  <div><b>Источники</b>Задачи: Jira · Код: Bitbucket</div>
+</div>
+<details><summary>Статусы категории «Тестирование — Внедрен», засчитанные в выборку</summary><p>Засчитаны статусы категории: Готов к тестированию, Approval, Ready for QA, Ready for ST, Ready for testing, Тестирование, QA, ST, Testing, testing, Verification, Ready for IFT, IFT, ИФТ, Ready for UAT, Готов к ПСИ, Протестировано, ПСИ, UAT, Ready for Beta Testing, Ready for Beta testing, Beta Testing, Beta testing, Closed, Done, Resolved, Deploy Prod</p></details>
+<p class="small">Запрос: <code>processes/team-irbis-sdd-stories-report/queries/stories.md</code> · Шаблон: <code>processes/team-irbis-sdd-stories-report/templates/report.md</code></p>
+<h3>Итог</h3>
+<table>
+<tr><th>Показатель</th><th>Значение</th></tr>
+<tr><td>Стори в выборке (прошли отбор)</td><td>40</td></tr>
+<tr><td>Выполнено по SDD</td><td>26</td></tr>
+<tr><td>— с меткой <code>SDD</code></td><td>15</td></tr>
+<tr><td>— со связью со спецификацией (файл в принятой правке или в привязанном коммите)</td><td>25</td></tr>
+<tr><td>— засчитано только меткой</td><td>1</td></tr>
+<tr><td>— засчитано только связью со спецификацией</td><td>11</td></tr>
+<tr><td>Выполнено без SDD</td><td>14</td></tr>
+<tr><td><b>Доля SDD от общего числа</b></td><td><b>65,0 %</b></td></tr>
+<tr><td>Проверить не удалось (в расчёт не входят)</td><td>0</td></tr>
+<tr><td>Исключено из расчёта (МПР, ОМНИ и исключённые КЭ)</td><td>29</td></tr>
+</table>
+<div class="note">Раздел «По КЭ» считает строки «история × КЭ»: стори с двумя кодами КЭ входит в обе строки, поэтому сумма по строкам больше числа в «Итоге».</div>
+</section>
+<section id="ke">
+  <h2>По КЭ</h2>
+<h3>По КЭ</h3>
+<table>
+<tr><th>КЭ</th><th>Стори</th><th>Уникальных стори</th><th>По SDD</th><th>Без SDD</th><th>Метка</th><th>Связь со спецификацией</th><th>Доля SDD</th><th>ТОП КЭ</th><th>Отметка</th></tr>
+<tr><td>CI03296913</td><td>40</td><td>40</td><td>26</td><td>14</td><td>15</td><td>25</td><td>65,0 %</td><td>Да</td><td class="dim">—</td></tr>
+<tr><td>CI07692618</td><td>20</td><td>20</td><td>7</td><td>13</td><td>3</td><td>6</td><td>35,0 %</td><td>Да</td><td>худший по доле SDD</td></tr>
+</table>
+<p><b>Доля SDD по ТОП КЭ:</b> CI03296913, CI07692618 — 55,0 % (33 из 60).</p>
+<p><b>Худший КЭ по доле SDD:</b> CI07692618 — 35,0 % (7 из 20).</p>
+<h3>Периметр КЭ</h3>
+<table>
+<tr><th>КЭ</th><th>Признак исключения</th></tr>
+<tr><td>CI03296913</td><td class="dim">—</td></tr>
+<tr><td>CI07692618</td><td class="dim">—</td></tr>
+</table>
+</section>
+<section id="sdd">
+  <h2>По SDD</h2>
+<table>
+<tr><th>Задача</th><th>КЭ</th><th>Статус</th><th>В работе с</th><th>Засчитано по</th><th>PR со спецификацией</th><th>Спецификация</th><th>Ответственный</th></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-7109" target="_blank" rel="noopener">SBAR-7109</a></td><td>CI03296913</td><td>Done</td><td>12.10.2026</td><td>метка и связь</td><td>333</td><td>openspec/changes/sbar-6861-pravo-logic-text-documents/Описание_изменений_контракта_методов_документов_признак_конфиденциальности (3).docx</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6990" target="_blank" rel="noopener">SBAR-6990</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>21.09.2026</td><td>метка и связь</td><td>312, 315</td><td>openspec/changes/sbar-6989-audit-metamodel-codes/.openspec.yaml</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6985" target="_blank" rel="noopener">SBAR-6985</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6938" target="_blank" rel="noopener">SBAR-6938</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>28.09.2026</td><td>связь со спецификацией</td><td>315</td><td>openspec/changes/sbar-6989-audit-metamodel-codes/.openspec.yaml</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6917" target="_blank" rel="noopener">SBAR-6917</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6914" target="_blank" rel="noopener">SBAR-6914</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6852" target="_blank" rel="noopener">SBAR-6852</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>метка и связь</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6774" target="_blank" rel="noopener">SBAR-6774</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>метка и связь</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6742" target="_blank" rel="noopener">SBAR-6742</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>метка и связь</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6689" target="_blank" rel="noopener">SBAR-6689</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6684" target="_blank" rel="noopener">SBAR-6684</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>22.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6677" target="_blank" rel="noopener">SBAR-6677</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6676" target="_blank" rel="noopener">SBAR-6676</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6648" target="_blank" rel="noopener">SBAR-6648</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>14.09.2026</td><td>метка</td><td class="dim">—</td><td class="dim">—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6646" target="_blank" rel="noopener">SBAR-6646</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6643" target="_blank" rel="noopener">SBAR-6643</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6641" target="_blank" rel="noopener">SBAR-6641</a></td><td>CI03296913</td><td>Ready for IFT</td><td>03.11.2026</td><td>метка и связь</td><td>363</td><td>openspec/changes/pravo-docs-texts-delay/plan.md</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6623" target="_blank" rel="noopener">SBAR-6623</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6621" target="_blank" rel="noopener">SBAR-6621</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6620" target="_blank" rel="noopener">SBAR-6620</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6913" target="_blank" rel="noopener">SBAR-6913</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6912" target="_blank" rel="noopener">SBAR-6912</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6863" target="_blank" rel="noopener">SBAR-6863</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>метка и связь</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6819" target="_blank" rel="noopener">SBAR-6819</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>метка и связь</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6654" target="_blank" rel="noopener">SBAR-6654</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>06.08.2026</td><td>метка и связь</td><td>290</td><td>openspec/changes/archive/2026-08-01-sbar-6653-indent-subject/.openspec.yaml</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6622" target="_blank" rel="noopener">SBAR-6622</a></td><td>CI03296913</td><td>Done</td><td>11.09.2026</td><td>связь со спецификацией</td><td>306</td><td>openspec/changes/sbar-6649-sbp-incremental/design.md</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+</table>
+</section>
+<section id="nosdd">
+  <h2>Без SDD</h2>
+<h3>Стори, выполненные без SDD</h3>
+<table>
+<tr><th>Задача</th><th>КЭ</th><th>Статус</th><th>В работе с</th><th>Создана</th><th>Ответственный</th></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6839" target="_blank" rel="noopener">SBAR-6839</a></td><td>CI03296913</td><td>Done</td><td>01.09.2026</td><td>01.09.2026</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6504" target="_blank" rel="noopener">SBAR-6504</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>23.06.2026</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6362" target="_blank" rel="noopener">SBAR-6362</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6360" target="_blank" rel="noopener">SBAR-6360</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Завьялов Вячеслав Сергеевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6358" target="_blank" rel="noopener">SBAR-6358</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Абетнакян Арман Мисакович</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6356" target="_blank" rel="noopener">SBAR-6356</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Козлов Максим Алексеевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6354" target="_blank" rel="noopener">SBAR-6354</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Морозов Павел Андреевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6352" target="_blank" rel="noopener">SBAR-6352</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>02.06.2026</td><td>Шпилёв Евгений Анатольевич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6338" target="_blank" rel="noopener">SBAR-6338</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>27.05.2026</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6337" target="_blank" rel="noopener">SBAR-6337</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>27.05.2026</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6335" target="_blank" rel="noopener">SBAR-6335</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>27.05.2026</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6334" target="_blank" rel="noopener">SBAR-6334</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>27.05.2026</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6309" target="_blank" rel="noopener">SBAR-6309</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>22.05.2026</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td><a href="https://jira.sberbank.ru/browse/SBAR-6300" target="_blank" rel="noopener">SBAR-6300</a></td><td>CI03296913, CI07692618</td><td>Done</td><td>08.07.2026</td><td>20.05.2026</td><td>Бозюков Артём Юрьевич</td></tr>
+</table>
+<h3>Проверить не удалось</h3>
+<p>нет записей</p>
+</section>
+<section id="excl">
+  <h2>Исключено</h2>
+<table>
+<tr><th>Задача</th><th>Статус</th><th>Причина</th></tr>
+<tr><td>SBAR-7220</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6933</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7092</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7062</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-3284</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7169</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7007</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7146</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7144</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7142</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6859</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6862</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-3516</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-7002</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6645</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6736</td><td>To Do</td><td>текущий статус не в категории Тестирование-Внедрен</td></tr>
+<tr><td>SBAR-6471</td><td>Done</td><td>создана до окна (2026-06-18), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6462</td><td>Done</td><td>создана до окна (2026-06-16), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6461</td><td>Done</td><td>создана до окна (2026-06-16), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6423</td><td>Done</td><td>создана до окна (2026-06-11), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6422</td><td>Done</td><td>создана до окна (2026-06-11), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6316</td><td>Done</td><td>создана до окна (2026-05-25), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6276</td><td>Done</td><td>создана до окна (2026-05-14), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6261</td><td>Done</td><td>создана до окна (2026-05-12), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6182</td><td>Done</td><td>создана до окна (2026-04-29), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6180</td><td>Done</td><td>создана до окна (2026-04-29), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6155</td><td>Done</td><td>создана до окна (2026-04-22), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6151</td><td>Done</td><td>создана до окна (2026-04-22), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+<tr><td>SBAR-6149</td><td>Done</td><td>создана до окна (2026-04-22), последний вход в работу вне окна: 2026-06-22, первый вход в тестирование 2026-06-30</td></tr>
+</table>
+</section>
+<section id="notes">
+  <h2>Оговорки и сверка</h2>
+<h3>Оговорки прогона</h3>
+<ul>
+<li>SBAR-7109: спецификация в общем принятом запросе названа по SBAR-6861 и SBAR-6957. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6990: спецификация в общем принятом запросе названа по SBAR-6989.</li>
+<li>SBAR-6985: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6938: спецификация в общем принятом запросе названа по SBAR-6989. зачтено по PR стори, дочерние узлы не проверялись: SBAR-6925. по узлам дерева в Jira отмечено 3 принятых запросов, в приёмочных ветках найден 1.</li>
+<li>SBAR-6917: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6914: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6852: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6774: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6742: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6689: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6684: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6677: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6676: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6648: состав принятого релизного запроса прочитан полностью: изменён только Jenkinsfile.groovy; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6646: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6643: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6641: спецификация в общем принятом запросе названа по SBAR-6588, SBAR-6640 и pravo-docs-texts-delay. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6623: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6621: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6620: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6913: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части. зачтено по PR стори, дочерние узлы не проверялись: SBAR-6844. по узлам дерева в Jira отмечено 3 принятых запросов, в приёмочных ветках найден 1.</li>
+<li>SBAR-6912: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части. зачтено по PR стори, дочерние узлы не проверялись: SBAR-6868. по узлам дерева в Jira отмечено 4 принятых запросов, в приёмочных ветках найден 1.</li>
+<li>SBAR-6863: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6839: состав принятого релизного запроса прочитан полностью: изменён только Jenkinsfile.groovy; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6819: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6654: спецификация в общем принятом запросе названа по SBAR-6653.</li>
+<li>SBAR-6622: спецификация в общем принятом запросе названа по SBAR-6649, SBAR-6739, SBAR-6773, SBAR-6818, SBAR-6847. дифф общего релизного запроса усечён, в changedPaths — пути спецификации из прочитанной части.</li>
+<li>SBAR-6504: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6362: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6360: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6358: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6356: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6354: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6352: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6338: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6337: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6335: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6334: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6309: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+<li>SBAR-6300: состав принятого релизного запроса прочитан фильтром по каждому наблюдаемому корню спецификации — изменений ни в одном корне нет; история приёмочных веток по корням спецификации прочитана до 01.07.2026, коммитов по задаче нет.</li>
+</ul>
+<h3>Сверка с дашбордом</h3>
+<p>Источник сверки: дашборд «Внедрение SDD» · когда сверялось: не сверялось</p>
+<p>Сверять построчно: «Историй SDD (метка)», «Историй SDD (связь со спецификацией)» и «Историй SDD (всего)»</p>
+<p>по каждому КЭ за тот же период. Расхождение записывать числом обеих сторон, а не объяснять словами.</p>
+<p>расхождений нет либо сверка не выполнялась</p>
+</section>
+<section id="read">
+  <h2>Как читать</h2>
+<ul>
+<li>В выборку попадают стори периметра КЭ, доведённые до категории «Тестирование — Внедрен» в периоде: созданные в периоде — по факту доведения, созданные раньше — по переходу в работу и доведению в самом периоде.</li>
+<li>«Выполнено по SDD» — есть метка <code>SDD</code> <b>или</b> связь со спецификацией: смерженный PR (в самой стори, её Task или Sub-Task) с файлом под одним из путей спецификаций либо тот же файл в правке, привязанной к задаче. Ссылка на спецификацию в тексте задачи признаком не считается. Достаточно одного из путей.</li>
+<li>«Выполнено без SDD» — ни метки, ни связи со спецификацией ни одним из путей.</li>
+<li>Связь со спецификацией даёт и правка в ветке самой задачи (или с её номером в сообщении), если принятого запроса на изменения с ней нет: в колонке «PR со спецификацией» такая строка помечена «— (правка в ветке задачи)», а номер правки и оговорка попадают в отчёт.</li>
+<li>Колонка «Коммит» — правка, привязанная к задаче; в таблице «без SDD» она есть, но файла спецификации в ней нет. Прочитать привязку не удалось — история остаётся в разделе «Проверить не удалось», а не в «без SDD».</li>
+<li>Раздел «По КЭ» считает стори по каждому КЭ из её поля КЭ; стори с двумя кодами входит в обе строки, поэтому сумма по строкам может быть больше числа в «Итоге».</li>
+<li>Колонка «Уникальных стори» — сколько разных историй стоит в этом КЭ; «Стори» — сколько строк «история × КЭ» он покрывает.</li>
+<li>Худший КЭ — наименьшая доля SDD среди КЭ, у которых в периоде есть стори; КЭ без стори в сравнении не участвуют.</li>
+<li><b>«ТОП КЭ» считается по методике</b> — один КЭ с историями — «Да»; два — «Да» у обоих, кроме случая, когда объём историй второго ниже 15 % общего объёма; больше двух — «Да» у двух КЭ с наибольшим объёмом; КЭ без историй периода остаётся без признака. Объём — строки «история × КЭ», поэтому доля по ТОП КЭ тоже считает такие стори дважды.</li>
+<li>Истории с метками исключения и по исключённым КЭ в расчёт не входят (см. «Периметр КЭ»).</li>
+<li>Доля SDD считается от числа прошедших отбор: непроверенные стори в знаменатель не входят.</li>
+</ul>
+</section>
+<section id="links">
+  <h2>Ссылки</h2>
+<ul>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-7109" target="_blank" rel="noopener">SBAR-7109</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-7109</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6990" target="_blank" rel="noopener">SBAR-6990</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6990</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6985" target="_blank" rel="noopener">SBAR-6985</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6985</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6938" target="_blank" rel="noopener">SBAR-6938</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6938</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6917" target="_blank" rel="noopener">SBAR-6917</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6917</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6914" target="_blank" rel="noopener">SBAR-6914</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6914</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6852" target="_blank" rel="noopener">SBAR-6852</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6852</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6774" target="_blank" rel="noopener">SBAR-6774</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6774</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6742" target="_blank" rel="noopener">SBAR-6742</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6742</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6689" target="_blank" rel="noopener">SBAR-6689</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6689</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6684" target="_blank" rel="noopener">SBAR-6684</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6684</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6677" target="_blank" rel="noopener">SBAR-6677</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6677</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6676" target="_blank" rel="noopener">SBAR-6676</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6676</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6648" target="_blank" rel="noopener">SBAR-6648</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6648</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6646" target="_blank" rel="noopener">SBAR-6646</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6646</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6643" target="_blank" rel="noopener">SBAR-6643</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6643</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6641" target="_blank" rel="noopener">SBAR-6641</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6641</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6623" target="_blank" rel="noopener">SBAR-6623</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6623</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6621" target="_blank" rel="noopener">SBAR-6621</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6621</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6620" target="_blank" rel="noopener">SBAR-6620</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6620</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6913" target="_blank" rel="noopener">SBAR-6913</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6913</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6912" target="_blank" rel="noopener">SBAR-6912</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6912</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6863" target="_blank" rel="noopener">SBAR-6863</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6863</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6819" target="_blank" rel="noopener">SBAR-6819</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6819</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6654" target="_blank" rel="noopener">SBAR-6654</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6654</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6622" target="_blank" rel="noopener">SBAR-6622</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6622</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6839" target="_blank" rel="noopener">SBAR-6839</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6839</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6504" target="_blank" rel="noopener">SBAR-6504</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6504</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6362" target="_blank" rel="noopener">SBAR-6362</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6362</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6360" target="_blank" rel="noopener">SBAR-6360</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6360</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6358" target="_blank" rel="noopener">SBAR-6358</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6358</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6356" target="_blank" rel="noopener">SBAR-6356</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6356</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6354" target="_blank" rel="noopener">SBAR-6354</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6354</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6352" target="_blank" rel="noopener">SBAR-6352</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6352</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6338" target="_blank" rel="noopener">SBAR-6338</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6338</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6337" target="_blank" rel="noopener">SBAR-6337</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6337</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6335" target="_blank" rel="noopener">SBAR-6335</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6335</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6334" target="_blank" rel="noopener">SBAR-6334</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6334</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6309" target="_blank" rel="noopener">SBAR-6309</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6309</span></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6300" target="_blank" rel="noopener">SBAR-6300</a> <span class="small dim">https://jira.sberbank.ru/browse/SBAR-6300</span></li>
+</ul>
+</section>
+</div>
+
+<script>
+(function(){
+  var nav=document.querySelector('nav');
+  nav.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    nav.querySelectorAll('button').forEach(function(x){x.removeAttribute('aria-current')});
+    b.setAttribute('aria-current','true');
+    document.querySelectorAll('section').forEach(function(s){s.classList.remove('on')});
+    document.getElementById(b.dataset.go).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>

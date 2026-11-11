@@ -9,6 +9,11 @@ const {dependencies,action,stepParams,childParams}=require('../entities/process-
 const {validateArtifact}=require('../contracts/artifact-contract');
 const {updateHistory}=require('./history');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
+// Согласия клиента в блоке permissions прибавляются посреди прогона, а на расчёт не влияют: адрес
+// системы, выбранный сервер и правила остаются прежними. Сверять их — значит обрывать живой прогон
+// на первом же согласии. Настройки сверяются без этого блока; если файл не разбирается, сравнение
+// остаётся байтовым.
+function fingerprint(file,body){if(file!=='.gigacode/settings.json')return hash(body);try{const value=JSON.parse(body.toString());delete value.permissions;return hash(Buffer.from(JSON.stringify(value)));}catch{return hash(body);}}
 function atomic(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});const tmp=file+'.'+crypto.randomUUID()+'.tmp';try{fs.writeFileSync(tmp,typeof value==='string'?value:JSON.stringify(value,null,2)+'\n',{flag:'wx',mode:0o600});fs.renameSync(tmp,file);}finally{fs.rmSync(tmp,{force:true});}}
 const json=file=>JSON.parse(fs.readFileSync(file,'utf8'));
 const now=()=>new Date().toISOString();
@@ -45,7 +50,7 @@ function facts(artifacts){
 function summary(cwd,output,state,spec={}){
  const folder=inside(cwd,'outputs/'+output),demo=state.identity.mode==='demo',status=state.status==='completed'?'готово':state.status==='failed'?'не получилось: '+(spec.reason||'шаг остановлен'):'выполняется',files=humanFiles(state);
  const listed=[...new Set(Object.values(files))];
- atomic(inside(folder,'итог.md'),`# ${state.title}\nДата: ${humanDate(state.identity.date||state.updated)}\nЧем закончилось: ${demo&&status==='готово'?'пробный прогон на вымышленных данных, ничего не отправлялось':demo?'пробный прогон, ничего не отправлялось; '+status:status}\nЧто сделано: ${spec.summary||'Завершено шагов: '+state.last_step+'.'}\nОткуда данные: ${demo?'тестовые данные выбранной фикстуры':state.identity.mode==='local'?(state.sourceDescription||'локальные файлы и артефакты процесса'):'внешние источники процесса'}\nЧто отправлено и кому: ${state.identity.mode==='live'?'см. подтверждённые результаты шагов':'ничего не отправлено'}\n${listed.length?'Файлы в этой папке:\n'+listed.map(name=>'- '+name).join('\n')+'\n':''}`);}
+ atomic(inside(folder,'итог.md'),`# ${state.title}\nДата: ${humanDate(state.identity.date||state.updated)}\nЧем закончилось: ${demo&&status==='готово'?'пробный прогон на вымышленных данных, ничего не отправлялось':demo?'пробный прогон, ничего не отправлялось; '+status:status}\nЧто сделано: ${spec.summary||'Завершено шагов: '+state.last_step+'.'}\nОткуда данные: ${demo?'тестовые данные выбранной фикстуры':state.identity.mode==='local'?(state.sourceDescription||'локальные файлы и артефакты процесса'):'объявленные подключения'}\nЧто отправлено и кому: ${state.identity.mode==='live'?'см. подтверждённые результаты шагов':'ничего не отправлено'}\n${listed.length?'Файлы в этой папке:\n'+listed.map(name=>'- '+name).join('\n')+'\n':''}`);}
 function start(cwd,spec){
  const current=new Date();spec={...spec,date:spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
@@ -57,7 +62,7 @@ function start(cwd,spec){
  const files=new Set(dependencies(cwd,spec.process,params,spec.mode,spec.files||[],overrides));
  const resolved=require('../entities/entities').manifest(cwd,spec.process,params,spec.mode,overrides),connections=resolved.connections;
  if(connections&&!connections.ready)throw new Error(connections.missing.map(item=>item.reason).join('; '));
- const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&file!=='.gigacode/settings.json')throw new Error('Недопустимый файл снимка');snapshots[file]=hash(fs.readFileSync(inside(cwd,file)));}
+ const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&file!=='.gigacode/settings.json')throw new Error('Недопустимый файл снимка');snapshots[file]=fingerprint(file,fs.readFileSync(inside(cwd,file)));}
  fs.mkdirSync(dir,{recursive:true});
  if(spec.inputText!==undefined){if(typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');atomic(inside(dir,'inputs/input.md'),spec.inputText);params.input=path.relative(cwd,inside(dir,'inputs/input.md'));snapshots[params.input]=hash(spec.inputText);}
  const state={sourceDescription:spec.inputText!==undefined?'переданный текст пользователя':'локальные файлы и артефакты процесса',last_step:0,last_step_name:'',next_step:model.entry,status:'running',params,updated:now(),artifacts:{},artifactHashes:{},recordedArtifacts:{},published:{},pending:null,cursorProcess:spec.process,stack:[],scopeParams:structuredClone(params),title:String(spec.title||model.data.title||model.data.description||spec.process).replace(/[\r\n]/g,' '),identity:{process:spec.process,mode:spec.mode,date:spec.date,extraFiles:spec.files||[],overrides,params:structuredClone(params),hashAlgorithm:'sha256',files:snapshots}};
@@ -67,7 +72,7 @@ function operation(cwd,command,spec){
  if(!validRunFolderName(spec.output))throw new Error('Неверный output');const dir=inside(cwd,`outputs/${spec.output}/.run`),lock=inside(dir,'.journal.lock');fs.mkdirSync(lock);
  try{
   const state=json(inside(dir,'state.json'));
-  for(const [file,digest]of Object.entries(state.identity.files))if(hash(fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
+  for(const [file,digest]of Object.entries(state.identity.files))if(fingerprint(file,fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
   const inventory=dependencies(cwd,state.identity.process,state.identity.params,state.identity.mode,state.identity.extraFiles||[],state.identity.overrides);
   const expected=Object.keys(state.identity.files).filter(file=>file!==state.identity.params.input).sort();
   if(JSON.stringify(inventory.sort())!==JSON.stringify(expected))throw new Error('Изменён состав зависимостей; нужен новый запуск');
@@ -192,10 +197,7 @@ function execute(cwd,spec){
   if(target?.kind!=='action')throw new Error('Выбранный шаг не относится к развилке');
  }else if(card.operation==='done')throw new Error('Прогон завершён: новый шаг не выполняется, нужен новый запуск');
  else if(spec.step!==card.spec?.step)throw new Error('Текущий шаг карточки — '+card.spec?.step+': передайте его spec без изменений');
- else if(card.operation!=='execute'){
-  const instruction=card.operation==='begin'?'Вызовите run begin с spec карточки next, выполните ACTION.md и сохраните результат через run save.':card.operation==='model'?'Шаг уже начат: выполните ACTION.md и сохраните результат через run save.':`Вызовите run next и выполните указанную операцию ${card.operation}.`;
-  throw Object.assign(new Error('Этот шаг не имеет штатного локального вычисления. '+instruction),{summaryFile:card.summaryFile});
- }
+ else if(card.operation!=='execute'){const reason='Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md';failStep(cwd,spec.output,reason);throw Object.assign(new Error(reason),{summaryFile:card.summaryFile});}
  try{
   let state=json(inside(dir,'state.json'));
   if(state.status!=='running')throw new Error('Прогон уже завершён: '+state.status);
@@ -210,4 +212,4 @@ function execute(cwd,spec){
  }catch(error){failStep(cwd,spec.output,error.message);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
 }
 module.exports={start,operation,execute,failStep,effectiveParams};
-if(require.main===module){try{const [cmd,file,...rest]=process.argv.slice(2);if(rest.length||!file||!['start','next','execute','enter','leave','begin','save','finish','fail','publish','diagnose'].includes(cmd))throw new Error('node tools/kit.js run <start|next|execute|begin|save|enter|leave|finish|publish|fail|diagnose> <spec.json>');const spec=json(file);console.log(JSON.stringify(cmd==='start'?start(root(),spec):cmd==='execute'?execute(root(),spec):cmd==='diagnose'?require('./diagnostics').report(root(),spec.output):operation(root(),cmd,spec),null,2));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}
+if(require.main===module){try{const [cmd,file,...rest]=process.argv.slice(2);if(rest.length||!file||!['start','next','execute','enter','leave','begin','save','finish','fail','publish'].includes(cmd))throw new Error('node tools/kit.js run <start|next|execute|begin|save|enter|leave|finish|publish|fail> <spec.json>');const spec=json(file);console.log(JSON.stringify(cmd==='start'?start(root(),spec):cmd==='execute'?execute(root(),spec):operation(root(),cmd,spec),null,2));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}

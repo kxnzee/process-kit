@@ -22,7 +22,8 @@ try {
   check('human result names reject Windows device names and forbidden characters', () => {
     const {validResultName}=require('../../tools/lib/core/paths');
     for(const name of ['CON.md','nul.txt','COM1.json','LPT9.md','report:final.md','bad?.md','folder/report.md','report.md ','a\u0001.md'])assert.equal(validResultName(name),false,name);
-    for(const name of ['отчёт.md','письмо.txt','report-2.json'])assert.equal(validResultName(name),true,name);
+    for(const name of ['отчёт.md','письмо.txt','report-2.json','отчёт.html'])assert.equal(validResultName(name),true,name);
+    for(const name of ['CON.html'])assert.equal(validResultName(name),false,name);
   });
   check('previous hooks preserve arguments, stdin and failure status', () => {
     const {runHook,invocation}=require('../../tools/lib/git/git-hook');

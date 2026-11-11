@@ -33,6 +33,12 @@ try{
   fs.cpSync(path.join(tmp,'actions/compose-report'),path.join(tmp,'actions/my-compose'),{recursive:true});
   const file=path.join(tmp,'actions/my-compose/ACTION.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: compose-report','name: my-compose'));
   assert.throws(()=>validateArtifact(tmp,'my-compose','report-text','md','{{unfilled}}'),/переменные/);
+  write('processes/my-release/data/cited.json',JSON.stringify({accepted:true}));
+  write('processes/my-release/templates/scoped.md','# Release\naccepted: {{accepted}}\n');
+  const scoped={processName:'my-release',params:{data:'processes/my-release/data/cited.json',templateFile:'processes/my-release/templates/scoped.md'}};
+  assert.doesNotThrow(()=>validateArtifact(tmp,'my-compose','report-text','md','# Release\naccepted: true\nПравило источника {{other.System.field}} цитируется дословно.\n',scoped));
+  assert.throws(()=>validateArtifact(tmp,'my-compose','report-text','md','# Release\n{{accepted}}\n',scoped),/переменные шаблона: \{\{accepted\}\}/);
+  assert.throws(()=>validateArtifact(tmp,'my-compose','report-text','md','# Release\naccepted: true\n{{#each items}}x{{/each}}\n',scoped),/переменные шаблона/);
   fs.cpSync(path.join(tmp,'actions/run-query'),path.join(tmp,'actions/my-query'),{recursive:true});
   const query=path.join(tmp,'actions/my-query/ACTION.md');fs.writeFileSync(query,fs.readFileSync(query,'utf8').replace('name: run-query','name: my-query'));
   assert.throws(()=>validateArtifact(tmp,'my-query','task-records','json',{meta:{queryFile:'processes/my-release/queries/tasks.md'},records:[{key:'A-1'}],excluded:[{key:'A-1',reason:'duplicate'}],unverified:[],selectionId:'id'}),/повторяющийся/);

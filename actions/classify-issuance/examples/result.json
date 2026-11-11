@@ -1,0 +1,164 @@
+{
+  "policyFile": "POLICY.md",
+  "rulesFile": "rules/classify-issuance.md",
+  "mode": "demo",
+  "store": "demo-tasks",
+  "relatedDepth": 1,
+  "commentsLimit": 20,
+  "releaseCount": 2,
+  "byClass": { "total": 6, "contained": 4, "technical": 1, "unknown": 1 },
+  "byAgreement": { "confirmed": 2, "reasoned": 1, "conflict": 1, "weak": 1, "question": 1 },
+  "conflicts": ["DEMO-105"],
+  "weak": ["DEMO-106"],
+  "questions": ["DEMO-104"],
+  "compositionUnread": [
+    {
+      "key": "DEMO-905",
+      "reason": "связь состава релиза не отдана сервером (таймаут обращения)"
+    }
+  ],
+  "rulesGaps": [
+    {
+      "key": "DEMO-103",
+      "classification": "contained",
+      "suggested": "содержательный признак: «расширение состава источников отчёта» — новые источники данных для читателя"
+    }
+  ],
+  "understandingInsufficient": false,
+  "understandingInsufficientReason": null,
+  "items": [
+    {
+      "key": "DEMO-101",
+      "release": "DEMO-900",
+      "classification": "technical",
+      "subtype": "безопасность",
+      "basis": "Устранение уязвимостей библиотек по результатам SCA",
+      "understanding": "У читателя не меняется ни состав данных, ни методы: обновляются только версии библиотек в сборке.",
+      "rulesMatched": ["T-SEC-01"],
+      "ruleId": "T-SEC-01",
+      "agreement": "confirmed",
+      "noDescription": false,
+      "question": null,
+      "material": {
+        "read": [
+          "заголовок и описание задачи DEMO-101",
+          "метки: libs",
+          "тип задачи: Task"
+        ],
+        "unread": []
+      }
+    },
+    {
+      "key": "DEMO-102",
+      "release": "DEMO-900",
+      "classification": "contained",
+      "subtype": "атрибуты данных",
+      "basis": "В выгрузке появятся новые атрибуты по проверкам ЕРП",
+      "understanding": "Читатель получит новые поля в данных выгрузки: расширится атрибутивный состав проверок.",
+      "rulesMatched": ["C-ATTR-01", "C-DATA-01"],
+      "ruleId": "C-ATTR-01",
+      "agreement": "confirmed",
+      "noDescription": false,
+      "question": null,
+      "material": {
+        "read": [
+          "заголовок и описание задачи DEMO-102",
+          "комментарий аналитика от 12.10: перечень новых атрибутов согласован",
+          "связанная задача DEMO-900 (релиз → состав)"
+        ],
+        "unread": []
+      }
+    },
+    {
+      "key": "DEMO-103",
+      "release": "DEMO-900",
+      "classification": "contained",
+      "subtype": null,
+      "basis": "В отчёт по надзорным проверкам добавляется источник по ЕРКНМ",
+      "understanding": "У читателя меняется состав источников: в ответе системы появится пласт данных, которого раньше не было.",
+      "rulesMatched": [],
+      "ruleId": null,
+      "agreement": "reasoned",
+      "noDescription": false,
+      "question": null,
+      "material": {
+        "read": [
+          "заголовок и описание задачи DEMO-103",
+          "тип задачи: Story"
+        ],
+        "unread": [
+          {
+            "what": "связанная задача DEMO-905",
+            "reason": "нет прав на чтение задачи"
+          }
+        ]
+      }
+    },
+    {
+      "key": "DEMO-104",
+      "release": "DEMO-901",
+      "classification": "unknown",
+      "subtype": null,
+      "basis": null,
+      "understanding": "Смысл не установлен: описание повторяет заголовок, связанных задач и комментариев, объясняющих изменение, не найдено.",
+      "rulesMatched": [],
+      "ruleId": null,
+      "agreement": "question",
+      "noDescription": true,
+      "question": "что именно меняется у читателя в этой задаче?",
+      "material": {
+        "read": [
+          "заголовок задачи DEMO-104",
+          "описание (повторяет заголовок)",
+          "метки и тип задачи"
+        ],
+        "unread": [
+          {
+            "what": "комментарии связанные с обсуждением оценки",
+            "reason": "комментарии не отданы сервером (таймаут обращения)"
+          }
+        ]
+      }
+    },
+    {
+      "key": "DEMO-105",
+      "release": "DEMO-901",
+      "classification": "contained",
+      "subtype": "настройка",
+      "basis": "Изменение схемы текстов документов и валюты + настройка загрузчиков",
+      "understanding": "Содержательная часть главнее: читатель увидит изменённую схему данных, настройка загрузчиков — техническое обрамление той же доработки.",
+      "rulesMatched": ["T-CONF-01"],
+      "ruleId": "T-CONF-01",
+      "agreement": "conflict",
+      "noDescription": false,
+      "question": "признак T-CONF-01 (настройка) даёт технический класс, а изменение схемы данных — содержательный: подтвердите напечатанный класс «содержательная» или назовите свой",
+      "material": {
+        "read": [
+          "заголовок и описание задачи DEMO-105",
+          "комментарий: схема правки передана в связанную задачу DEMO-910"
+        ],
+        "unread": []
+      }
+    },
+    {
+      "key": "DEMO-106",
+      "release": "DEMO-901",
+      "classification": "contained",
+      "subtype": "справочник",
+      "basis": "Добавление справочника кодов регионов в выгрузку отчёта",
+      "understanding": "Читатель получит новый справочник в выгрузке; признак C-DICT-01 слабый — справочник мог быть доступен и раньше, решение остаётся человеку.",
+      "rulesMatched": ["C-DICT-01"],
+      "ruleId": "C-DICT-01",
+      "agreement": "weak",
+      "noDescription": false,
+      "question": "справочник кодов регионов появляется у читателя впервые или был доступен раньше в другом виде?",
+      "material": {
+        "read": [
+          "заголовок и описание задачи DEMO-106",
+          "тип задачи: Story"
+        ],
+        "unread": []
+      }
+    }
+  ]
+}

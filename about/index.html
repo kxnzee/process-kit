@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Process Kit — обзор проекта</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2b313d;
+    --ink:#e8eaee; --muted:#9aa3b2; --acc:#63b3ed; --acc2:#f6ad55; --ok:#68d391; --warn:#f6ad55;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+  header h1{font-size:26px;margin:0 0 6px}
+  header p{color:var(--muted);margin:0 0 18px}
+  nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;position:sticky;top:0;
+    background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+  nav button{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+  nav button[aria-current="true"]{background:var(--acc);color:#0b1220;border-color:var(--acc);font-weight:600}
+  section{display:none}
+  section.on{display:block}
+  h2{font-size:20px;margin:4px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 2px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:13px}
+  .chip b{color:var(--acc);font-size:16px;display:block}
+  table{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:14px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+  code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px}
+  .node{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 9px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+  .node.src{border-color:#3f6f9e} .node.tr{border-color:#5c6b3f}
+  .node.act{border-color:#8b5e2a} .node.gate{border-color:#7a4a6a}
+  .arrow{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:20px} li{margin:4px 0}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.vis{color:var(--ok);border-color:#2f6b4a}
+  .tag.svc{color:var(--warn);border-color:#7a5c2a}
+  .note{background:var(--panel2);border-left:3px solid var(--acc);padding:10px 13px;
+    border-radius:0 8px 8px 0;color:var(--muted);font-size:14px;margin:14px 0}
+  .lvl{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .lvl div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px}
+  .lvl b{display:block;color:var(--ink);margin-bottom:3px}
+  .ex-line{margin:10px 0 0;font-size:14px;color:var(--muted)}
+  .ex-line a{color:var(--acc);text-decoration:none;border-bottom:1px dotted var(--acc)}
+  .ex-line a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Process Kit — обзор проекта</h1>
+</header>
+
+<nav>
+  <button data-go="goal" aria-current="true">Цель проекта</button>
+  <button data-go="arch">Особенности архитектуры</button>
+  <button data-go="skills">Навыки-помощники</button>
+  <button data-go="flows">Рабочие процессы</button>
+</nav>
+
+<section id="goal" class="on">
+  <h2>Цель проекта</h2>
+  <div class="note"><b>Главное — не отдельная задача пользователя, а удобная расширяемая инфраструктура, которую можно переиспользовать на разных уровнях (общем, командном, персональном)</b>: процесс под задачу один раз собирается, может быть переиспользован или кастомизирован на любом уровне ниже, человек при этом не обязан разбираться в тонкостях архитектуры решения. За базовый уровень отвечают отдельные специалисты.</div>
+  <div class="grid">
+    <div class="card"><h4>1 · Готовые решения под разные роли</h4>
+      <p>Один и тот же механизм на трёх уровнях: общий набор → командный → личный. Можно использовать базовые наработки, расширять и кастомизировать их на командном уровне, создавать процессы для решения своих командных и персональных задач.</p></div>
+    <div class="card"><h4>2 · Своё решение собирается из готового</h4>
+      <p>Ключевая особенность — переиспользование: типовые шаги и подключения к рабочим системам уже реализованы, поэтому процесс под свою задачу собирается быстро и по имени, а не с нуля. Берёте готовые части, задаёте параметры и получаете результат; следующему с той же задачей достаётся готовый процесс.</p></div>
+    <div class="card"><h4>3 · Максимально просто для нетехнического человека</h4>
+      <p>Единая точка входа: пишешь задачу словами («собери инфо-поводы на эту неделю») — тебе подбирают готовый процесс, добирают недостающие значения и доводят до результата. Внутренние команды человеку не показываются и не предлагаются, разговор идёт предметными словами, а перед работой называется план. Ошибки объясняются простыми словами, с конкретным следующим действием и предложением по их устранению.</p></div>
+  </div>
+
+  <h3>На кого рассчитано и что уже есть</h3>
+  <table>
+    <tr><th>Роль</th><th>Что повторяется каждую неделю</th><th>Собрано сейчас</th></tr>
+    <tr><td>Аналитик</td><td>проверить, что его требования вышли в окно; разобрать входящие; собрать черновик постановки и письма смежникам</td><td>косвенно: чтение состава релиза и классификация задач по смыслу, черновик письма без отправки</td></tr>
+    <tr><td>Delivery</td><td>статус историй команды за период, доля проработанных по спецификации, узкие места и просрочка, отчёт к релизу</td><td>есть: доля историй по спецификациям (общий и командный варианты), инфо-поводы релиза файлом прогона</td></tr>
+    <tr><td>Руководитель (команды, кластера, подразделения)</td><td>сводка по КЭ без ручного чтения Jira: что внедряем и что планируем, где провал метрик, чем отчитаться; кто в кластере ниже цели по индексу зрелости и что проседает у команды целиком</td><td>есть: таблица «текущее / план» построчно по КЭ с вопросами на решение; разбивка по КЭ и признак худшего в отчёте по спецификациям; картина по кластеру в индексе зрелости — средний индекс, кто ниже цели и предупреждающего порога, и план подъёма каждому с ценой рычагов в баллах и оценкой A–E (пока в личной копии)</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:14px">Собрано четыре боевых процесса и один учебный, все они про чтение и отчёт. Честно: задачи разбора входящих, декомпозиции и регулярных сводок по рискам ещё не собраны — именно они и есть основной объём наполнения, потому что ценность инфраструктуры появляется только вместе с каталогом задач.</p>
+
+  <h3>Как простота реализована механически</h3>
+  <ul>
+    <li><b>Одна точка входа.</b> Человеку виден единственный помощник: он подбирает процесс по названию, описанию и примерам, уточняет при неоднозначности и передаёт работу исполнителю или конструктору. Восемь служебных навыков он сам не показывает и не советует набрать руками.</li>
+    <li><b>Подсказки вместо инструкции.</b> До работы — короткий план (что прочитаю, что создам, что трону во внешних системах); после шага — одна строка хода; в конце — результат, полный путь и вопрос «Полезно?». Технические подробности уходят в служебный отчёт, а не в диалог.</li>
+    <li><b>Разговор предметными словами.</b> Правила общения прямо запрещают внутренний жаргон в репликах человеку: вместо названий уровней и файлов — «личная копия», «команда», «настройки», «запрос на изменения».</li>
+    <li><b>Спросить дешевле, чем угадать.</b> Недостающие значения добирает настройка, и только недостающее: повторная настройка не переспрашивает про то, что уже сохранено. Неизвестный уровень или отсутствие доступа — остановка с вопросом, а не подбор «похожего значения».</li>
+    <li><b>Можно попробовать без доступов.</b> Пробный прогон на вымышленных данных не требует ни подключений, ни настройки, ни токенов и помечается «ДАННЫЕ ДЕМО» — форма и логика видны сразу, доступ заводится потом.</li>
+    <li><b>Проверка готовности одним чтением.</b> «Подключение работает» означает, что система ответила на одну безопасную операцию чтения; отсутствие токена, отказ доступа и таймаут объясняются по-разному и не лечатся советом «поменяй токен».</li>
+  </ul>
+
+</section>
+
+<section id="arch">
+  <h2>Особенности архитектуры</h2>
+
+  <h3>Пять ключевых сущностей</h3>
+  <div class="lvl">
+    <div><b>Процесс</b>описывает задачу целиком и порядок действий — граф действий. Состоит из действий и других процессов (подпроцессов); только ссылки и параметры шага, текст действия не дублируется.</div>
+    <div><b>Действие</b>что делает один шаг. Независимо: получает на вход данные и возвращает данные, может выполняться в отдельном агенте. Специфические данные передаёт процесс.</div>
+    <div><b>Адаптер</b>как обращаться к внешним хранилищам информации, без привязки к конкретному источнику: операции, пагинация, лимиты. Один адаптер Jira покрывает обе инсталляции; портал с методикой — уже другой адаптер.</div>
+    <div><b>Параметры</b>с какими значениями идём: берутся из командных или личных настроек либо передаются аргументами процесса.</div>
+    <div><b>Контекст</b>дополнительные знания: проверенные факты и договорённости. Подключается к шагу только явно и не сливается молча — при противоречии показываются оба источника.</div>
+  </div>
+  <p style="color:var(--muted);font-size:14px">Сущности связаны только ссылками: процесс знает действие по имени, действие — систему по <code>id</code> подключения.</p>
+
+  <h3>Три уровня владения</h3>
+  <table>
+    <tr><th>Уровень</th><th>Ветка</th><th>Что видит</th></tr>
+    <tr><td>общий</td><td><code>master</code> (+ <code>master-&lt;имя&gt;</code> для правок через PR)</td><td>только свои</td></tr>
+    <tr><td>командный</td><td><code>team-&lt;код&gt;</code></td><td>свои + общие</td></tr>
+    <tr><td>личный</td><td><code>my</code></td><td>свои + командные + общие</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:14px">Ссылки только вверх: общий файл, сославшийся на личное имя, — ошибка раскладки, исполнитель останавливается и называет файл. Клиент про уровни не знает: все читатели открывают одну папку и один <code>GIGACODE.md</code>.</p>
+
+</section>
+
+<section id="skills">
+  <h2>Навыки-помощники</h2>
+  <p style="color:var(--muted)">Скиллов ровно восемь, все служебные с префиксом <code>pp-ai-</code>, лежат строго плоско в <code>.gigacode/skills/</code>. Новый шаг процесса нового скилла не создаёт.</p>
+
+  <table>
+    <tr><th>Скилл</th><th>Кто видит</th><th>Что делает</th></tr>
+    <tr><td><code>pp-ai-mentor</code></td><td><span class="tag vis">вход</span></td><td>Ментор-помощник: единственный, кого видит человек. Разбирает задачу словами, отвечает на «что ты умеешь», собирает процесс и переносит изменения, а саму работу передаёт служебным навыкам из списка ниже. Шаги процесса не исполняет.</td></tr>
+    <tr><td><code>pp-ai-init</code></td><td><span class="tag svc">служебный</span></td><td>Первоначальная настройка окружения под человека: личная копия, только необходимые подключения, защита отправки и отчёт «что-сделано.md». Повторная настройка добирает лишь недостающее и не переспрашивает про сохранённое.</td></tr>
+    <tr><td><code>pp-ai-run-process</code></td><td><span class="tag svc">служебный</span></td><td>Исполняет выбранный процесс по точным ссылкам: пакет на шаг, артефакт в журнал, делегирование чтения агенту, честный итог.</td></tr>
+    <tr><td><code>pp-ai-create-process</code></td><td><span class="tag svc">служебный</span></td><td>Собирает процесс из разговора, переиспользует существующие действия, проверяет точные зависимости.</td></tr>
+    <tr><td><code>pp-ai-create-action</code></td><td><span class="tag svc">служебный</span></td><td>Определяет границы новой законченной операции и создаёт <code>ACTION.md</code> с контрактами. Проверяет переиспользование, а не оборачивает вызов инструмента.</td></tr>
+    <tr><td><code>pp-ai-create-adapter</code></td><td><span class="tag svc">служебный</span></td><td>Описание новой системы: реальные операции, схемы ответов, пагинация, ограничения. Не разрабатывает MCP-сервер и не заводит секреты.</td></tr>
+    <tr><td><code>pp-ai-promote-changes-team</code></td><td><span class="tag svc">служебный</span></td><td>Перенос подготовленных изменений своего уровня в командный: отдельный worktree от свежей цели, проверка, показ диффа, отдельное согласие на отправку.</td></tr>
+    <tr><td><code>pp-ai-promote-changes-master</code></td><td><span class="tag svc">служебный</span></td><td>То же в общий уровень. Сам запрос на изменения не сливает.</td></tr>
+  </table>
+
+</section>
+
+<section id="flows">
+  <h2>Рабочие процессы</h2>
+  <p style="color:var(--muted)">Ниже пять карточек: четыре процесса открытого уровня — три боевых и один учебный — и один командный вариант. Помощник подбирает их по <code>name</code>, <code>description</code> и <code>examples</code>; устаревшие не предлагает; при равных вариантах ближний уровень важнее.</p>
+
+  <div class="card" style="margin-bottom:14px">
+    <h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">действует</span></h4>
+    <p>Собирает релизы Release 2.0 периметра КЭ из обеих инсталляций Jira, читает состав каждого, отделяет содержательные задачи от технических и печатает таблицу из двух колонок: текущие инфоповоды и планы на следующую неделю, построчно по КЭ. Результат отдаёт файлом прогона: развилка в конце спрашивает, положить ли сверху одностраничник <code>отчёт-инфо-поводы.html</code> — форма страницы не меняет ни строки содержимого.</p>
+    <div class="flow">
+      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
+      <span class="node src">fetch-sigma</span><span class="arrow">∥</span>
+      <span class="node src">fetch-delta</span><span class="arrow">→</span>
+      <span class="node src">classify-sigma</span><span class="arrow">∥</span>
+      <span class="node src">classify-delta</span><span class="arrow">→</span>
+      <span class="node tr">assess</span><span class="arrow">→</span>
+      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node gate">publish-gate</span><span class="arrow">→</span>
+      <span class="node tr">render-html</span><span class="arrow">→</span>
+      <span class="node">end</span>
+    </div>
+    <p style="margin-top:8px;color:var(--muted);font-size:14px">Развилка в начале — сверять ли процесс с методикой сценария (спрашивается до прогона). ∥ — шаги читаются параллельно двумя агентами, в журнал пишутся по очереди. Прогон 11.11.2026: 64 релиза, 21 КЭ, 51 инфоповод, 66 строк таблицы, 14 вопросов на решение.</p>
+    <p class="ex-line">Пример результата: <a href="examples/info-povod.html">страница инфоповодов за окно 04.11–18.11 — две колонки «текущее / план» построчно по КЭ, релизы ссылками, разделы вопросов и оговорок прогона</a></p>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h4>sdd-stories-report — доля стори по SDD (командная методика дашборда) <span class="tag">командный</span><span class="tag">действует</span></h4>
+    <p>Считает истории КЭ из периметра команды, доведённые до «Тестирование — Внедрен», и делит на выполненные по SDD (метка или спецификация в принятой правке/привязанном коммите) и без неё. На выходе доля, разбивка по КЭ, признак ТОП КЭ, худший КЭ, исключения и сверка с методикой дашборда.</p>
+    <div class="flow">
+      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
+      <span class="node src">check-methodology</span><span class="arrow">→</span>
+      <span class="node gate">methodology-review</span><span class="arrow">→</span>
+      <span class="node src">fetch</span><span class="arrow">→</span>
+      <span class="node src">read-code</span><span class="arrow">→</span>
+      <span class="node tr">assess</span><span class="arrow">→</span>
+      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node">end</span>
+    </div>
+    <p class="ex-line">Пример результата: <a href="examples/team-irbis-sdd-stories-report.html">доля стори по SDD по методике дашборда, окно 01.07.2026–08.11.2026</a></p>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h4>sdd-stories-report — доля стори по SDD <span class="tag">общий</span><span class="tag">действует</span></h4>
+    <p>Общая версия той же метрики: окно начала работы, статус от тестирования и далее, отбор по КЭ команды, признак SDD по метке или изменениям спецификаций в принятом запросе на изменения. Может подготовить черновик письма по историям без SDD — он не отправляется.</p>
+    <div class="flow">
+      <span class="node src">fetch</span><span class="arrow">→</span>
+      <span class="node src">read-code</span><span class="arrow">→</span>
+      <span class="node tr">assess</span><span class="arrow">→</span>
+      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node gate">gate</span><span class="arrow">→</span>
+      <span class="node tr">prepare-mail-data</span><span class="arrow">→</span>
+      <span class="node tr">compose-mail</span><span class="arrow">→</span>
+      <span class="node tr">notify</span><span class="arrow">→</span>
+      <span class="node">end</span>
+    </div>
+    <p class="ex-line">Пример результата за полгода: <a href="examples/sdd-stories-report.html">доля стори по SDD, окно 08.05.2026–08.11.2026</a></p>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h4>gmi-cluster-report — цифры индекса зрелости и план подъёма <span class="tag">общий</span><span class="tag">действует</span></h4>
+    <p>Даёт картину по кластеру: средний индекс, сколько людей ниже цели и где именно проседает обучение, навыки и продуктивность. А каждому, кто ниже цели, — что подтянуть, чтобы дойти до неё: какие курсы доучить, какие навыки закрыть, как менять режим работы и какие метрики и истории догнать, с ценой каждого шага в баллах. Считает по шкалам методики «Методика оценки сотрудников по блокам метрик» (GigaCode Maturity Index, слайды 1–3): веса блоков 30/30/40 и балл за каждую градацию берутся оттуда, а планку 6,0 из 10 задаёт владелец процесса — в методике такой планки нет. Ссылка «Письмо сотруднику» берётся из карты адресов, которую собирает запускающий прогон по почтовому справочнику; сама карта — локальный файл и в репозиторий не попадает. Результат отдаёт файлом прогона: развилка спрашивает, положить ли сверху одностраничник в папку прогона; внешних изменений процесс не делает.</p>
+    <div class="flow">
+      <span class="node tr">read</span><span class="arrow">→</span>
+      <span class="node tr">assess</span><span class="arrow">→</span>
+      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node gate">publish-gate</span><span class="arrow">→</span>
+      <span class="node tr">render-html</span><span class="arrow">→</span>
+      <span class="node">end</span>
+    </div>
+    <p style="margin-top:8px;color:var(--muted);font-size:14px">Чтений систем здесь нет: источник — таблица выгрузки, а бизнес-правило живёт в расчётном правиле процесса, поэтому весь процесс проверяется на фикстуре без доступов.</p>
+    <p class="ex-line">Сгенерированный отчёт: <a href="examples/gmi-cluster-report.html">страница прогона от 11.11.2026 — цифры кластера и план подъёма, под каждым планом ссылка «Письмо сотруднику»</a> — это снимок рабочих данных: в файле настоящие ФИО и адреса сотрудников кластера.</p>
+  </div>
+
+  <div class="card">
+    <h4>example — подготовка письма <span class="tag">учебный</span></h4>
+    <p>Процесс <span class="node tr">edit</span> → <span class="node tr">draft</span> → <span class="node">end</span>: переписывает переданный текст и готовит черновик по явным адресатам. Служит образцом для копирования: поля, шаблон и проверка описаны в <code>processes/example/README.md</code>.</p>
+  </div>
+
+  <div class="note">Открытые пункты, которые ждут решения владельца: перенос несохранённых правок этой копии выше личного уровня; команды журнала <code>run save --from &lt;файл&gt;</code> и <code>run packet &lt;шаг&gt;</code> (сейчас пакеты собирают скрипты в папке прогона); ответы на три вопроса классификации прошлого прогона; расхождение оговорки «строка = релиз в группе КЭ» с формой «строка = ИТ-услуга»; неполнота чтения комментариев не попадает в раздел «Проверить не удалось». поднимать ли процесс индекса зрелости до командного или общего уровня — решает владелец, сам я личную версию не переношу.</div>
+</section>
+</div>
+
+<script>
+(function(){
+  var nav=document.querySelector('nav');
+  function show(id,push){
+    var b=nav.querySelector('button[data-go="'+id+'"]');
+    var s=document.getElementById(id);
+    if(!b||!s)return;
+    nav.querySelectorAll('button').forEach(function(x){x.removeAttribute('aria-current')});
+    b.setAttribute('aria-current','true');
+    document.querySelectorAll('section').forEach(function(x){x.classList.remove('on')});
+    s.classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+    // pushState, а не location.hash: запись в историю остаётся, а браузер не перематывает
+    // страницу к самому разделу.
+    if(push&&location.hash!=='#'+id)history.pushState({page:id},'','#'+id);
+  }
+  function fromHash(){show(location.hash.replace(/^#/,''),false);}
+  nav.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    show(b.dataset.go,true);
+  });
+  window.addEventListener('popstate',fromHash);
+  window.addEventListener('hashchange',fromHash);
+  fromHash();
+})();
+</script>
+</body>
+</html>

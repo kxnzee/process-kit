@@ -25,8 +25,6 @@ try{
   const started=run('start',{process:'example',mode:'local',date:'2026-11-05',inputText:'12 задач.',params:{to:'User',subject:'Status'}}),output=started.output;
   for(const [step,artifact,next]of [['edit','report-text','draft'],['draft','mail-draft','end']]){run('begin',{output,step});run('save',{output,step,artifact,next,extension:'md',content:'12 задач.'});}
   const state=run('finish',{output,resultName:'письмо.md'});assert.equal(state.status,'completed');assert.equal(fs.readFileSync(path.join(tmp,'outputs',output,'письмо.md'),'utf8'),'12 задач.');
-  const diagnostic=run('diagnose',{output});
-  const file=diagnostic.reportFile;assert.ok(fs.existsSync(file));assert.ok(!fs.readFileSync(file,'utf8').includes('12 задач.'));
  });
  check('hook installation points to private modules and the installed commit guard executes',()=>{
   write('.git/hooks/pre-commit','#!/bin/sh\nprintf previous-hook > previous-hook-called\n');

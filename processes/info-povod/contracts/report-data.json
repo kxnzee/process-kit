@@ -1,0 +1,240 @@
+{
+  "type": "object",
+  "description": "Данные отчёта «Инфо-поводы Release Notes»: строка = релиз в группе одного КЭ. Счётчики сходятся: rowCount равно сумме rowCount по keGroups и обычно больше releaseCount, потому что релиз с несколькими КЭ попадает в группу каждого.",
+  "required": ["meta", "counters", "keGroups", "questions", "unverified", "excluded", "notes"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["reportTitle", "pageTitle", "generatedAt", "releaseType", "windowCurrent", "windowPlan", "windowsText", "queryFile", "stores", "methodologyCheck", "demo"],
+      "properties": {
+        "reportTitle": { "type": "string", "minLength": 1 },
+        "pageTitle": { "type": "string", "minLength": 1, "description": "Заголовок страницы отчёта, собранный из pageTitleTemplate по границам окон" },
+        "generatedAt": { "type": "string", "minLength": 1, "description": "Дата прогона ГГГГ-ММ-ДД — единственный источник обоих окон" },
+        "releaseType": { "type": "string", "minLength": 1 },
+        "windowCurrent": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": { "from": { "type": "string", "minLength": 1 }, "to": { "type": "string", "minLength": 1 } },
+          "additionalProperties": false
+        },
+        "windowPlan": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": { "from": { "type": "string", "minLength": 1 }, "to": { "type": "string", "minLength": 1 } },
+          "additionalProperties": false
+        },
+        "windowsText": { "type": "string", "minLength": 1 },
+        "queryFile": { "type": "string" },
+        "stores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "releases"],
+            "properties": {
+              "id": { "type": "string", "description": "id подключения; пустой — в демо подключение не выбиралось" },
+              "label": { "type": "string", "minLength": 1 },
+              "releases": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "methodologyCheck": { "type": "string", "enum": ["yes", "no", "ask"], "description": "Как решено сверяться в этом прогоне: yes — шаг сверки шёл в маршруте, no — не шёл, ask — ответа человека не было и маршрут пошёл по умолчанию, то есть без сверки" },
+        "demo": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "counters": {
+      "type": "object",
+      "description": "Число релизов и число строк называются раздельно: строка — релиз в группе одного КЭ",
+      "required": ["releaseCount", "rowCurrentCount", "rowPlanCount", "rowCount", "keCount", "newsCount", "technicalCount", "emptyCount", "unreadCompositionCount", "storyCount", "technicalStoryCount", "unknownStoryCount", "noNewsCount", "unverifiedCount", "excludedCount", "questionCount"],
+      "properties": {
+        "releaseCount": { "type": "integer", "minimum": 0 },
+        "rowCurrentCount": { "type": "integer", "minimum": 0 },
+        "rowPlanCount": { "type": "integer", "minimum": 0 },
+        "rowCount": { "type": "integer", "minimum": 0 },
+        "keCount": { "type": "integer", "minimum": 0 },
+        "newsCount": { "type": "integer", "minimum": 0, "description": "Релизов, где есть хотя бы одна содержательная задача" },
+        "technicalCount": { "type": "integer", "minimum": 0, "description": "Релизов, состоящих только из технических задач" },
+        "emptyCount": { "type": "integer", "minimum": 0, "description": "Релизов с прочитанным пустым составом" },
+        "unreadCompositionCount": { "type": "integer", "minimum": 0, "description": "Релизов, чей состав прочитан не полностью" },
+        "storyCount": { "type": "integer", "minimum": 0 },
+        "technicalStoryCount": { "type": "integer", "minimum": 0 },
+        "unknownStoryCount": { "type": "integer", "minimum": 0 },
+        "noNewsCount": { "type": "integer", "minimum": 0, "description": "Строк без инфоповода: технический релиз, пустой состав или непрочитанный состав" },
+        "unverifiedCount": { "type": "integer", "minimum": 0 },
+        "excludedCount": { "type": "integer", "minimum": 0 },
+        "questionCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "keGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "rowCount", "current", "plan"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "description": "Имя КЭ дословно из значения поля задачи" },
+          "rowCount": { "type": "integer", "minimum": 0 },
+          "current": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "url", "status", "plannedAt", "window", "heading", "kind", "items", "technicalRefs", "excludedText", "itService"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "url": { "type": "string" },
+                "status": { "type": "string" },
+                "plannedAt": { "type": "string", "minLength": 1 },
+                "window": { "type": "string", "enum": ["current", "plan"] },
+                "heading": { "type": "string", "minLength": 1 },
+                "kind": { "type": "string", "enum": ["news", "technical", "empty", "unread"], "description": "news — есть содержательная задача; technical — только технические; empty — состав прочитан и пуст; unread — состав прочитан не полностью" },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["key", "summary", "url", "classification", "agreement", "subtype", "basis", "question", "text"],
+                    "properties": {
+                      "key": { "type": "string", "minLength": 1 },
+                      "summary": { "type": "string" },
+                      "url": { "type": "string" },
+                      "classification": { "type": "string", "enum": ["contained", "technical", "unknown"] },
+                      "agreement": { "type": "string", "enum": ["confirmed", "reasoned", "conflict", "weak", "question"] },
+                      "subtype": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                      "basis": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Дословная цитата-основание из задачи; null — основания не нашлось" },
+                      "question": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                      "text": { "type": "string" }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "technicalRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["key", "url"],
+                    "properties": {
+                      "key": { "type": "string", "minLength": 1 },
+                      "url": { "type": "string" }
+                    },
+                    "additionalProperties": false
+                  },
+                  "description": "Технические задачи релиза: ключ и ссылка — форма печатает их ссылками"
+                },
+                "excludedText": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Подпись основания без перечня задач; перечень форма берёт из technicalRefs" },
+                "itService": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Значение поля «ИТ-услуга» справочно; строку отчёта определяет КЭ" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "plan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "url", "status", "plannedAt", "window", "heading", "kind", "items", "technicalRefs", "excludedText", "itService"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "url": { "type": "string" },
+                "status": { "type": "string" },
+                "plannedAt": { "type": "string", "minLength": 1 },
+                "window": { "type": "string", "enum": ["current", "plan"] },
+                "heading": { "type": "string", "minLength": 1 },
+                "kind": { "type": "string", "enum": ["news", "technical", "empty", "unread"] },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["key", "summary", "url", "classification", "agreement", "subtype", "basis", "question", "text"],
+                    "properties": {
+                      "key": { "type": "string", "minLength": 1 },
+                      "summary": { "type": "string" },
+                      "url": { "type": "string" },
+                      "classification": { "type": "string", "enum": ["contained", "technical", "unknown"] },
+                      "agreement": { "type": "string", "enum": ["confirmed", "reasoned", "conflict", "weak", "question"] },
+                      "subtype": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                      "basis": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                      "question": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                      "text": { "type": "string" }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "technicalRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["key", "url"],
+                    "properties": {
+                      "key": { "type": "string", "minLength": 1 },
+                      "url": { "type": "string" }
+                    },
+                    "additionalProperties": false
+                  },
+                  "description": "Технические задачи релиза: ключ и ссылка — форма печатает их ссылками"
+                },
+                "excludedText": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Подпись основания без перечня задач; перечень форма берёт из technicalRefs" },
+                "itService": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "questions": {
+      "type": "array",
+      "description": "Вопросы человека: задача или релиз, где данных не хватило. Каждый вопрос даёт контекст, чтобы на него ответили без чтения прогонных артефактов.",
+      "items": {
+        "type": "object",
+        "required": ["scope", "url", "summary", "why", "text", "store", "release", "cause"],
+        "properties": {
+          "scope": { "type": "string", "minLength": 1, "description": "Ключ задачи или релиза, к которому вопрос" },
+          "url": { "type": "string", "description": "Ссылка на задачу; пусто — подключение не отдало ссылку" },
+          "summary": { "type": "string", "description": "Формулировка задачи дословно; пусто — для вопроса про релиз" },
+          "why": { "type": "string", "minLength": 1, "description": "Что известно и чего именно не хватило" },
+          "text": { "type": "string", "minLength": 1, "description": "Что нужно решить человеку" },
+          "store": { "type": "string", "description": "Человеческое имя инсталляции из артефакта выборки" },
+          "release": {
+            "anyOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "required": ["key", "url"],
+                "properties": { "key": { "type": "string", "minLength": 1 }, "url": { "type": "string" } },
+                "additionalProperties": false
+              }
+            ],
+            "description": "Релиз, в составе которого пришла задача"
+          },
+          "cause": { "type": "string", "enum": ["rule-conflict", "weak-rule", "unknown-meaning", "missing-date"], "description": "Почему это вопрос: rule-conflict — чтение задачи и признак из правил дают разные классы (класс напечатан по пониманию), weak-rule — опора только на слабый признак, unknown-meaning — смысл не установлен, missing-date — у релиза нет плановой даты. Вопрос не меняет счётчики классов: задача остаётся учтённой в своём классе" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unverified": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "reason"],
+        "properties": { "key": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "kind", "reason"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "additionalProperties": false
+}

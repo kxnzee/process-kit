@@ -31,8 +31,10 @@ function validRunFolderName(name) {
 }
 
 // Portable file name: Windows device names are reserved even with an extension.
+// html разрешён: отчёт владельцу отдают не только текстовым файлом, но и цельной
+// страницей-одностраничником, который открывают в браузере без внешней публикации.
 function validResultName(name) {
-  return typeof name==='string' && /^[^./\\][^/\\]*\.(md|txt|json)$/.test(name) &&
+  return typeof name==='string' && /^[^./\\][^/\\]*\.(md|txt|json|html)$/.test(name) &&
     !/[<>:"|?*\x00-\x1f]/.test(name) && !/[ .]$/.test(name) &&
     !/^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:[ .]|$)/i.test(name);
 }

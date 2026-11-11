@@ -1,0 +1,98 @@
+{
+  "type": "object",
+  "description": "Артефакт сверки процесса с методикой. Форма общая: шаг отчёта читает эти ключи. Счётчики обязаны сходиться: matched + mismatched + unverified = total.",
+  "required": [
+    "source",
+    "mode",
+    "total",
+    "matched",
+    "mismatched",
+    "unverified",
+    "sections",
+    "unverifiedSections",
+    "notInProcess",
+    "notes"
+  ],
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": ["pageUrl", "readAt", "readToEnd"],
+      "properties": {
+        "pageUrl": { "type": "string", "minLength": 1 },
+        "pageTitle": { "type": "string" },
+        "version": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "readAt": { "type": "string", "minLength": 1 },
+        "readToEnd": { "type": "boolean" },
+        "connection": { "type": "string", "description": "Каким сервером чтения страницы прочитано фактически: по нему результат воспроизводят. Пустым оставляют только в demo, где страницы нет." }
+      },
+      "additionalProperties": false
+    },
+    "mode": { "type": "string", "enum": ["live", "demo"] },
+    "total": { "type": "integer", "minimum": 0 },
+    "matched": { "type": "integer", "minimum": 0 },
+    "mismatched": { "type": "integer", "minimum": 0 },
+    "unverified": { "type": "integer", "minimum": 0 },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["section", "target", "status", "process", "method"],
+        "properties": {
+          "section": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["matched", "mismatched", "unverified"] },
+          "process": { "type": "string" },
+          "method": { "type": "string" },
+          "action": { "type": "string", "enum": ["change", "clarify", "keep"] },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unverifiedSections": {
+      "type": "array",
+      "description": "Разделы и причины, по которым сверка не сложилась, в том числе недоступная страница и недочитанные порции.",
+      "items": {
+        "type": "object",
+        "required": ["section", "reason"],
+        "properties": {
+          "section": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notInProcess": {
+      "type": "array",
+      "description": "Значения методики, которых в процессе не заведено. Разобанные решениями уровня сюда не попадают.",
+      "items": {
+        "type": "object",
+        "required": ["value", "section"],
+        "properties": {
+          "value": { "type": "string", "minLength": 1 },
+          "section": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "methodologyNews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["change"],
+        "properties": {
+          "date": { "type": "string" },
+          "change": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Сноски: прочитанный файл решений, значения, снятые по ответу системы, ограничения чтения страницы.",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

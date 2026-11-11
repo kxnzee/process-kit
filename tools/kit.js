@@ -5,10 +5,8 @@ const path=require('node:path'),{spawnSync}=require('node:child_process');
 const commands={
  action:{file:'lib/actions/invoke.js',usage:'<spec.json>',purpose:'Выполнить локальный экшен без создания процесса',scope:'local-write'},
  entities:{file:'lib/entities/entities.js',usage:'<process> [local|demo|live] [params.json]',purpose:'Разрешить сущности и подключения процесса',scope:'read-only'},
- skills:{file:'lib/entities/skills.js',usage:'',purpose:'Прочитать каталог скиллов без тел инструкций',scope:'read-only'},
- run:{file:'lib/runtime/run-journal.js',usage:'<start|next|execute|begin|save|enter|leave|finish|publish|fail|diagnose> <spec.json>',purpose:'Сохранить состояние, результаты и диагностику запуска',scope:'local-write'},
+ run:{file:'lib/runtime/run-journal.js',usage:'<start|next|execute|begin|save|enter|leave|finish|publish|fail> <spec.json>',purpose:'Сохранить состояние и результаты запуска',scope:'local-write'},
  config:{file:'lib/config/config.js',usage:'--json | --process <name> [--params <file>]',purpose:'Проверить настройки и выбор подключений',scope:'read-only'},
- 'setup-status':{file:'lib/config/setup-state.js',usage:'',purpose:'Безопасно прочитать факты о личной настройке',scope:'read-only'},
  check:{file:'lib/validation/validate.js',usage:'[--process <name>] [--demo] [--params <file>] [--json]',purpose:'Проверить структуру или готовность процесса',scope:'read-only'},
  test:{file:'../tests/run.js',usage:'',purpose:'Запустить тесты разработки; не нужен для обычной задачи',scope:'temporary-files'},
  'hooks-install':{file:'lib/git/install-hooks.js',usage:'',purpose:'Установить локальную защиту Git при инициализации',scope:'git-local-write'},

@@ -1,0 +1,171 @@
+{
+  "comment": "Вымышленные входные данные для demo процесса info-povod. Классы задач здесь не заготовлены: их определяет шаг классификации по заголовку, описанию и меткам этих задач. Даты подобраны под runDate 2026-11-07: окна текущих поводов 2026-10-31…2026-11-07, планов 2026-11-08…2026-11-14.",
+  "query": "processes/info-povod/queries/releases.md",
+  "parameters": {
+    "runDate": "2026-11-07",
+    "lookBackDays": 7,
+    "lookAheadDays": 7,
+    "releaseType": "Release 2.0",
+    "statusesExclude": ["Cancelled"],
+    "excludeIssueTypes": ["Bug"],
+    "pageTitleTemplate": "Release Notes {currentFrom}–{planTo}"
+  },
+  "result": {
+    "meta": {
+      "instanceLabel": "демо",
+      "queryFile": "processes/info-povod/queries/releases.md",
+      "demo": true,
+      "releaseType": "Release 2.0",
+      "statusesExclude": ["Cancelled"],
+      "windowJql": "2026-10-31…2026-11-14",
+      "modulesInScope": [
+        { "code": "3296913" },
+        { "code": "7692618" },
+        { "code": "3845533" },
+        { "code": "4836311" },
+        { "code": "3594997" },
+        { "code": "3407804" }
+      ],
+      "readCounters": { "releasesRead": 6, "batches": 1, "pagesRead": 1 },
+      "plannedAtMissing": [],
+      "itServiceMissing": [{ "key": "DEMO-503", "reason": "поле «ИТ-услуга» не заполнено" }],
+      "linksUnread": [{ "key": "DEMO-505", "reason": "связи состава не отданы сервером (таймаут обращения)" }]
+    },
+    "records": [
+      {
+        "key": "DEMO-501",
+        "summary": "Релиз DataExpert 07.11",
+        "url": "http://example.invalid/browse/DEMO-501",
+        "status": "Внедрен",
+        "plannedAt": "2026-11-07",
+        "itService": "DataExpert",
+        "keValues": [
+          { "id": "3296913", "name": "SBP.IRBIS.Открытые данные" },
+          { "id": "3845533", "name": "SBP.IRBIS.Профиль клиента" }
+        ],
+        "codes": ["3296913", "3845533"],
+        "members": [
+          {
+            "key": "DEMO-601",
+            "issueType": "Story",
+            "summary": "В выгрузке появились новые атрибуты по проверкам ЕРП",
+            "description": "Контракт выгрузки расширяется атрибутами надзорных проверок: читатель получает поля, которых раньше в справке не было.",
+            "status": "Внедрен",
+            "labels": [],
+            "url": "http://example.invalid/browse/DEMO-601"
+          },
+          {
+            "key": "DEMO-602",
+            "issueType": "Task",
+            "summary": "Устранение уязвимостей библиотек по результатам SCA",
+            "description": "Подняты версии зависимостей в сборке сервиса; функциональность и состав данных не меняются.",
+            "status": "Внедрен",
+            "labels": ["tech"],
+            "url": "http://example.invalid/browse/DEMO-602"
+          }
+        ],
+        "membersComplete": true
+      },
+      {
+        "key": "DEMO-502",
+        "summary": "Релиз платформы 04.11",
+        "url": "http://example.invalid/browse/DEMO-502",
+        "status": "Внедрен",
+        "plannedAt": "2026-11-04",
+        "itService": "Платформа IRBIS",
+        "keValues": [{ "id": "3296913", "name": "SBP.IRBIS.Открытые данные" }],
+        "codes": ["3296913"],
+        "members": [
+          {
+            "key": "DEMO-603",
+            "issueType": "Task",
+            "summary": "Обновление версии образов контейнеров",
+            "description": "Пересборка образов с актуальными базовыми слоями, обновление зависимостей сборки.",
+            "status": "Внедрен",
+            "labels": ["техническая"],
+            "url": "http://example.invalid/browse/DEMO-603"
+          }
+        ],
+        "membersComplete": true
+      },
+      {
+        "key": "DEMO-503",
+        "summary": "Релиз К2 06.11",
+        "url": "http://example.invalid/browse/DEMO-503",
+        "status": "Внедрен",
+        "plannedAt": "2026-11-06",
+        "itService": null,
+        "keValues": [{ "id": "7692618", "name": "SBP.IRBIS.К2" }],
+        "codes": ["7692618"],
+        "members": [],
+        "membersComplete": true
+      },
+      {
+        "key": "DEMO-504",
+        "summary": "Релиз профиля клиента 12.11",
+        "url": "http://example.invalid/browse/DEMO-504",
+        "status": "На тестировании",
+        "plannedAt": "2026-11-12",
+        "itService": "Профиль клиента",
+        "keValues": [
+          { "id": "3845533", "name": "SBP.IRBIS.Профиль клиента" },
+          { "id": "4836311", "name": "SBP.IRBIS.Справки" }
+        ],
+        "codes": ["3845533", "4836311"],
+        "members": [
+          {
+            "key": "DEMO-604",
+            "issueType": "Story",
+            "summary": "Реализован метод обновления данных ДЮЛ",
+            "description": "Новый метод API для обновления данных юридических лиц: обращение обрабатывается быстрее, ответ системы дополняется признаком источника.",
+            "status": "На тестировании",
+            "labels": [],
+            "url": "http://example.invalid/browse/DEMO-604"
+          }
+        ],
+        "membersComplete": true
+      },
+      {
+        "key": "DEMO-505",
+        "summary": "Релиз справок 05.11",
+        "url": "http://example.invalid/browse/DEMO-505",
+        "status": "Внедрен",
+        "plannedAt": "2026-11-05",
+        "itService": "Справки",
+        "keValues": [{ "id": "7692618", "name": "SBP.IRBIS.К2" }],
+        "codes": ["7692618"],
+        "members": [],
+        "membersComplete": false
+      },
+      {
+        "key": "DEMO-507",
+        "summary": "Релиз открытых данных 09.11",
+        "url": "http://example.invalid/browse/DEMO-507",
+        "status": "Готов к тестированию",
+        "plannedAt": "2026-11-09",
+        "itService": "Открытые данные",
+        "keValues": [{ "id": "3296913", "name": "SBP.IRBIS.Открытые данные" }],
+        "codes": ["3296913"],
+        "members": [
+          {
+            "key": "DEMO-606",
+            "issueType": "Story",
+            "summary": "Доработка обработки заявок",
+            "description": "Доработка обработки заявок.",
+            "status": "Готов к тестированию",
+            "labels": [],
+            "url": "http://example.invalid/browse/DEMO-606"
+          }
+        ],
+        "membersComplete": true
+      }
+    ],
+    "excluded": [
+      { "key": "DEMO-605", "status": "Внедрен", "reason": "тип задачи Bug исключён составом релиза DEMO-504" },
+      { "key": "DEMO-506", "status": "В работе", "reason": "дата начала внедрения 2026-11-25 вне окон прогона" }
+    ],
+    "unverified": [
+      { "key": "DEMO-508", "summary": "Релиз ЕПК 06.11", "reason": "не удалось прочитать свойства релиза: сервер отдал ошибку обращения" }
+    ]
+  }
+}

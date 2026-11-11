@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Инфо-поводы</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1d212a;--line:#2b313d;--ink:#e8eaee;--muted:#9aa3b2;--acc:#63b3ed;--ok:#68d391;--warn:#f6ad55;--dim:#5d6675}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 18px 60px}
+header h1{font-size:26px;margin:0 0 6px}
+header p{color:var(--muted);margin:0 0 6px;font-size:14px}
+.badge{display:inline-block;background:#3b2a12;border:1px solid var(--warn);color:var(--warn);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600;margin:0 0 8px}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 22px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+nav button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+nav button[aria-current="true"]{background:var(--acc);color:#0b1220;border-color:var(--acc);font-weight:600}
+nav button .n{color:var(--muted);font-weight:400}
+nav button[aria-current="true"] .n{color:#0b1220}
+section{display:none}
+section.on{display:block}
+h2{font-size:20px;margin:4px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+p{margin:8px 0}
+.small,p.small{color:var(--muted);font-size:13px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.fact{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:13px;min-width:150px}
+.fact b{color:var(--acc);font-size:16px;display:block}
+.fact i{display:block;color:var(--muted);font-style:normal;font-size:12px;margin-top:2px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:6px 0 4px}
+th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.5px}
+th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+td{width:50%}
+td+td{border-left:1px solid var(--line)}
+ul{margin:6px 0 0;padding-left:18px}
+li{margin:4px 0}
+p.svc{font-size:14.5px;font-weight:700;margin:0 0 6px}
+p.item{margin:3px 0}
+p.ke{color:var(--muted);font-size:12.5px;margin:2px 0 6px}
+p.rel{margin:2px 0 6px;font-weight:600}
+p.none{color:var(--muted);font-style:italic;border-left:2px solid var(--line);padding-left:9px;margin:4px 0 8px}
+code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13px}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+.lead{color:var(--ink);font-weight:600;margin:18px 0 4px;border-top:1px solid var(--line);padding-top:12px}
+footer{color:var(--dim);font-size:13px;margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
+@media(max-width:900px){td{width:auto}td+td{border-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Инфо-поводы</h1>
+<p>Дата: 2026-11-11 · Окна: текущие: 04.11-11.11; планы: 12.11-18.11</p>
+<p class="small">Релизы: sigma — релизов 37; delta — релизов 27</p>
+<p class="small">только технические 9, пустой состав 4, состав прочитан не полностью 0</p>
+<div class="facts"><div class="fact"><b>129</b><i>Бизнес задач</i></div><div class="fact"><b>65</b><i>Технических задач</i></div><div class="fact"><b>7</b><i>из них без класса</i></div></div>
+</header>
+<nav>
+<button data-go="s1" aria-current="true">Инфо-поводы <span class="n">15</span></button>
+<button data-go="s2">Вопросы <span class="n">14</span></button>
+<button data-go="s3">Проверить не удалось</button>
+<button data-go="s4">Оговорки прогона <span class="n">2</span></button>
+<button data-go="s5">Как читать этот отчёт <span class="n">6</span></button>
+</nav>
+<section id="s1" class="on">
+
+<div class="scroll"><table><thead><tr><th>Текущие инфоповоды</th><th>Планы на следующую неделю</th></tr></thead><tbody><tr><td><p class="svc"><strong>ЕФС ЮЛ СберБизнес Внешние согласия кредитного мониторинга</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td><td><p class="svc"><strong>ЕФС ЮЛ СберБизнес Внешние согласия кредитного мониторинга</strong></p>
+<p class="ke">КЭ: ЕФС ЮЛ СберБизнес Внешние согласия кредитного мониторинга</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/CCM-3341" target="_blank" rel="noreferrer">CCM-3341 «[ВСКМ] 2026-4-11-14» — Создан — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="none">Нет инфоповодов: в релизе нет связанных задач</p></td></tr>
+<tr><td><p class="svc"><strong>ЕФС.Сотрудники.Сервисы для бизнеса КИБ</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td><td><p class="svc"><strong>ЕФС.Сотрудники.Сервисы для бизнеса КИБ</strong></p>
+<p class="ke">КЭ: SOWA - шлюз безопасности (SIGMA-ALPHA)</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/URMEPK-5838" target="_blank" rel="noreferrer">URMEPK-5838 «2026-4-11-14 SOWA» — Готов к стабилизации — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.sberbank.ru/browse/URMEPK-6164" target="_blank" rel="noreferrer">URMEPK-6164</a></p>
+<p class="ke">КЭ: SOWA - шлюз безопасности (SIGMA-ALPHA)</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/RGSCT-4656" target="_blank" rel="noreferrer">RGSCT-4656 «Релиз RGSCT-1.066.0 - Центр торгов - Обновление профиля ЦТ Сигма SOWA» — Готов к стабилизации — плановая дата ПРОМ 17.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/RGSCT-4634" target="_blank" rel="noreferrer">RGSCT-4634</a> — Sowa. ЕФС</p></td></tr>
+<tr><td><p class="svc"><strong>ЕФС.Сотрудники.Сервисы для бизнеса КИБ, Универсальное рабочее место ЕПК КИБ</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td><td><p class="svc"><strong>ЕФС.Сотрудники.Сервисы для бизнеса КИБ, Универсальное рабочее место ЕПК КИБ</strong></p>
+<p class="ke">КЭ: Универсальное рабочее место ЕПК КИБ; Универсальное рабочее место ЕПК КИБ Sigma</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/URMEPK-5837" target="_blank" rel="noreferrer">URMEPK-5837 «2026-4-11-14» — Готов к стабилизации — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6045" target="_blank" rel="noreferrer">URMEPK-6045</a> — Единый UI. Реализовать отдельную страницу по работе с DE в генеративном формате</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6056" target="_blank" rel="noreferrer">URMEPK-6056</a> — Реализовать детальную статистику использования приложения</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6103" target="_blank" rel="noreferrer">URMEPK-6103</a> — ЛК / Включить привилегию глобального поиска</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6165" target="_blank" rel="noreferrer">URMEPK-6165</a> — Подключение к эндпоинту получения списка доступных справок в Data Expert</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-5918" target="_blank" rel="noreferrer">URMEPK-5918</a> — ЛК / Управление жизненным циклом связи</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-5968" target="_blank" rel="noreferrer">URMEPK-5968</a> — ППК/ Получение истории изменения ставок на договоре (GetRateHistory)</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6011" target="_blank" rel="noreferrer">URMEPK-6011</a> — ЛК / Автоматический перерассчёт после применения предложения по улучшению</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6012" target="_blank" rel="noreferrer">URMEPK-6012</a> — ЛК / Добавить возможность применить исправление по созданию сущности</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6026" target="_blank" rel="noreferrer">URMEPK-6026</a> — ЛК / Добавить возможность применить исправление по удалению сущности</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6039" target="_blank" rel="noreferrer">URMEPK-6039</a> — ЛК / Управление жизненным циклом связи: удаление связи</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6040" target="_blank" rel="noreferrer">URMEPK-6040</a> — ЛК / Управление жизненным циклом связи: блокировка связи</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6042" target="_blank" rel="noreferrer">URMEPK-6042</a> — ЛК / Добавить отображение связей в подробную информацию/текстовое представление логических и физических атрибутов</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/URMEPK-6130" target="_blank" rel="noreferrer">URMEPK-6130</a> — СПЕКТР / Добавить вывод и отправку конечных значений ОГРН в критериях аналитики рентабельности рынка</p></td></tr>
+<tr><td><p class="svc"><strong>КАП - Реплики. xStream SelfService. Внешние источники BO</strong></p>
+<p class="ke">КЭ: КАП - Реплики. xStream SelfService. Внешние источники BO</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/SBAR-7205" target="_blank" rel="noreferrer">SBAR-7205 «[IRBIS][SELFSERVICE_ACSBAR_CBR xStream SelfService]-[HF-11-2026]» — Готов к установке на ПРОМ — Внедрение 10.11</a></strong></p>
+<p class="none">Нет инфоповодов: в релизе нет связанных задач</p></td><td><p class="svc"><strong>КАП - Реплики. xStream SelfService. Внешние источники BO</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td></tr>
+<tr><td><p class="svc"><strong>ПКАП СС360.ИТ.Кластер КИБ</strong></p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-21987" target="_blank" rel="noreferrer">PKBS-21987 «Релиз_Разработка. СВД КБ 4D B2C Данные клиента - миграция УВСК» — Установлен на ПРОМ — Внедрение 05.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PKBS-21931" target="_blank" rel="noreferrer">PKBS-21931</a></p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-22014" target="_blank" rel="noreferrer">PKBS-22014 «Релиз_Diff_sbp_корректировка расчета инкремента» — Установлен на ПРОМ — Внедрение 09.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PKBS-21970" target="_blank" rel="noreferrer">PKBS-21970</a></p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-21948" target="_blank" rel="noreferrer">PKBS-21948 «Релиз_ОВК 26к4 Развитие витрин HDP. Доработка витрины БВД КБ 4D Госзакупки» — Готов к установке на ПРОМ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PKBS-21630" target="_blank" rel="noreferrer">PKBS-21630</a> — ОВК 26к4 Развитие витрин HDP. Доработка витрины БВД КБ 4D Госзакупки</p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-22036" target="_blank" rel="noreferrer">PKBS-22036 «Релиз_Доработка СВД КБ 4D Справка GigaChat - hotfix» — Установлен на ПРОМ — Внедрение 11.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PKBS-22025" target="_blank" rel="noreferrer">PKBS-22025</a></p>
+<p class="ke">КЭ: ПКАП CC360.УРМ СБАР.HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1269" target="_blank" rel="noreferrer">URMSBARD-1269 «R22_2026_11_11» — Создан — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1196" target="_blank" rel="noreferrer">URMSBARD-1196</a> —  [СБАР100] Разработка витрины ОКПД2 - виды деятельности</p>
+<p class="ke">КЭ: ПКАП CC360.УРМ СБАР.HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1312" target="_blank" rel="noreferrer">URMSBARD-1312 «R22_2026_11_11» — Формирование — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1317" target="_blank" rel="noreferrer">URMSBARD-1317</a> — Исправить размножение строк и NULL в id_lot при загрузке lot_info и tender_info</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1196" target="_blank" rel="noreferrer">URMSBARD-1196</a> —  [СБАР100] Разработка витрины ОКПД2 - виды деятельности</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1313" target="_blank" rel="noreferrer">URMSBARD-1313</a> — Доработать логику формирования SRO (sro_id) — учесть пустой ogrn</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1315" target="_blank" rel="noreferrer">URMSBARD-1315</a> — РУДЗИ - доработка поля regnumber</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/URMSBARD-1316" target="_blank" rel="noreferrer">URMSBARD-1316</a> — СРО - убрать источники из потока PCAPCC360_SBARURM.SRO_HDP_DM_DPFW.</p></td><td><p class="svc"><strong>ПКАП СС360.ИТ.Кластер КИБ</strong></p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-21780" target="_blank" rel="noreferrer">PKBS-21780 «Релиз_Технический релиз: доработки в работе логгирования» — Готов к ПСИ — плановая дата ПРОМ 12.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PKBS-21716" target="_blank" rel="noreferrer">PKBS-21716</a></p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-22047" target="_blank" rel="noreferrer">PKBS-22047 «Релиз_ОВК - 21й релиз» — Формирование — плановая дата ПРОМ 16.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PKBS-21867" target="_blank" rel="noreferrer">PKBS-21867</a> — ОВК - 21й релиз, EPKSV-1444</p>
+<p class="ke">КЭ: ПКАП СС360. Профиль клиента B2B HDP</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PKBS-22051" target="_blank" rel="noreferrer">PKBS-22051 «Релиз_БВ ЕПК КБ Плосская структура_исключить одну таблицу» — Готов к установке на ПРОМ — плановая дата ПРОМ 16.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PKBS-22026" target="_blank" rel="noreferrer">PKBS-22026</a> — БВ ЕПК КБ Плосская структура_исключить одну таблицу</p></td></tr>
+<tr><td><p class="svc"><strong>ПКАП803 АС Интегрированные данные (ЕСС)</strong></p>
+<p class="ke">КЭ: КАП803 Интегрированные данные (ЕСС).Группа ПО Профиль ЮЛ</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/ECCUL-1276" target="_blank" rel="noreferrer">ECCUL-1276 «Релиз ЕСС Профиль ЮЛ R56 (DEBUG)» — Установлен на ПРОМ — Внедрение 09.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1114" target="_blank" rel="noreferrer">ECCUL-1114</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в историчный линк subj_org_subj</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1216" target="_blank" rel="noreferrer">ECCUL-1216</a> — [NDL_UCPKB_DEBUG][ind_addr] Исправление битой ссылки на ФЛ</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1219" target="_blank" rel="noreferrer">ECCUL-1219</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в историчный линки subj_org_shareholder и subj_org_shareholder_hist</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1259" target="_blank" rel="noreferrer">ECCUL-1259</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в таблицы-линки</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1288" target="_blank" rel="noreferrer">ECCUL-1288</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в историчный линк subj_org_founder и subj_org_founder_hist</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1289" target="_blank" rel="noreferrer">ECCUL-1289</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в историчный линки subj_org_beneficiary и subj_org_beneficiary_h</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1291" target="_blank" rel="noreferrer">ECCUL-1291</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в неисторичный  линк subj_org_reorg</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1292" target="_blank" rel="noreferrer">ECCUL-1292</a> — [NDL_UCPKB_DEBUG][links] Внесение связей закрытых карточек в неисторичный  линк ind_labor_relations</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1301" target="_blank" rel="noreferrer">ECCUL-1301</a> — [IDL_DEBUG] Обновление бизнес проверок для дата продукта</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1306" target="_blank" rel="noreferrer">ECCUL-1306</a> — [IDL_I_DEBUG] Обновление бизнес проверок для дата продукта</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1310" target="_blank" rel="noreferrer">ECCUL-1310</a> — [NDL_UCPKB_DEBUG] Обновление бизнес проверок для дата продукта</p></td><td><p class="svc"><strong>ПКАП803 АС Интегрированные данные (ЕСС)</strong></p>
+<p class="ke">КЭ: КАП803 Интегрированные данные (ЕСС).Группа ПО Профиль ЮЛ</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/ECCUL-1361" target="_blank" rel="noreferrer">ECCUL-1361 «Релиз ЕСС Профиль ЮЛ R57» — Создан — плановая дата ПРОМ 15.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1235" target="_blank" rel="noreferrer">ECCUL-1235</a> — [IDL_I] Разработка  сателлит интеграции pif_i</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1274" target="_blank" rel="noreferrer">ECCUL-1274</a> — [NDL][subj] Добавление целевой ссылки на натуральный swift</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1275" target="_blank" rel="noreferrer">ECCUL-1275</a> — [NDL] Разработка атрибутов анкеты ИСК</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1332" target="_blank" rel="noreferrer">ECCUL-1332</a> — [IDL][subj] Добавление целевой ссылки на натуральный swift</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1149" target="_blank" rel="noreferrer">ECCUL-1149</a> — [NDL] Выделение ПИФ в отдельную сущность</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1331" target="_blank" rel="noreferrer">ECCUL-1331</a> — [IDL] Разработка атрибутов анкеты ИСК</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1364" target="_blank" rel="noreferrer">ECCUL-1364</a> — [NDL_UCPKB_DEBUG] Изменить заполнение специфических dp_code всех таблиц исков</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1150" target="_blank" rel="noreferrer">ECCUL-1150</a> — [IDL] Выделение ПИФ в отдельную сущность</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1351" target="_blank" rel="noreferrer">ECCUL-1351</a> — [IDL] Доработка subj_org_doc для subj_org_doc_org_issue_name, subj_org_doc_issue_code</p>
+<p class="ke">КЭ: КАП803 Интегрированные данные (ЕСС).Группа ПО Профиль ЮЛ</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/ECCUL-1393" target="_blank" rel="noreferrer">ECCUL-1393 «Релиз ЕСС Профиль ЮЛ R58» — Создан — плановая дата ПРОМ 16.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1364" target="_blank" rel="noreferrer">ECCUL-1364</a> — [NDL_UCPKB_DEBUG] Изменить заполнение специфических dp_code всех таблиц исков</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1367" target="_blank" rel="noreferrer">ECCUL-1367</a> — [NDL_UCPKB_DEBUG] [subj] Разработка изменения страны при реализации SWIFT</p></td></tr>
+<tr><td><p class="svc"><strong>ППРБ Единый профиль клиента КИБ</strong></p>
+<p class="ke">КЭ: ЕПК КИБ.Hub</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-22704" target="_blank" rel="noreferrer">CCUEPKK-22704 «[TCA] №5-2026-Q3» — Формирование — Внедрение 06.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-22552" target="_blank" rel="noreferrer">CCUEPKK-22552</a> — [HUB TCA] Расширение модели PartiesRelated. Добавление customerContactSurveysSber в реплику КАП</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23628" target="_blank" rel="noreferrer">CCUEPKK-23628</a> — [HUB TCA] Расширение модели OKK</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23629" target="_blank" rel="noreferrer">CCUEPKK-23629</a> — [HUB TCA] Расширение модели ick</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23630" target="_blank" rel="noreferrer">CCUEPKK-23630</a> — [HUB TCA] Расширение модели BusinessTag (partyToPartyGroup in 3g)</p></td><td><p class="svc"><strong>ППРБ Единый профиль клиента КИБ</strong></p>
+<p class="ke">КЭ: ЕПК КИБ.Hub</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23688" target="_blank" rel="noreferrer">CCUEPKK-23688 «[HUB] №15-2026-Q4» — Готов к стабилизации — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23745" target="_blank" rel="noreferrer">CCUEPKK-23745</a> — Добавление Анкеты MSBSurvey в ИСК</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23260" target="_blank" rel="noreferrer">CCUEPKK-23260</a> — [FP] Настройка статусов и ретраев при обработке файлов</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23849" target="_blank" rel="noreferrer">CCUEPKK-23849</a> — Доверенное лицо МЧД</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23857" target="_blank" rel="noreferrer">CCUEPKK-23857</a> — Обновление справочников ОКК</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23784" target="_blank" rel="noreferrer">CCUEPKK-23784</a> — Доработка поведения individual.identificationMethods при добавлении ДУЛ/ДР или  заполненном identificationMethod</p></td></tr>
+<tr><td><p class="svc"><strong>ППРБ Продуктовый профиль клиента КИБ</strong></p>
+<p class="ke">КЭ: ППРБ ППК КИБ.4g</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17228" target="_blank" rel="noreferrer">PPCCIB-17228 «Релиз патчевания образов ci02723958» — Создан — Внедрение 05.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17229" target="_blank" rel="noreferrer">PPCCIB-17229</a></p>
+<p class="ke">КЭ: ППРБ Продуктовый профиль клиента КИБ. Единое окно</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17232" target="_blank" rel="noreferrer">PPCCIB-17232 «Релиз патчевания образов ci08014995» — Создан — Внедрение 05.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17233" target="_blank" rel="noreferrer">PPCCIB-17233</a></p>
+<p class="ke">КЭ: ППРБ Продуктовый профиль клиента КИБ.Бизнес-логирование</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17230" target="_blank" rel="noreferrer">PPCCIB-17230 «Релиз патчевания образов ci05438827» — Создан — Внедрение 05.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17231" target="_blank" rel="noreferrer">PPCCIB-17231</a></p></td><td><p class="svc"><strong>ППРБ Продуктовый профиль клиента КИБ</strong></p>
+<p class="ke">КЭ: ППРБ ППК КИБ.4g</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17216" target="_blank" rel="noreferrer">PPCCIB-17216 «Релиз АС ППРБ.ППК КИБ M2026-11-15-4G-D67» — Формирование — плановая дата ПРОМ 15.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17221" target="_blank" rel="noreferrer">PPCCIB-17221</a> — [TASK TECH.SERVICE] Добавление нового продукта «Реестры регистрации УПК» в справочник ППК</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17126" target="_blank" rel="noreferrer">PPCCIB-17126</a> — [Доработка] Правка параметров API для соответствия архитектурному стандарту</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17138" target="_blank" rel="noreferrer">PPCCIB-17138</a> — Разработка метода /v2/gettaskinfo для соответствия архитектурному стандарту</p>
+<p class="ke">КЭ: ППРБ Продуктовый профиль клиента КИБ. Единое окно</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17287" target="_blank" rel="noreferrer">PPCCIB-17287 «Релиз АС ППРБ.ППК КИБ M2026-11-18-SWS-D10» — Формирование — плановая дата ПРОМ 18.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17184" target="_blank" rel="noreferrer">PPCCIB-17184</a> — [SWS] Реализован перевод сценария Аккредитив на новый источник - блок GetLetterOfCreditOpen и GetLetterOfCreditClosed</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-16513" target="_blank" rel="noreferrer">PPCCIB-16513</a> — [Разработка] Добавить метод для обновления ДЮЛ в /actualize</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-16913" target="_blank" rel="noreferrer">PPCCIB-16913</a> — [SWS] [Разработка] включение сценария Выгоды ФЛ на ПСИ и ПРОМ - блок GetBenefits</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-13654" target="_blank" rel="noreferrer">PPCCIB-13654</a> — [SWS] Реализован перевод сценария Инкассации на новый источник - блок GetEncashmentByContract и GetEncashmentByObject</p>
+<p class="ke">КЭ: ППРБ Продуктовый профиль клиента КИБ.Бизнес-логирование</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17290" target="_blank" rel="noreferrer">PPCCIB-17290 «Релиз АС ППРБ.ППК КИБ M2026-11-18-Blogger-D24» — Создан — плановая дата ПРОМ 18.11</a></strong></p>
+<p class="none">Нет инфоповодов: в релизе нет связанных задач</p></td></tr>
+<tr><td><p class="svc"><strong>ППРБ Управление согласиями клиентов ЮЛ</strong></p>
+<p class="ke">КЭ: ППРБ УСК ЮЛ.Согласия</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/CCM-3772" target="_blank" rel="noreferrer">CCM-3772 «[УСК] 2026-4-11-07» — Установлен на ПРОМ — Внедрение 07.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/CCM-3885" target="_blank" rel="noreferrer">CCM-3885</a> — УСК. Стоп-листы по маркетинговой рассылке. Добавить исторические таблицы</p></td><td><p class="svc"><strong>ППРБ Управление согласиями клиентов ЮЛ</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td></tr>
+<tr><td><p class="svc"><strong>ППРБ Электронный документооборот с Госорганами</strong></p>
+<p class="ke">КЭ: ППРБ Электронный документооборот с Госорганами.БПС</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/ELGO-30037" target="_blank" rel="noreferrer">ELGO-30037 «ELGO 42.1» — Установлен на ПРОМ — Внедрение 07.11</a></strong></p>
+<p class="none">Технический релиз: <a href="https://jira.delta.sbrf.ru/browse/ELGO-29857" target="_blank" rel="noreferrer">ELGO-29857</a>, <a href="https://jira.delta.sbrf.ru/browse/ELGO-29858" target="_blank" rel="noreferrer">ELGO-29858</a>, <a href="https://jira.delta.sbrf.ru/browse/ELGO-30062" target="_blank" rel="noreferrer">ELGO-30062</a>, <a href="https://jira.delta.sbrf.ru/browse/ELGO-30063" target="_blank" rel="noreferrer">ELGO-30063</a></p></td><td><p class="svc"><strong>ППРБ Электронный документооборот с Госорганами</strong></p>
+<p class="ke">КЭ: ППРБ Электронный документооборот с Госорганами.БПС</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/ELGO-29825" target="_blank" rel="noreferrer">ELGO-29825 «ELGO 43» — Создан — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="none">Нет инфоповодов: в релизе нет связанных задач</p></td></tr>
+<tr><td><p class="svc"><strong>ППРБ. ЭлГО. СПЕКТР</strong></p>
+<p class="ke">КЭ: ППРБ. ЭлГО. СПЕКТР</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/SPK-2643" target="_blank" rel="noreferrer">SPK-2643 «Релиз ФП ППРБ.СПЕКТР КИБ M2026-11-05-R21» — Установка на ПРОМ — Внедрение 05.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2370" target="_blank" rel="noreferrer">SPK-2370</a> — [Portal] [CR ИнфоАрбитр CRSIGMA-27814] - Получить список АД  /api/v1/external/company/arbitrs</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2767" target="_blank" rel="noreferrer">SPK-2767</a> — [IMPORT] Доработка таблицы case_arbitr_cards, добавление полей bankrupt_person_inn, bankrupt_person_name</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2209" target="_blank" rel="noreferrer">SPK-2209</a> — [Астра] Добавить массив ОГРН для /reports/criterions/info</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2261" target="_blank" rel="noreferrer">SPK-2261</a> — [Portal] Новый эндпоинт /api/v1​/counterparties/imports добавление файла</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2968" target="_blank" rel="noreferrer">SPK-2968</a> — CRALPHA-22503: Увеличение предельного количества компаний в выгрузке компаний для AI -Агента</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3084" target="_blank" rel="noreferrer">SPK-3084</a> — [ASTRA] Добавить массив ОГРН для /reports/criterions/edit</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3095" target="_blank" rel="noreferrer">SPK-3095</a> — [BACK] Добавить сортировку по имени - судебные дела</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3112" target="_blank" rel="noreferrer">SPK-3112</a> — [Portal][CR ИнфоАрбитр CRSIGMA-27814] - Получить список АД ИП /api/v1/external/individual/arbitrs</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3126" target="_blank" rel="noreferrer">SPK-3126</a> — [Portal] Добавление сортировки и поиска , id для /company/pledges-fnp и /person/pledges-fnp</p></td><td><p class="svc"><strong>ППРБ. ЭлГО. СПЕКТР</strong></p>
+<p class="ke">КЭ: ППРБ. ЭлГО. СПЕКТР</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/SPK-2645" target="_blank" rel="noreferrer">SPK-2645 «Релиз ФП ППРБ.СПЕКТР КИБ M2026-11-13-R22» — Создан — плановая дата ПРОМ 13.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3141" target="_blank" rel="noreferrer">SPK-3141</a> — Конкуренты (таб ЮЛ) новый эндпоинт - /api/v1/company/competitors</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3316" target="_blank" rel="noreferrer">SPK-3316</a> — [PORTAL] Контакты новый эндпоинт - /api/v1/external/contacts</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-2211" target="_blank" rel="noreferrer">SPK-2211</a> — Разработка фичи Вакансии</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/SPK-3143" target="_blank" rel="noreferrer">SPK-3143</a> — Конкуренты (таб ИП) новый эндпоинт -  /api/v1/company/competitors/sole-proprietors</p></td></tr>
+<tr><td><p class="svc"><strong>AEF Containers AI-Агенты ЕПК</strong></p>
+<p class="ke">КЭ: Ai-Agent-DataExpert</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/AIEPK-1849" target="_blank" rel="noreferrer">AIEPK-1849 «[DataExpert] AI-ЕПК №12-2026» — Установка на ПРОМ — Внедрение 06.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1716" target="_blank" rel="noreferrer">AIEPK-1716</a> — [DataExpert] собрать данные в справку по получению доходов, наличия счетов в других банках, наличия сотрудников</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1722" target="_blank" rel="noreferrer">AIEPK-1722</a> — [DataExpert] собрать данные в справку по оптимизации затрат</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1723" target="_blank" rel="noreferrer">AIEPK-1723</a> — [DataExpert] собрать данные в справку  по остаткам на счетах</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1235" target="_blank" rel="noreferrer">AIEPK-1235</a> — [Data Provider] Собрать данные в справку для ДРИМФ</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1236" target="_blank" rel="noreferrer">AIEPK-1236</a> — [Data Expert] Новое намерение получения справки ДРИМФ</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1532" target="_blank" rel="noreferrer">AIEPK-1532</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/pledges</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1533" target="_blank" rel="noreferrer">AIEPK-1533</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/traffic-light - v3</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1534" target="_blank" rel="noreferrer">AIEPK-1534</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/arbitr</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1535" target="_blank" rel="noreferrer">AIEPK-1535</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/bankrupt/message</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1536" target="_blank" rel="noreferrer">AIEPK-1536</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1​/company​​/fssp</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1839" target="_blank" rel="noreferrer">AIEPK-1839</a> — [Data Expert] Подключить блок bankrupt в /api/v1/drkbAttributesProblematicity</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1841" target="_blank" rel="noreferrer">AIEPK-1841</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/heads → блок heads в drkbGetSFLProfileData</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1842" target="_blank" rel="noreferrer">AIEPK-1842</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/news_list → блок newsList в drkbGetSFLProfileData</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1843" target="_blank" rel="noreferrer">AIEPK-1843</a> — [DataExpert] Подключение к СПЕКТРу (Справка ДРКБ) /api/v1/company/participants → блок participants в drkbGetSFLProfileData</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1845" target="_blank" rel="noreferrer">AIEPK-1845</a> — [DE] Подключение к ЕПК GraphQL для справки ДРКБ Атрибуты проблемности</p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1846" target="_blank" rel="noreferrer">AIEPK-1846</a> — [DE] Подключение к ЕПК GraphQL для справки ДРКБ Карта влияния</p></td><td><p class="svc"><strong>AEF Containers AI-Агенты ЕПК</strong></p>
+<p class="ke">КЭ: Ai-Agent-UCP-Business-Agent</p>
+<p class="rel"><strong><a href="https://jira.delta.sbrf.ru/browse/AIEPK-1848" target="_blank" rel="noreferrer">AIEPK-1848 «[ucp-business-agent] AI-ЕПК №8-2026» — Создан — плановая дата ПРОМ 12.11</a></strong></p>
+<p class="item">• <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1786" target="_blank" rel="noreferrer">AIEPK-1786</a> — Развитие AI Агента Бизнес-Администратора ЕПК КИБ Q4 2026</p></td></tr>
+<tr><td><p class="svc"><strong>SberAPI</strong></p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18212" target="_blank" rel="noreferrer">APIDEV-18212 «SAR-2772_D-80.897.00-02 Сбербанк-Телеком публикация getSubscriberBalancesList» — Установлен на ПРОМ — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-16188" target="_blank" rel="noreferrer">APIDEV-16188</a> — SAR-2772 &quot;Сбербанк-Телеком публикация getSubscriberBalancesList&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18213" target="_blank" rel="noreferrer">APIDEV-18213 «SAR-2774_D-80.898.00-03 Сбербанк-Телеком публикация getSubscriberDiscount» — Установка на ПРОМ — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-16232" target="_blank" rel="noreferrer">APIDEV-16232</a> — SAR-2774 &quot;Сбербанк-Телеком публикация getSubscriberDiscount&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18281" target="_blank" rel="noreferrer">APIDEV-18281 «SAR-2944_D-80.426.15-01 API ЕКП.Авторкедиты для выдачи автокредитов в ДЦ» — Установлен на ПРОМ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18216" target="_blank" rel="noreferrer">APIDEV-18216</a> — SAR-2944 &quot;API ЕКП.Авторкедиты для выдачи автокредитов в ДЦ&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18420" target="_blank" rel="noreferrer">APIDEV-18420 «Геймификация прогресса пользователей в 2GIS» — Согласование ППСИ — Внедрение 07.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18170" target="_blank" rel="noreferrer">APIDEV-18170</a> — SAR-2938 &quot;Геймификация прогресса пользователей в 2GIS&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18439" target="_blank" rel="noreferrer">APIDEV-18439 «SAR-2927_D-80.753.02-02 ОРД. Работа с товарными фидами (v5.0)» — Установлен на ПРОМ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18042" target="_blank" rel="noreferrer">APIDEV-18042</a> — SAR-2927 &quot;ОРД. Работа с товарными фидами (v5.0)&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18507" target="_blank" rel="noreferrer">APIDEV-18507 «SAR-2945_D-80.264.11 API Витрина страхования СБС - Детальная информация по продуктам» — Установлен на ПРОМ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18217" target="_blank" rel="noreferrer">APIDEV-18217</a> — SAR-2945 &quot;API Витрина страхования СБС - Детальная информация по продуктам&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18511" target="_blank" rel="noreferrer">APIDEV-18511 «SAR-2940_D-80.965.00 Получение данных из Online Feature Store B2C» — Установлен на ПРОМ — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18181" target="_blank" rel="noreferrer">APIDEV-18181</a> — SAR-2940 &quot;Получение данных из Online Feature Store B2C&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18540" target="_blank" rel="noreferrer">APIDEV-18540 «API УК.Первая_ППРБ.УА. Договор ДУ/ИИС. Обновление статуса заявки/договора из УК Первая.» — Установлен на ПРОМ — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17784" target="_blank" rel="noreferrer">APIDEV-17784</a> — SAR-2915 &quot;API УК.Первая_ППРБ.УА. Договор ДУ/ИИС. Обновление статуса заявки/договора из УК Первая.&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18545" target="_blank" rel="noreferrer">APIDEV-18545 «SAR-2939_D-60.006.00 Типовое событие для партнерских подписок» — Установлен на ПРОМ — Внедрение 07.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18171" target="_blank" rel="noreferrer">APIDEV-18171</a> — SAR-2939 &quot;Типовое событие для партнерских подписок&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18580" target="_blank" rel="noreferrer">APIDEV-18580 «SAR-2931_D-80.959.00-01 Защита банковских карт v3. Модульный продукт.» — Стабилизация — Внедрение 06.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18139" target="_blank" rel="noreferrer">APIDEV-18139</a> — SAR-2931 &quot;Защита банковских карт v3. Модульный продукт.&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18582" target="_blank" rel="noreferrer">APIDEV-18582 «SAR-2943_D-80.961.00-06 API для работы с сервисом Profile АС Профиль.Hub V1» — Стабилизация — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18211" target="_blank" rel="noreferrer">APIDEV-18211</a> — SAR-2943 &quot;API для работы с сервисом Profile АС Профиль.Hub V1&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18583" target="_blank" rel="noreferrer">APIDEV-18583 «SAR-2942_D-80.962.00-01 API для работы с сервисом Profile АС Профиль.Hub V3» — Стабилизация — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18210" target="_blank" rel="noreferrer">APIDEV-18210</a> — SAR-2942 &quot;API для работы с сервисом Profile АС Профиль.Hub V3&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18584" target="_blank" rel="noreferrer">APIDEV-18584 «SAR-2949_D-80.963.00-02 Profile АС Профиль.Hub V5» — Стабилизация — Внедрение 04.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18298" target="_blank" rel="noreferrer">APIDEV-18298</a> — SAR-2949 &quot;Profile АС Sber Team ID. V5&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18589" target="_blank" rel="noreferrer">APIDEV-18589 «SAR-2976_D-80.399.06 SberCRM API для ДЗО. Получение информации по продуктовым предложениям и их статусам» — Установлен на ПРОМ — Внедрение 07.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18510" target="_blank" rel="noreferrer">APIDEV-18510</a> — SAR-2976 &quot;SberCRM API для ДЗО. Получение информации по продуктовым предложениям и их статусам&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18644" target="_blank" rel="noreferrer">APIDEV-18644 «SAR-2855_D-80.879.01 SBS Insurance Score API.» — Утверждение ППСИ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17237" target="_blank" rel="noreferrer">APIDEV-17237</a> — SAR-2855 &quot;SBS Insurance Score API.&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18688" target="_blank" rel="noreferrer">APIDEV-18688 «SAR-2861_D-80.934.00-03 API категорий Спасибо 3.0 V2» — Стабилизация — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17266" target="_blank" rel="noreferrer">APIDEV-17266</a> — SAR-2861 &quot;API категорий Спасибо 3.0 V2&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18689" target="_blank" rel="noreferrer">APIDEV-18689 «SAR-2862_D-80.935.00-03 API категорий Спасибо 3.0. Результат пакетной обработки. V2» — Готов к ПСИ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17267" target="_blank" rel="noreferrer">APIDEV-17267</a> — SAR-2862 &quot;API категорий Спасибо 3.0. Результат пакетной обработки. V2&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18702" target="_blank" rel="noreferrer">APIDEV-18702 «SAR-2979_D-80.439.01-02 Установка TD атрибутов на ПЦ Лояльность (Alpha)» — Утверждение ППСИ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18553" target="_blank" rel="noreferrer">APIDEV-18553</a> — SAR-2979 &quot;Установка TD атрибутов на ПЦ Лояльность (Alpha)&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18740" target="_blank" rel="noreferrer">APIDEV-18740 «SAR-2951_D-80.824.04 Заявки Управленческого учета. Корректировка работы с ЗНО» — Согласование ППСИ — Внедрение 11.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18306" target="_blank" rel="noreferrer">APIDEV-18306</a> — SAR-2951 &quot;Заявки Управленческого учета. Корректировка работы с ЗНО&quot;</p></td><td><p class="svc"><strong>SberAPI</strong></p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18317" target="_blank" rel="noreferrer">APIDEV-18317 «SAR-2932_D-80.524.05 IRBIS: Закупки» — ПСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18148" target="_blank" rel="noreferrer">APIDEV-18148</a> — SAR-2932 &quot;IRBIS: Закупки&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18323" target="_blank" rel="noreferrer">APIDEV-18323 «SAR-2834_D-80.356.04 IRBIS: Деятельность компаний и ИП» — ПСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17094" target="_blank" rel="noreferrer">APIDEV-17094</a> — SAR-2834 &quot;IRBIS: Деятельность компаний и ИП&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18407" target="_blank" rel="noreferrer">APIDEV-18407 «SAR-2747_D-80.883.00 Миграция АПИ для Робота в УПТМ» — Утверждение ППСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-16101" target="_blank" rel="noreferrer">APIDEV-16101</a> — SAR-2747 &quot;Миграция АПИ для Робота в УПТМ&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18486" target="_blank" rel="noreferrer">APIDEV-18486 «SAR-2937_D-80.931.01 ЕФС. Страхование. ППО страховых продуктов. Урегулирование в WebView. СБС» — Установлен на ПРОМ — плановая дата ПРОМ 12.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18162" target="_blank" rel="noreferrer">APIDEV-18162</a> — SAR-2937 &quot;ЕФС. Страхование. ППО страховых продуктов. Урегулирование в WebView. СБС&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18631" target="_blank" rel="noreferrer">APIDEV-18631 «SAR-2822_D-80.368.02 IRBIS: Лизинг» — Готов к ПСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-16949" target="_blank" rel="noreferrer">APIDEV-16949</a> — SAR-2822 &quot;IRBIS: Лизинг&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18665" target="_blank" rel="noreferrer">APIDEV-18665 «SAR-2913_D-80.957.00 Guardrails для ДЗО» — Готов к ПСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17780" target="_blank" rel="noreferrer">APIDEV-17780</a> — SAR-2913 &quot;Guardrails для ДЗО&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18680" target="_blank" rel="noreferrer">APIDEV-18680 «SAR-2695_D-80.858.00-01 SberLoyalty. API для регистрации клиентских и неклиентских профилей в программе лояльности с фиксацией версии согласия на участие в ПЛ и флагом согласия на рассылку маркетинговых коммуникаций» — Стабилизация — плановая дата ПРОМ 12.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-15742" target="_blank" rel="noreferrer">APIDEV-15742</a> — SAR-2695 &quot;SberLoyalty. API для регистрации клиентских и неклиентских профилей в программе лояльности с фиксацией версии согласия на участие в ПЛ и флагом согласия на рассылку маркетинговых коммуникаций&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18681" target="_blank" rel="noreferrer">APIDEV-18681 «SAR-2692_D-80.859.00 Изменение &quot;SberLoyalty. API для регистрации клиентских и неклиентских профилей в программе лояльности» — Согласование ППСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-15739" target="_blank" rel="noreferrer">APIDEV-15739</a> — SAR-2692 &quot;Изменение &quot;SberLoyalty. API для регистрации клиентских и неклиентских профилей в программе лояльности&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18719" target="_blank" rel="noreferrer">APIDEV-18719 «SAR-2982_D-80.916.02 ППРБ Услуги ДЗО. DZO_Services_Universal_Contract_API_v2» — Готов к ПСИ — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-18627" target="_blank" rel="noreferrer">APIDEV-18627</a> — SAR-2982 &quot;ППРБ Услуги ДЗО. DZO_Services_Universal_Contract_API_v2&quot;</p>
+<p class="ke">КЭ: Управление API (Gravitee) SAPI</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/APIDEV-18752" target="_blank" rel="noreferrer">APIDEV-18752 «SAR-2874_D-80.743.01-07 API IVR_GET_SAMOKAT» — Стабилизация — плановая дата ПРОМ 18.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/APIDEV-17368" target="_blank" rel="noreferrer">APIDEV-17368</a> — SAR-2874 &quot;API IVR_GET_SAMOKAT&quot;</p></td></tr>
+<tr><td><p class="svc"><strong>SberBusinessProfile</strong></p>
+<p class="ke">КЭ: SBP.GMP</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/SBP-6143" target="_blank" rel="noreferrer">SBP-6143 «Major-4-2026-11-07 ДГР H» — Установлен на ПРОМ — Внедрение 07.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBP-6144" target="_blank" rel="noreferrer">SBP-6144</a> — Датафикс по дате annual check</p></td><td><p class="svc"><strong>SberBusinessProfile</strong></p>
+<p class="ke">КЭ: SBP.GMP</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/SBP-6111" target="_blank" rel="noreferrer">SBP-6111 «Major-4-2026-11-15 ДГР» — Готов к стабилизации — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBP-6165" target="_blank" rel="noreferrer">SBP-6165</a> — Перепуш клиента в сберCRM</p></td></tr>
+<tr><td><p class="svc"><strong>SBP.IRBIS</strong></p>
+<p class="none">Нет релиза этой ИТ-услуги в окне</p></td><td><p class="svc"><strong>SBP.IRBIS</strong></p>
+<p class="ke">КЭ: SBP.IRBIS.К2; SBP.IRBIS.Открытые данные</p>
+<p class="rel"><strong><a href="https://jira.sberbank.ru/browse/SBAR-6146" target="_blank" rel="noreferrer">SBAR-6146 «Релиз 01.050: ЕРП + ЕРКНМ, Async API» — Стабилизация — плановая дата ПРОМ 14.11</a></strong></p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6641" target="_blank" rel="noreferrer">SBAR-6641</a> — ЕРП - Добавление новых атрибутов и методов - API</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6643" target="_blank" rel="noreferrer">SBAR-6643</a> — ЕРКНМ - Добавление новых атрибутов и методов - БД</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6646" target="_blank" rel="noreferrer">SBAR-6646</a> — ЕРКНМ - Добавление новых атрибутов и методов - API</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6689" target="_blank" rel="noreferrer">SBAR-6689</a> — ЕРП - Добавление новых атрибутов и методов - БД</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6917" target="_blank" rel="noreferrer">SBAR-6917</a> — API search / autocomplete: Добавление минимального кол-ва символов в параметре q</p>
+<p class="item">• <a href="https://jira.sberbank.ru/browse/SBAR-6985" target="_blank" rel="noreferrer">SBAR-6985</a> — Закупки - Новые методы получения информации о тендерах/закупках - API</p></td></tr></tbody></table></div>
+</section>
+<section id="s2">
+<h2>Вопросы</h2>
+<ul><li><a href="https://jira.sberbank.ru/browse/APIDEV-16101" target="_blank" rel="noreferrer">APIDEV-16101</a> «SAR-2747 &quot;Миграция АПИ для Робота в УПТМ&quot;» (релиз <a href="https://jira.sberbank.ru/browse/APIDEV-18407" target="_blank" rel="noreferrer">APIDEV-18407</a>) — смысл задачи не установлен. Шаблонное описание («Публикация API по задаче …») не отвечает, что именно меняется для потребителя: миграция уже работающего API робота на другую площадку либо публикация нового метода. Что нужно решить: По задаче непонятно, что увидит потребитель API: метод только переносится на УПТМ с прежним контрактом или для потребителей открывается новый метод — уточните это в постановке SAR-2747.</li><li><a href="https://jira.sberbank.ru/browse/SBP-6165" target="_blank" rel="noreferrer">SBP-6165</a> «Перепуш клиента в сберCRM» (релиз <a href="https://jira.sberbank.ru/browse/SBP-6111" target="_blank" rel="noreferrer">SBP-6111</a>) — смысл задачи не установлен. Из заголовка и связей видно только действие «перепуш клиента в СберCRM»: одинаково возможно и разовая переотправка данных по конкретному клиенту, и новое поведение выгрузки — что увидит читатель отчёта, непонятно. Что нужно решить: Описание повторяет заголовок: непонятно, разовая это переотправка данных клиента или изменяется сам механизм передачи клиентов в СберCRM — что именно должен заметить потребитель данных?</li><li><a href="https://jira.sberbank.ru/browse/SBP-6144" target="_blank" rel="noreferrer">SBP-6144</a> «Датафикс по дате annual check» (релиз <a href="https://jira.sberbank.ru/browse/SBP-6143" target="_blank" rel="noreferrer">SBP-6143</a>) — смысл задачи не установлен. Датафикс по конкретному клиенту (присвоить дату annual check 03.09.2026): одинаково возможно и разовая правка значения в данных, и изменение самого расчёта/правил даты — назначение правки в материале задачи не раскрыто. Что нужно решить: Уточните цель правки: это разовая корректировка даты annual check у ПАО «МТС-БАНК» или меняется правило проставления этой даты (тогда это затронет всех клиентов)?</li><li><a href="https://jira.sberbank.ru/browse/URMEPK-6131" target="_blank" rel="noreferrer">URMEPK-6131</a> «УСК / Перевод запроса справочников согласий с API v1 на v2» (релиз <a href="https://jira.sberbank.ru/browse/URMEPK-5837" target="_blank" rel="noreferrer">URMEPK-5837</a>) — правило против чтения задачи. По описанию это перевод внутренних вызовов на версию v2: критерий приёмки прямо говорит, что «значения и коды справочников совпадают с v1», конфигурация стендов и маршруты UI не меняются — новых данных читатель не увидит. Что нужно решить: Признак C-API-01 (изменённый метод) и слабой силы C-DICT-01 (справочник) дают класс содержательная, а по описанию состав справочников не меняется — правка только перевод вызовов с API v1 на v2; подтвердите, что задача техническая.</li><li><a href="https://jira.delta.sbrf.ru/browse/AIEPK-1444" target="_blank" rel="noreferrer">AIEPK-1444</a> «[DataParser] Добавить эндпоинт для заполнения mapping_to_data атрибутов» (релиз <a href="https://jira.delta.sbrf.ru/browse/AIEPK-1849" target="_blank" rel="noreferrer">AIEPK-1849</a>) — правило против чтения задачи. MMB использует новый эндпоинт для синхронизации ручных правок графа из УРМ — служебный обмен между внутренними сервисами. Что нужно решить: Правило C-API-01 видит новый эндпоинт (содержательная), а предмет задачи — синхронизация ручных правок графа между внутренними сервисами (техническая): какой класс подтверждает владелец?</li><li><a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23260" target="_blank" rel="noreferrer">CCUEPKK-23260</a> «[FP] Настройка статусов и ретраев при обработке файлов» (релиз <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23688" target="_blank" rel="noreferrer">CCUEPKK-23688</a>) — смысл задачи не установлен. Из заголовка и описания (шаблонная форма ЕПК без заполненных пунктов) не видно, меняется ли состав статусов для потребителя или только механизм повторов. Что нужно решить: Что меняется для читателя: правила выставления статусов обработки файлов или только внутренние ретраи сервиса?</li><li><a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23849" target="_blank" rel="noreferrer">CCUEPKK-23849</a> «Доверенное лицо МЧД» (релиз <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23688" target="_blank" rel="noreferrer">CCUEPKK-23688</a>) — опора только на слабый признак. В справочник типов связи с клиентом добавляют значения по доверенным лицам МЧД — справочные данные пополняются. Что нужно решить: Класс держится на слабом признаке справочника (в PartyRelatedRole добавляются значения) — подтверждать это как инфо-повод?</li><li><a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23857" target="_blank" rel="noreferrer">CCUEPKK-23857</a> «Обновление справочников ОКК» (релиз <a href="https://jira.delta.sbrf.ru/browse/CCUEPKK-23688" target="_blank" rel="noreferrer">CCUEPKK-23688</a>) — опора только на слабый признак. Обновляются наименования подотраслей в справочнике отраслевой классификации — значения данных становятся другими. признак «метод» найден внутри слова «Методике», а «бизнес» — в наименовании строки обновляемого справочника: оба не учтены. Не учтены признаки: C-API-01, C-BIZ-01. Что нужно решить: Актуализация наименований подотраслей опирается только на слабый признак справочника — считать это инфо-поводом?</li><li><a href="https://jira.delta.sbrf.ru/browse/ECCUL-1149" target="_blank" rel="noreferrer">ECCUL-1149</a> «[NDL] Выделение ПИФ в отдельную сущность» (релиз <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1361" target="_blank" rel="noreferrer">ECCUL-1361</a>) — опора только на слабый признак. Выделение ПИФ в отдельную сущность с таблицами pif, pif_h, pif_type и связью с карточкой — новый состав данных. Что нужно решить: Понимание ясное (выделяется сущность ПИФ с новыми таблицами), но единственный признак — слабый справочник: подтверждать инфо-повод?</li><li><a href="https://jira.delta.sbrf.ru/browse/ECCUL-1150" target="_blank" rel="noreferrer">ECCUL-1150</a> «[IDL] Выделение ПИФ в отдельную сущность» (релиз <a href="https://jira.delta.sbrf.ru/browse/ECCUL-1361" target="_blank" rel="noreferrer">ECCUL-1361</a>) — опора только на слабый признак. Выделение ПИФ в отдельную сущность на слое IDL — новые таблицы и связи в золотом слое. Что нужно решить: То же, что для NDL-задачи: сущность ПИФ на IDL понятна, но признак только слабый справочник — подтверждать инфо-повод?</li><li><a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17221" target="_blank" rel="noreferrer">PPCCIB-17221</a> «[TASK TECH.SERVICE] Добавление нового продукта «Реестры регистрации УПК» в справочник ППК» (релиз <a href="https://jira.delta.sbrf.ru/browse/PPCCIB-17216" target="_blank" rel="noreferrer">PPCCIB-17216</a>) — опора только на слабый признак. В справочник продуктов ППК добавляют новый продукт «Реестры регистрации УПК» — справочные значения пополняются. признак «бизнес» взят из шаблонного заголовка «Бизнес потребность», а не из предмета задачи, поэтому не учтён. Не учтены признаки: C-BIZ-01. Что нужно решить: Добавление нового продукта в справочник ППК держится только на слабом признаке справочника — подтверждать как инфо-повод?</li><li><a href="https://jira.delta.sbrf.ru/browse/PKBS-21867" target="_blank" rel="noreferrer">PKBS-21867</a> «ОВК - 21й релиз, EPKSV-1444» (релиз <a href="https://jira.delta.sbrf.ru/browse/PKBS-22047" target="_blank" rel="noreferrer">PKBS-22047</a>) — смысл задачи не установлен. Ни заголовок (номер релиза и ссылка на задачу другой инсталляции), ни описание не говорят, что меняется; связанные задачи — только клонажи и сам релиз. Что нужно решить: Что входит в 21-й релиз ОВК: перечень изменений в задаче отсутствует, описание — только отсылка к БТ.</li><li><a href="https://jira.delta.sbrf.ru/browse/PKBS-22026" target="_blank" rel="noreferrer">PKBS-22026</a> «БВ ЕПК КБ Плосская структура_исключить одну таблицу » (релиз <a href="https://jira.delta.sbrf.ru/browse/PKBS-22051" target="_blank" rel="noreferrer">PKBS-22051</a>) — смысл задачи не установлен. Заголовок называет только исключение одной таблицы, описание пустое; комментарий — служебный перевод статуса по релизу, связей кроме релиза нет. Что нужно решить: Какую таблицу исключают из «плоской структуры» и увидит ли читатель изменение состава данных?</li><li><a href="https://jira.delta.sbrf.ru/browse/RGSCT-4634" target="_blank" rel="noreferrer">RGSCT-4634</a> «Sowa. ЕФС» (релиз <a href="https://jira.delta.sbrf.ru/browse/RGSCT-4656" target="_blank" rel="noreferrer">RGSCT-4656</a>) — смысл задачи не установлен. Из заголовка и однострочного описания непонятно, идёт ли речь о сборке поставки или о новом отчёте; комментариев у задачи нет. Что нужно решить: Что происходит в задаче: сборка релиза SOWA или подключение отчёта «Онлайн» для 5-го агента — что увидит читатель?</li></ul>
+</section>
+<section id="s3">
+<h2>Проверить не удалось</h2>
+<p>нет записей</p>
+</section>
+<section id="s4">
+<h2>Оговорки прогона</h2>
+<ul><li>КЭ без релизов в окнах прогона: 8 из 29 — в таблицу не попали (первые: 3314865, 3762799, 9725441, 10579684, 7726413, …)</li><li>строка отчёта — это релиз в группе одного КЭ: релиз с несколькими КЭ попадает в группу каждого, поэтому строк может быть больше, чем релизов</li></ul>
+</section>
+<section id="s5">
+<h2>Как читать этот отчёт</h2>
+<ul><li>Строка таблицы — ИТ-услуга (их 15); релиз выводится один раз в строке своей услуги, даже если у него несколько КЭ.</li><li>Над строкой релиза перечислены его КЭ через точку с запятой — по ним читатель сверяется с реестром.</li><li>«Внедрение дд.мм» — плановая дата начала внедрения уже наступила или совпадает с датой прогона; «плановая дата ПРОМ дд.мм» — дата впереди.</li><li>Три подписи вместо инфоповодов: «Нет релиза этой ИТ-услуги в окне» — у услуги нет релиза в этом окне; «Нет инфоповодов: в релизе нет связанных задач» — релиз есть, его состав прочитан и в нём ни одной задачи; «Технический релиз: &lt;ключи&gt;» — задачи есть, но все они про внутреннее устройство системы, каждый ключ ведёт ссылкой в Jira.</li><li>Состав прочитан не полностью — чтение оборвалось, детали в разделе «Проверить не удалось»; это «не проверено», а не «нет».</li><li>«Вопросы» — то, что решает человек: чтение задачи и признак из правил дают разные классы, опора только на слабый признак, смысл не установлен или у релиза нет плановой даты. В строке: сама задача, её релиз, что известно и что нужно решить. Задача при этом остаётся в таблице строкой своего релиза обычным инфоповодом и остаётся в счётчике своего класса: вопрос про уверенность в классе, а не про то, учтена ли задача; чтобы закрыть вопрос, достаточно одной строки ответа.</li></ul>
+</section>
+<footer>Файл собран прогоном процесса my-info-povod; тот же текст — в markdown-форме прогона и в теле опубликованной страницы. Релизы и задачи читались из выбранных подключений Jira, класс задачи — шаг классификации.</footer>
+</div>
+<script>
+(function(){
+  var nav=document.querySelector('nav');
+  nav.addEventListener('click',function(e){
+    var b=e.target.closest('button');
+    if(!b){return;}
+    nav.querySelectorAll('button').forEach(function(x){x.removeAttribute('aria-current');});
+    b.setAttribute('aria-current','true');
+    document.querySelectorAll('section').forEach(function(s){s.classList.remove('on');});
+    document.getElementById(b.dataset.go).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>

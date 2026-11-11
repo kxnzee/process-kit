@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Доля стори по SDD за полгода — 08.05.2026–08.11.2026</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2b313d;
+    --ink:#e8eaee; --muted:#9aa3b2; --acc:#63b3ed; --acc2:#f6ad55; --ok:#68d391; --warn:#f6ad55;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+  header h1{font-size:26px;margin:0 0 6px}
+  header p{color:var(--muted);margin:0 0 18px}
+  nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;position:sticky;top:0;
+    background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+  nav button{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+  nav button[aria-current="true"]{background:var(--acc);color:#0b1220;border-color:var(--acc);font-weight:600}
+  section{display:none}
+  section.on{display:block}
+  h2{font-size:20px;margin:4px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 2px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:13px}
+  .chip b{color:var(--acc);font-size:16px;display:block}
+  table{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:14px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+  code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px}
+  .node{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 9px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+  .node.src{border-color:#3f6f9e} .node.tr{border-color:#5c6b3f}
+  .node.act{border-color:#8b5e2a} .node.gate{border-color:#7a4a6a}
+  .arrow{color:var(--muted)}
+  ul{margin:6px 0 0;padding-left:20px} li{margin:4px 0}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.vis{color:var(--ok);border-color:#2f6b4a}
+  .tag.svc{color:var(--warn);border-color:#7a5c2a}
+  .note{background:var(--panel2);border-left:3px solid var(--acc);padding:10px 13px;
+    border-radius:0 8px 8px 0;color:var(--muted);font-size:14px;margin:14px 0}
+  .lvl{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .lvl div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px}
+  .lvl b{display:block;color:var(--ink);margin-bottom:3px}
+</style>
+<style>:root{--dim:#5d6675}.chip i{display:block;color:var(--muted);font-style:normal;font-size:12px;margin-top:2px}.chip{min-width:150px}.chips{margin:14px 0 6px}.small{color:var(--muted);font-size:13px}td.dim,.dim{color:var(--dim)}nav button .n{color:var(--muted);font-weight:400}nav button[aria-current="true"] .n{color:#0b1220}details{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin:12px 0;font-size:14px;color:var(--muted)}details summary{cursor:pointer;color:var(--ink)}td,th{font-size:13.5px}td a,li a,p a{color:var(--acc);text-decoration:none}td a:hover,li a:hover,p a:hover{text-decoration:underline}td:first-child,th:first-child{white-space:nowrap}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Доля стори по SDD за полгода</h1>
+  <p>Окно 08.05.2026–08.11.2026 · маршрут <code>sdd-stories-report</code> (общий уровень) · прогон 08.11.2026</p>
+</header>
+<nav>
+  <button data-go="sum" aria-current="true">Итог <span class="n">5</span></button>
+  <button data-go="sdd">По SDD <span class="n">20</span></button>
+  <button data-go="nosdd">Без SDD <span class="n">34</span></button>
+  <button data-go="unverified">Проверить не удалось</button>
+  <button data-go="links">Ссылки <span class="n">54</span></button>
+  <button data-go="read">Как читать <span class="n">3</span></button>
+</nav>
+<section id="sum" class="on">
+  <h2>Итог</h2>
+<div class="note">Пример результата процесса <code>sdd-stories-report</code> (общий уровень). Данные боевые: Jira <code>SBAR</code> и принятые запросы <code>P4D/sbar</code>, окно 08.05.2026–08.11.2026. Оригинал прогона: <code>outputs/2026-11-08_otchet-sdd-za-polugodie-2/отчёт.md</code> — папка результатов в git не попадает.</div>
+<p class="small">Дата: 08.11.2026 · Окно: 08.05.2026–08.11.2026 · Метка: SDD · Засчитаны статусы: IFT, Ready for UAT, Done, Resolved<br>Задачи: Jira · Код: Bitbucket<br>Запрос: processes/sdd-stories-report/queries/stories.md · Шаблон: processes/sdd-stories-report/templates/report.md</p>
+<div class="chips"><span class="chip"><b>54</b>Стори в выборке</span><span class="chip"><b>20</b>Выполнено по SDD<i>с меткой 9, через PR с артефактами 19</i></span><span class="chip"><b>34</b>Выполнено без SDD</span><span class="chip"><b>37,0 %</b>Доля SDD</span><span class="chip"><b>0</b>Проверить не удалось (в расчёт не входят)</span></div>
+<table>
+<tr><th>Показатель</th><th>Значение</th></tr>
+<tr><td>Стори в выборке</td><td>54</td></tr>
+<tr><td>Выполнено по SDD</td><td>20 — с меткой 9, через PR с артефактами 19</td></tr>
+<tr><td>Выполнено без SDD</td><td>34</td></tr>
+<tr><td>Доля SDD</td><td>37,0 %</td></tr>
+<tr><td>Проверить не удалось (в расчёт не входят)</td><td>0</td></tr>
+</table>
+</section>
+<section id="sdd">
+  <h2>Стори, выполненные по SDD</h2>
+<table>
+<tr><th>Задача</th><th>Статус</th><th>В работе с</th><th>Засчитано по</th><th>Коммит</th><th>Ответственный</th></tr>
+<tr><td>SBAR-6620</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6621</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6622</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6623</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6648</td><td>Done</td><td>2026-09-14</td><td>метка</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6654</td><td>Done</td><td>2026-08-06</td><td>метка и PR</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6676</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6677</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6684</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6742</td><td>Done</td><td>2026-09-11</td><td>метка и PR</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6774</td><td>Done</td><td>2026-09-11</td><td>метка и PR</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6819</td><td>Done</td><td>2026-09-11</td><td>метка и PR</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6852</td><td>Done</td><td>2026-09-11</td><td>метка и PR</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6863</td><td>Done</td><td>2026-09-11</td><td>метка и PR</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6912</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6913</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6914</td><td>Done</td><td>2026-09-11</td><td>PR с артефактами</td><td>—</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6938</td><td>Done</td><td>2026-09-28</td><td>PR с артефактами</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6990</td><td>Done</td><td>2026-09-21</td><td>метка и PR</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-7109</td><td>Done</td><td>2026-10-12</td><td>метка и PR</td><td>—</td><td>Бозюков Артём Юрьевич</td></tr>
+</table>
+</section>
+<section id="nosdd">
+  <h2>Стори, выполненные без SDD</h2>
+<table>
+<tr><th>Задача</th><th>Статус</th><th>В работе с</th><th>Ответственный</th></tr>
+<tr><td>SBAR-5948</td><td>Done</td><td>2026-05-21</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-5950</td><td>Done</td><td>2026-05-21</td><td>Абетнакян Арман Мисакович</td></tr>
+<tr><td>SBAR-5995</td><td>Done</td><td>2026-05-21</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6079</td><td>Done</td><td>2026-05-21</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td>SBAR-6090</td><td>Done</td><td>2026-05-21</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td>SBAR-6149</td><td>Done</td><td>2026-06-22</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6151</td><td>Done</td><td>2026-06-22</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6155</td><td>Done</td><td>2026-06-22</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6180</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6182</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6261</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6270</td><td>Done</td><td>2026-05-21</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td>SBAR-6276</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6300</td><td>Done</td><td>2026-07-08</td><td>Бозюков Артём Юрьевич</td></tr>
+<tr><td>SBAR-6309</td><td>Done</td><td>2026-07-08</td><td>Коротких Александр Игоревич</td></tr>
+<tr><td>SBAR-6316</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6324</td><td>Done</td><td>2026-05-26</td><td>Абетнакян Арман Мисакович</td></tr>
+<tr><td>SBAR-6334</td><td>Done</td><td>2026-07-08</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6335</td><td>Done</td><td>2026-07-08</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6337</td><td>Done</td><td>2026-07-08</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6338</td><td>Done</td><td>2026-07-08</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6352</td><td>Done</td><td>2026-07-08</td><td>Шпилёв Евгений Анатольевич</td></tr>
+<tr><td>SBAR-6354</td><td>Done</td><td>2026-07-08</td><td>Морозов Павел Андреевич</td></tr>
+<tr><td>SBAR-6356</td><td>Done</td><td>2026-07-08</td><td>Козлов Максим Алексеевич</td></tr>
+<tr><td>SBAR-6358</td><td>Done</td><td>2026-07-08</td><td>Абетнакян Арман Мисакович</td></tr>
+<tr><td>SBAR-6360</td><td>Done</td><td>2026-07-08</td><td>Завьялов Вячеслав Сергеевич</td></tr>
+<tr><td>SBAR-6362</td><td>Done</td><td>2026-07-08</td><td>Плотников Александр Михайлович</td></tr>
+<tr><td>SBAR-6422</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6423</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6461</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6462</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6471</td><td>Done</td><td>2026-06-22</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6504</td><td>Done</td><td>2026-07-08</td><td>Кузьменко Юлия Вячеславовна</td></tr>
+<tr><td>SBAR-6839</td><td>Done</td><td>2026-09-01</td><td>Бозюков Артём Юрьевич</td></tr>
+</table>
+</section>
+<section id="unverified">
+  <h2>Проверить не удалось</h2>
+<table>
+<tr><th>Задача</th><th>Причина</th></tr>
+
+</table>
+<p>нет записей</p>
+</section>
+<section id="links">
+  <h2>Ссылки</h2>
+<ul>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6620" target="_blank" rel="noreferrer">SBAR-6620</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6621" target="_blank" rel="noreferrer">SBAR-6621</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6622" target="_blank" rel="noreferrer">SBAR-6622</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6623" target="_blank" rel="noreferrer">SBAR-6623</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6648" target="_blank" rel="noreferrer">SBAR-6648</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6654" target="_blank" rel="noreferrer">SBAR-6654</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6676" target="_blank" rel="noreferrer">SBAR-6676</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6677" target="_blank" rel="noreferrer">SBAR-6677</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6684" target="_blank" rel="noreferrer">SBAR-6684</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6742" target="_blank" rel="noreferrer">SBAR-6742</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6774" target="_blank" rel="noreferrer">SBAR-6774</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6819" target="_blank" rel="noreferrer">SBAR-6819</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6852" target="_blank" rel="noreferrer">SBAR-6852</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6863" target="_blank" rel="noreferrer">SBAR-6863</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6912" target="_blank" rel="noreferrer">SBAR-6912</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6913" target="_blank" rel="noreferrer">SBAR-6913</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6914" target="_blank" rel="noreferrer">SBAR-6914</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6938" target="_blank" rel="noreferrer">SBAR-6938</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6990" target="_blank" rel="noreferrer">SBAR-6990</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-7109" target="_blank" rel="noreferrer">SBAR-7109</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-5948" target="_blank" rel="noreferrer">SBAR-5948</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-5950" target="_blank" rel="noreferrer">SBAR-5950</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-5995" target="_blank" rel="noreferrer">SBAR-5995</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6079" target="_blank" rel="noreferrer">SBAR-6079</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6090" target="_blank" rel="noreferrer">SBAR-6090</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6149" target="_blank" rel="noreferrer">SBAR-6149</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6151" target="_blank" rel="noreferrer">SBAR-6151</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6155" target="_blank" rel="noreferrer">SBAR-6155</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6180" target="_blank" rel="noreferrer">SBAR-6180</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6182" target="_blank" rel="noreferrer">SBAR-6182</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6261" target="_blank" rel="noreferrer">SBAR-6261</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6270" target="_blank" rel="noreferrer">SBAR-6270</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6276" target="_blank" rel="noreferrer">SBAR-6276</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6300" target="_blank" rel="noreferrer">SBAR-6300</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6309" target="_blank" rel="noreferrer">SBAR-6309</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6316" target="_blank" rel="noreferrer">SBAR-6316</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6324" target="_blank" rel="noreferrer">SBAR-6324</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6334" target="_blank" rel="noreferrer">SBAR-6334</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6335" target="_blank" rel="noreferrer">SBAR-6335</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6337" target="_blank" rel="noreferrer">SBAR-6337</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6338" target="_blank" rel="noreferrer">SBAR-6338</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6352" target="_blank" rel="noreferrer">SBAR-6352</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6354" target="_blank" rel="noreferrer">SBAR-6354</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6356" target="_blank" rel="noreferrer">SBAR-6356</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6358" target="_blank" rel="noreferrer">SBAR-6358</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6360" target="_blank" rel="noreferrer">SBAR-6360</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6362" target="_blank" rel="noreferrer">SBAR-6362</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6422" target="_blank" rel="noreferrer">SBAR-6422</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6423" target="_blank" rel="noreferrer">SBAR-6423</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6461" target="_blank" rel="noreferrer">SBAR-6461</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6462" target="_blank" rel="noreferrer">SBAR-6462</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6471" target="_blank" rel="noreferrer">SBAR-6471</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6504" target="_blank" rel="noreferrer">SBAR-6504</a></li>
+<li><a href="https://jira.sberbank.ru/browse/SBAR-6839" target="_blank" rel="noreferrer">SBAR-6839</a></li>
+</ul>
+</section>
+<section id="read">
+  <h2>Как читать этот отчёт</h2>
+<ul>
+<li>Отбор определяется периодом начала работы, текущим статусом и КЭ. Метка SDD и принятый PR классифицируют уже отобранные истории.</li>
+<li>По SDD: метка SDD или подтверждённый принятый PR с изменениями спецификаций.</li>
+<li>Без SDD: оба признака проверены и отсутствуют. Непроверенные истории не входят в знаменатель.</li>
+</ul>
+</section>
+</div>
+
+<script>
+(function(){
+  var nav=document.querySelector('nav');
+  nav.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    nav.querySelectorAll('button').forEach(function(x){x.removeAttribute('aria-current')});
+    b.setAttribute('aria-current','true');
+    document.querySelectorAll('section').forEach(function(s){s.classList.remove('on')});
+    document.getElementById(b.dataset.go).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>

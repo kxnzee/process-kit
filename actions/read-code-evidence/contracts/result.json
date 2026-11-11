@@ -73,6 +73,37 @@
             "type": "string",
             "minLength": 1
           },
+          "commits": {
+            "type": "array",
+            "description": "Коммиты, привязанные к задаче по правилу запроса (имя ветки или сообщение), когда связь через принятый PR не подтверждена.",
+            "items": {
+              "type": "object",
+              "required": [
+                "hash"
+              ],
+              "properties": {
+                "hash": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "branch": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "changedPaths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "commitsComplete": {
+            "type": "boolean"
+          },
           "reason": {
             "type": "string",
             "minLength": 1

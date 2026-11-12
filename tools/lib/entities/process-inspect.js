@@ -2,7 +2,7 @@
 // Static facts for authoring, including incomplete definitions. Never require owner code.
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path'),{parseFrontmatter}=require('../core/markdown');
-const {processModel,NAME,owner,allowedReference}=require('./process-model');
+const {processModel,NAME,VERSION,STATUSES,owner,allowedReference}=require('./process-model');
 const {scopeFor,visible,visibleFile,canonicalFile,publicationFacts}=require('./process-facts');
 
 function inspect(cwd,spec){
@@ -54,11 +54,14 @@ function inspect(cwd,spec){
   const file=`processes/${ref}/PROCESS.md`,model=processModel(text),data=model.data;
   const missing=['name','version','area','status','description'].filter(key=>typeof data[key]!=='string'||!data[key].trim());
   if(!data.example&&!(Array.isArray(data.examples)&&data.examples.length))missing.push('example/examples');
+  const invalidVersion=!VERSION.test(data.version||''),invalidStatus=!STATUSES.includes(data.status);
+  if(invalidVersion)issue('metadata-invalid-version',file);
+  if(invalidStatus)issue('metadata-invalid-status',file);
   if(data.name!==ref||missing.length)issue('metadata-partial',file);
   if(model.errors.length)issue('structure-partial',file);
   if(ref===name){
    const metadata=Object.fromEntries(['name','title','version','area','status','description','publication'].filter(key=>typeof data[key]==='string').map(key=>[key,data[key]]));
-   result.definition={status:missing.length||data.name!==ref||model.errors.length?'partial':'parsed',metadata,missingFields:missing,structure:{steps:model.steps.length,problems:model.errors.length}};
+   result.definition={status:missing.length||invalidVersion||invalidStatus||data.name!==ref||model.errors.length?'partial':'parsed',metadata,missingFields:missing,structure:{steps:model.steps.length,problems:model.errors.length}};
   }
   const req=data.requires;
   if(!req||typeof req!=='object'||Array.isArray(req)){issue('declarations-partial',file);}

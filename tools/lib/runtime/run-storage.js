@@ -12,15 +12,17 @@ function atomic(file,value){
 }
 function lock(dir,recover=false,name='.journal.lock'){
  const file=inside(dir,name),owner={pid:process.pid,host:os.hostname(),id:crypto.randomUUID()};
+ const candidateFor=owner=>inside(dir,`${name}.${owner.pid}.${owner.id}.candidate`);
+ const same=(a,b)=>a&&b&&a.dev===b.dev&&a.ino===b.ino;
+ function readOwner(entry){return JSON.parse(fs.readFileSync(entry.isDirectory()?inside(file,'owner.json'):file,'utf8'));}
  function claim(){
-  // Publish a nonempty directory with its owner in one rename: no ownerless lock window.
-  const candidate=inside(dir,`${name}.${owner.pid}.${owner.id}.candidate`);
-  fs.mkdirSync(candidate);
+  // Publish closed, complete owner bytes exclusively. A file rename could overwrite a lock.
+  // Readers may hold this file open: unlink avoids Windows directory-rename sharing races.
+  const candidate=candidateFor(owner);
   try{
-   atomic(inside(candidate,'owner.json'),owner);
-   if(fs.existsSync(file))return false;
-   try{fs.renameSync(candidate,file);return true;}catch(error){if(['ENOTEMPTY','EEXIST'].includes(error.code)||fs.existsSync(file))return false;throw error;}
-  }finally{fs.rmSync(candidate,{recursive:true,force:true});}
+   fs.writeFileSync(candidate,encode(owner),{flag:'wx',mode:0o600});
+   try{fs.linkSync(candidate,file);return true;}catch(error){if(error.code==='EEXIST'||fs.existsSync(file))return false;throw error;}
+  }finally{fs.rmSync(candidate,{force:true});}
  }
  if(!claim()){
   if(!recover)throw new Error('Журнал занят или прерван: используйте run recover, не удаляйте lock вручную');
@@ -31,19 +33,30 @@ function lock(dir,recover=false,name='.journal.lock'){
    const entry=fs.statSync(file,{throwIfNoEntry:false});
    if(entry){
     let previous;
-    try{previous=JSON.parse(fs.readFileSync(inside(file,'owner.json'),'utf8'));}
+    try{previous=readOwner(entry);}
     catch(error){
      const current=fs.statSync(file,{throwIfNoEntry:false});
      // An ordinary release may remove/replace the path between stat and read.
-     if(error.code==='ENOENT'&&(!current||current.dev!==entry.dev||current.ino!==entry.ino)){
+     if(['ENOENT','ENOTDIR','EISDIR'].includes(error.code)&&!same(current,entry)){
       if(!claim())throw new Error('Журнал занят работающим процессом');
       acquired=true;
      }else throw new Error('Владелец lock неизвестен: требуется проверка разработчиком');
     }
     if(!acquired){
-     if(previous.host!==os.hostname()||!Number.isInteger(previous.pid)||previous.pid<=0)throw new Error('Нельзя проверить владельца lock на этом компьютере');
+     if(!previous||previous.host!==os.hostname()||!Number.isInteger(previous.pid)||previous.pid<=0)throw new Error('Нельзя проверить владельца lock на этом компьютере');
      try{process.kill(previous.pid,0);throw new Error('Журнал занят работающим процессом');}catch(error){if(error.code!=='ESRCH')throw error;}
-     const stale=file+'.'+crypto.randomUUID()+'.stale';fs.renameSync(file,stale);fs.rmSync(stale,{recursive:true,force:true});
+     if(entry.isDirectory()){
+      // Legacy locks remain recoverable only after their local owner is proven dead.
+      const stale=file+'.'+crypto.randomUUID()+'.stale';fs.renameSync(file,stale);fs.rmSync(stale,{recursive:true,force:true});
+     }else{
+      // A crash immediately after link may leave its candidate hard link. Remove only
+      // that same inode, never an unrelated candidate or a path supplied by metadata.
+      if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
+       const candidate=candidateFor(previous);
+       if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
+      }
+      fs.unlinkSync(file);
+     }
     }
    }
    // A normal writer can acquire during recovery; never remove its newly published lock.
@@ -51,10 +64,9 @@ function lock(dir,recover=false,name='.journal.lock'){
   }finally{releaseGuard();}
  }
  return ()=>{
-  const current=JSON.parse(read(inside(file,'owner.json')));
+  const current=readOwner(fs.statSync(file));
   if(current.id!==owner.id)throw new Error('Изменился владелец блокировки');
-  // Withdraw the complete owned directory before deleting metadata inside it.
-  const released=file+'.'+owner.id+'.released';fs.renameSync(file,released);fs.rmSync(released,{recursive:true});
+  fs.unlinkSync(file);
  };
 }
 

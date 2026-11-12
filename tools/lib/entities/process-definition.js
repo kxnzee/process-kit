@@ -2,7 +2,7 @@
 // Shared definition checks for check, start and publication. No agent or network API.
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path');
-const {processModel,NAME,allowedReference,parameter}=require('./process-model');
+const {processModel,NAME,VERSION,STATUSES,allowedReference,parameter}=require('./process-model');
 function validateDefinition(cwd,name,stack=[]){
  if(!NAME.test(name||''))throw new Error('Неверное имя процесса');
  if(stack.includes(name)||stack.length>=require('../config/config').loadMaster(cwd).execution.maxProcessDepth)throw new Error('Цикл или глубина подпроцессов');
@@ -10,8 +10,8 @@ function validateDefinition(cwd,name,stack=[]){
  const errors=[...model.errors];
  for(const key of ['name','version','area','status','description'])if(typeof d[key]!=='string'||!d[key].trim())errors.push('нет '+key);
  if(d.name!==name)errors.push('name не совпадает с именем папки');
- if(!/^\d+\.\d+\.\d+$/.test(d.version||''))errors.push('version не в формате X.Y.Z');
- if(!['действует','устарел'].includes(d.status))errors.push('status: действует или устарел');
+ if(!VERSION.test(d.version||''))errors.push('version не в формате X.Y.Z');
+ if(!STATUSES.includes(d.status))errors.push('status: действует или устарел');
  if(!d.example&&!(Array.isArray(d.examples)&&d.examples.length))errors.push('нет example/examples');
  if(d.params!==undefined&&(!d.params||typeof d.params!=='object'||Array.isArray(d.params)))errors.push('params: нужен объект');
  if(d.publication!==undefined&&d.publication!=='required')errors.push('publication: допускается только required; legacy нужно перевести через validate/test/publish');

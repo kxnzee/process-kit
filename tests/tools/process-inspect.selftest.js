@@ -29,6 +29,16 @@ try{
   proc('inspect-test');const facts=inspect();assert.equal(facts.definition.status,'parsed');assert.deepEqual(facts.issues,[]);assert.equal(facts.dependencies.coverage,'static-only');assert.equal(facts.ready,undefined);assert.equal(facts.next,undefined);
   assert.throws(()=>lifecycle(tmp,'status',{process:'not-created'}));
  });
+ check('inspect rejects invalid version/status values statically, including in subprocesses',()=>{
+  for(const [field,value,code]of [['version','invalid','metadata-invalid-version'],['version','1.2','metadata-invalid-version'],['version','1.2.3-beta','metadata-invalid-version'],['status','неизвестно','metadata-invalid-status']]){
+   proc('inspect-test');const file=path.join(tmp,'processes/inspect-test/PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(field+': '+(field==='version'?'1.0.0':'действует'),field+': '+value));
+   const facts=inspect();assert.equal(facts.definition.status,'partial');assert.ok(issue(facts,code));assert.throws(()=>lifecycle(tmp,'status',{process:'inspect-test'}));
+  }
+  proc('inspect-child');const child=path.join(tmp,'processes/inspect-child/PROCESS.md');fs.writeFileSync(child,fs.readFileSync(child,'utf8').replace('version: 1.0.0','version: invalid'));
+  proc('inspect-test','','### edit\n- процесс: inspect-child\n- следующий: end');assert.ok(inspect().issues.some(item=>item.code==='metadata-invalid-version'&&item.file==='processes/inspect-child/PROCESS.md'));
+  proc('inspect-test');const file=path.join(tmp,'processes/inspect-test/PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('status: действует','status: устарел').replace('version: 1.0.0','version: 12.0.30'));
+  assert.equal(inspect().definition.status,'parsed');assert.deepEqual(inspect().issues,[]);
+ });
  check('inspect CLI executes no owner code and leaves all repository bytes unchanged',()=>{
   const poison=`require('node:fs').writeFileSync(${JSON.stringify(path.join(tmp,'SIDE_EFFECT'))},'executed');throw new Error('PRIVATE_EXECUTION_ERROR');`;
   proc('inspect-test','branchRule: rules/poison.js\nparams:\n  rendererFile: processes/inspect-test/renderer.js\n');

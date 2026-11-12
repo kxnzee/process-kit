@@ -3,7 +3,7 @@
 // The only public CLI. Libraries under lib/ are not agent-facing tools.
 const path=require('node:path'),{spawnSync}=require('node:child_process');
 const commands={
- definition:{file:'lib/entities/process-release.js',usage:'<inspect|validate|test|publish|status> <spec.json>',purpose:'Безопасно прочитать факты (inspect); глубоко проверить (status/validate) и допустить версию',scope:'local-write'},
+ definition:{file:'lib/entities/process-release.js',usage:'<inspect|validate|test|publish|status> <spec.json>',purpose:'Безопасно прочитать факты (inspect); глубоко проверить (status/validate) и допустить версию',scope:'local-write',scopeNote:'inspect: read-only; status: глубокая проверка с загрузкой кода; validate/test/publish: локальная запись и загрузка кода'},
  action:{file:'lib/actions/invoke.js',usage:'<spec.json>',purpose:'Выполнить локальный экшен без создания процесса',scope:'local-write'},
  entities:{file:'lib/entities/entities.js',usage:'<process> [local|demo|live] [params.json]',purpose:'Разрешить сущности и подключения процесса',scope:'read-only'},
  skills:{file:'lib/entities/skills.js',usage:'',purpose:'Прочитать каталог скиллов без тел инструкций',scope:'read-only'},
@@ -21,7 +21,7 @@ function main(args){
  if(!command||command==='--help'||command==='help'){
   if(rest.length){console.error('Использование: node tools/kit.js --help | --json | <command> [args]');return 2;}
   console.log('Process Kit: node tools/kit.js <command> [args]\n');
-  for(const [name,item]of Object.entries(commands))console.log(`${name.padEnd(15)} ${item.purpose}\n                ${item.usage}`);
+  for(const [name,item]of Object.entries(commands))console.log(`${name.padEnd(15)} ${item.purpose}\n                ${item.usage}${item.scopeNote?'\n                '+item.scopeNote:''}`);
   return 0;
  }
  if(command==='--json'&&!rest.length){console.log(JSON.stringify(Object.fromEntries(Object.entries(commands).map(([name,{file,...info}])=>[name,info])),null,2));return 0;}

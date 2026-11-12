@@ -1,6 +1,8 @@
 'use strict';
 const { parseFrontmatter } = require('../core/markdown');
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
+const VERSION = /^\d+\.\d+\.\d+$/;
+const STATUSES = ['действует','устарел'];
 const asList = value => Array.isArray(value) ? value : value ? [value] : [];
 
 // One parser for route validation, selected data files and preflight.
@@ -97,4 +99,4 @@ function allowedReference(from, to) {
   const a = owner(from), b = owner(to);
   return b.level <= a.level && !(a.level === 1 && b.level === 1 && a.team !== b.team);
 }
-module.exports = { processModel, parameter, owner, allowedReference, NAME, asList };
+module.exports = { processModel, parameter, owner, allowedReference, NAME, VERSION, STATUSES, asList };

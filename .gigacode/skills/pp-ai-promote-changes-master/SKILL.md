@@ -11,7 +11,7 @@ description: >
 
 Вход: назначение, выбранные материалы, ответы и область согласия. Возврат: commit, targetCommit, pushed, prUrl либо pendingAction и путь отдельной рабочей копии.
 
-До подготовки прочитай и выполни docs/references/promotion.md полностью.
+До подготовки прочитай и выполни [promotion.md](../../references/promotion.md) полностью.
 Этот скилл задаёт только назначение:
 
 - Цель: `origin/master`.

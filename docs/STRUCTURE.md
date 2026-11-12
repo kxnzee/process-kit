@@ -61,6 +61,9 @@ $ git ls-remote origin team-urmepk
 ├── .gigacode/
 │   ├── settings.json                ссылки $secret:…, значений доступа нет
 │   ├── hooks/pre-push               исходник; копия ставится в .git/hooks/
+│   ├── references/                  общие операционные инструкции агента
+│   │   ├── interaction.md           случаи продолжения, изменений и отмены
+│   │   └── promotion.md             общая процедура двух переносов
 │   └── skills/
 │       ├── pp-ai-mentor/SKILL.md   консультация; знакомство в references/guide.md
 │       ├── pp-ai-init/SKILL.md     факты через setup-status; детали в references/
@@ -214,9 +217,14 @@ kit.js run next/execute либо begin/save для работы модели. Ф
 
 В .gigacode/skills/ остаются десять самостоятельных способностей. Обязательных
 посредников нет. Общие инварианты и policy-driven продолжение — GIGACODE.md;
-подробные случаи — docs/references/interaction.md. Общая процедура двух переносов
-находится в docs/references/promotion.md, правила назначения — в соответствующих skills.
+подробные случаи — [interaction.md](../.gigacode/references/interaction.md). Общая процедура двух переносов
+находится в [promotion.md](../.gigacode/references/promotion.md), правила назначения — в соответствующих skills.
 References одной способности хранятся рядом; рабочие данные процессов/Actions — у владельцев.
+Общие операционные инструкции хранятся в .gigacode/references/, методики одной
+способности — в .gigacode/skills/<skill>/references/. Это организационные каталоги,
+не дополнительные Skills или источники автоматической загрузки. Условия чтения
+задают GIGACODE.md и выбранный Skill. В docs/ остаются документация, архитектура
+и контракты системы; они доступны и человеку, и агенту по задаче.
 
 Каталог tools/lib/entities/process-catalog.js читает текущие метаданные без исполнения
 runtime/branchRule. Владение и команда проверяются до выдачи закрытых записей. Это

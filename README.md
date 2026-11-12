@@ -284,7 +284,11 @@ node tools/kit.js hooks-install
 
 | Папка | Что | Уровни |
 |---|---|---|
+| `GIGACODE.md` | общие обязательные правила агента | только `master` |
+| `.gigacode/references/` | общие операционные инструкции; чтение по условиям GIGACODE.md и Skills | только `master` |
 | `.gigacode/skills/pp-ai-*` | десять обнаруживаемых способностей; процедуры у владельцев, общие правила в GIGACODE.md | только `master` |
+| `.gigacode/skills/<skill>/references/` | подробные методики конкретной способности | у владельца Skill |
+| `docs/` | документация, архитектура и контракты системы | только `master` |
 | `processes/` | процессы: шапка (`name`, `title`, `description`, `example`, `entry`, `params`) и шаги-ссылки | все |
 | `actions/<имя>/` | действия: `ACTION.md` + `queries/`, `templates/`, `rules/` | все |
 | `adapters/` | как говорить с системой | `master`; команда — только новую систему |

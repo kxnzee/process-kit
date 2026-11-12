@@ -22,25 +22,28 @@ function processModel(text) {
     if (head || item) {
       short ||= !!item;
       step = { name: head ? head[1] : item[1], ref: item ? item[1] : null,
-        kind: item ? 'action' : null, params: {}, targets: [], ln: fm.bodyLine + i };
+        kind: item ? 'action' : null, params: {}, targets: [], body: [], ln: fm.bodyLine + i };
       steps.push(step);
       if (!item) continue;
       row = item[2] || '';
     }
     if (!step) continue;
+    step.body.push(row);
     const kind = row.match(/^\s*(?:[-*]\s*)?(действие|процесс):\s*([^\s`]+)/);
     if (kind) {
       if (step.kind) errors.push(`шаг ${step.name}: несколько типов шага`);
       step.kind = kind[1] === 'процесс' ? 'process' : 'action'; step.ref = kind[2];
     }
     if (/^\s*(?:-\s*)?branch:/.test(row)) step.kind = 'branch';
+    const decision = row.match(/^\s*(?:[-*]\s*)?decision:\s*(\S+)\s*$/);
+    if(decision){if(!['code','model','user'].includes(decision[1]))errors.push(`шаг ${step.name}: decision должен быть code/model/user`);else step.decision=decision[1];}
     const artifact = row.match(/артефакт:\s*([a-z0-9-]+)/);
     if (artifact) step.artifact = artifact[1];
     const next = row.match(/следующий:\s*([a-z0-9-]+)/);
     if (next) step.next = next[1];
     const goto = row.match(/goto:\s*([a-z0-9-]+)/);
     if (goto) step.targets.push(goto[1]);
-    if (/default/.test(row) && goto) step.default = true;
+    if (/default/.test(row) && goto) { if(step.default)errors.push(`шаг ${step.name}: несколько default`);step.default = true; step.defaultTarget = goto[1]; }
     // Parameter values are literal names or {params.name}; artifact bindings remain paths.
     const paramRe = /(?:`|^|\s)(query|template|rule|taskStore|codeStore):\s*([^`\n]+)/g;
     let p;
@@ -55,6 +58,8 @@ function processModel(text) {
   steps.forEach((s, index) => {
     if (!s.kind && s.name !== 'end') errors.push(`шаг ${s.name}: нет действия, подпроцесса или branch`);
     if (s.kind && s.kind !== 'branch' && !s.next) s.next = steps[index + 1]?.name || 'end';
+    if(s.kind==='branch'&&s.decision==='code'&&!fm.data.branchRule)errors.push(`шаг ${s.name}: для decision=code нужен branchRule`);
+    if(s.decision&&s.kind!=='branch')errors.push(`шаг ${s.name}: decision допустим только у branch`);
     if (s.kind === 'branch' && !s.default) errors.push(`шаг ${s.name}: нет default`);
     if (s.ref && !NAME.test(s.ref)) errors.push(`шаг ${s.name}: недопустимое имя ссылки`);
     for (const target of s.kind === 'branch' ? s.targets : s.next ? [s.next] : []) {

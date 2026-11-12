@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "process": "example",
+  "status": "published",
+  "files": {
+    "actions/edit-text/ACTION.md": "b422d83de03fd22cc83e773e9c3e68cb39af2b26b53f60d77eb053c799d802e1",
+    "actions/edit-text/rules/before-after.md": "70f12568bb7f7f753b0906cf4dff05b8ac268cf41e22d0612485b20be28b8254",
+    "actions/edit-text/runtime.js": "2e6ad3e7aa2a18c1fe19fd2b7c2f7b32eae4c32bd4fb1a210d5c733972280f15",
+    "actions/prepare-mail-draft/ACTION.md": "1e72faa5cecc1db8a703a4e6d4e55dc326907e9f747bfb8f41e755e55a041ecf",
+    "context/master/writing-style/CONTEXT.md": "a187c1e1e3a3645b639303b2e7cba7c11ce64824786d1766b1688f6f2a6198aa",
+    "processes/example/PROCESS.md": "2116169729557cedaad906ea63ed90d5cac9e0db4b4c1ad4733933680538f0d3"
+  },
+  "updated": "2026-11-12T07:55:05.641Z",
+  "scope": "local/demo",
+  "outputs": [
+    "2026-11-12_проверка-письмо"
+  ]
+}

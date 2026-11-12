@@ -2,7 +2,7 @@
 const ctx=require('../fixture')(),{fs,path,assert,tmp,source,write,check}=ctx;
 const {spawnSync}=require('node:child_process');
 const {contextFile}=require('../../tools/lib/entities/context'),{dependencies}=require('../../tools/lib/entities/process-dependencies'),journal=require('../../tools/lib/runtime/run-journal');
-const processSpec=(name,refs)=>`---\nname: ${name}\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: Context test\nexample: test\nentry: edit\nrequires:\n  actions: [edit-text]\n  context: [${['master',...refs].join(', ')}]\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- артефакт: report-text\n- следующий: end\n`;
+const processSpec=(name,refs)=>`---\nname: ${name}\nversion: 1.0.0\narea: test\nstatus: действует\npublication: legacy\ndescription: Context test\nexample: test\nentry: edit\nrequires:\n  actions: [edit-text]\n  context: [${['master',...refs].join(', ')}]\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- артефакт: report-text\n- следующий: end\n`;
 try{
  check('whole declared levels enter the snapshot; all their topics are protected',()=>{
   write('context/my/domain/CONTEXT.md','# Domain\nChosen facts.\n');write('context/my/unselected/CONTEXT.md','# Other\nUnselected facts.\n');

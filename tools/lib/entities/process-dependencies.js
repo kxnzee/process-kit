@@ -6,6 +6,8 @@ function action(cwd,name){
  if(!NAME.test(name||''))throw new Error('Неверное действие');const data=parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${name}/ACTION.md`),'utf8')).data;
  if(!data||data.name!==name||!data.produces||typeof data.produces!=='object'||Array.isArray(data.produces)||Object.keys(data.produces).length!==1||Object.entries(data.produces).some(([key,value])=>!NAME.test(key)||typeof value!=='string'||!value.trim()))throw new Error('Неверное определение действия '+name);
  if(!['source','transform','act'].includes(data.kind)||!data.consumes||!['artifacts','params'].every(k=>Array.isArray(data.consumes[k])&&data.consumes[k].every(v=>typeof v==='string')&&new Set(data.consumes[k]).size===data.consumes[k].length))throw new Error('Неверный вход действия '+name);
+ if(data.adapter==='environment-tool'&&data.kind!=='source')throw new Error('environment-tool допустим только для source');
+ if(data.adapter==='environment-tool'&&data.consumes.params.some(p=>['taskStore','codeStore'].includes(p)))throw new Error('environment-tool не заменяет объявленное подключение');
  if(!data.contracts||Object.keys(data.contracts).length!==1||Object.keys(data.produces).some(k=>!Object.hasOwn(data.contracts,k)))throw new Error('Нужен контракт каждого выхода '+name);
  for(const ref of Object.values(data.contracts))if(ref!=='text'&&!/^contracts\/[a-z0-9][a-z0-9.-]*\.json$/.test(ref))throw new Error('Неверный путь контракта '+name);
  if(data.runtime&&data.runtime!=='runtime.js')throw new Error('runtime должен быть runtime.js');
@@ -17,7 +19,27 @@ function bind(value,params,artifacts={}){
  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,bind(item,params,artifacts)]));
  if(typeof value!=='string')return value;
  const exact=value.match(/^\{params\.([^}]+)\}$/);if(exact)return params[exact[1]];
- if(/^[{[]/.test(value)){try{return bind(JSON.parse(value),params,artifacts);}catch(error){if(!(error instanceof SyntaxError))throw error;}}
+ if(/^[{[]/.test(value)){
+  // JSON values can contain unquoted typed bindings, e.g. {"map":{params.map}}.
+  // Replace only tokens outside JSON strings, parse JSON, then restore typed values.
+  const references=new Map();let encoded='',quoted=false,escaped=false;
+  for(let i=0;i<value.length;){
+   const match=!quoted&&value.slice(i).match(/^\{params\.([^}]+)\}/);
+   if(match){
+    if(!Object.hasOwn(params,match[1]))throw new Error('Нет параметра JSON: '+match[1]);
+    const token='pk-binding-'+require('node:crypto').randomUUID();references.set(token,params[match[1]]);encoded+=JSON.stringify(token);i+=match[0].length;continue;
+   }
+   const ch=value[i++];encoded+=ch;
+   if(escaped){escaped=false;continue;}if(quoted&&ch==='\\'){escaped=true;continue;}if(ch==='"')quoted=!quoted;
+  }
+  function expand(item){
+   if(typeof item==='string'&&references.has(item))return references.get(item);
+   if(Array.isArray(item))return item.map(expand);
+   if(item&&typeof item==='object')return Object.fromEntries(Object.entries(item).map(([key,entry])=>[key,expand(entry)]));
+   return bind(item,params,artifacts);
+  }
+  try{return expand(JSON.parse(encoded));}catch(error){if(!(error instanceof SyntaxError))throw error;}
+ }
  return value.replace(/\{params\.([^}]+)\}|\{([a-z0-9-]+)\}/g,(text,key,artifact)=>key?(params[key]??text):(artifacts[artifact]??text));
 }
 function stepParams(params,step,overrides={},artifacts={}){
@@ -33,10 +55,10 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
  const files=new Set(),visiting=new Set();const include=file=>{const full=inside(cwd,file);if(!fs.statSync(full).isFile())throw new Error('Нет файла '+file);files.add(file);return fs.readFileSync(full,'utf8');};
  function entityFiles(folder){for(const item of fs.readdirSync(inside(cwd,folder),{withFileTypes:true})){const file=folder+'/'+item.name;if(item.isDirectory())entityFiles(file);else include(file);}}
  const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;include('config/master/config.json');
- if(mode==='live')include('.gigacode/settings.json');
  function visit(process,values,depth=0){
   if(!NAME.test(process)||visiting.has(process)||depth>=maxDepth)throw new Error('Цикл или глубина подпроцессов');visiting.add(process);
   const model=processModel(include(`processes/${process}/PROCESS.md`));require('./entities').declarations(cwd,process,model);values={...model.data.params,...values};if(model.errors.length)throw new Error(model.errors.join('; '));
+  if(model.data.branchRule)include(`processes/${process}/${model.data.branchRule}`);
   for(const level of model.data.requires?.context||[])for(const file of require('./context').contextLevel(cwd,process,level))include(file);
   if(model.data.requires?.context?.includes('team'))for(const file of require('../config/config').loadConfig(cwd).files)include(file);
   const config=mode==='live'&&model.data.requires?.config?.length?require('../config/config').loadConfig(cwd,model.data.requires.config):null;
@@ -69,10 +91,10 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
  visit(name,params);
  for(const file of extras)if(!files.has(file)){
   if(file.startsWith('context/'))require('../actions/action-support').resource(cwd,name,file);
-  if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&file!=='.gigacode/settings.json')throw new Error('Неверный дополнительный файл');include(file);
+  if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file))throw new Error('Неверный дополнительный файл');include(file);
  }
  if(params.dataFile){if(mode!=='demo')throw new Error('dataFile только для demo');include(params.dataFile);}
- for(const file of ['tools/kit.js','tools/lib/runtime/run-journal.js','tools/lib/entities/process-dependencies.js','tools/lib/contracts/value-contract.js','tools/lib/contracts/artifact-contract.js','tools/lib/core/safe-path.js','tools/lib/entities/process-model.js','tools/lib/core/markdown.js','tools/lib/runtime/history.js','tools/lib/core/paths.js','tools/lib/actions/action-runtime.js','tools/lib/config/config.js','tools/lib/config/config-contract.js','tools/lib/entities/context.js','tools/lib/entities/entities.js'])include(file);
+ for(const file of ['tools/kit.js','tools/lib/runtime/run-journal.js','tools/lib/runtime/run-storage.js','tools/lib/entities/process-definition.js','tools/lib/entities/process-release.js','tools/lib/entities/process-dependencies.js','tools/lib/contracts/value-contract.js','tools/lib/contracts/artifact-contract.js','tools/lib/core/safe-path.js','tools/lib/entities/process-model.js','tools/lib/core/markdown.js','tools/lib/runtime/history.js','tools/lib/core/paths.js','tools/lib/actions/action-runtime.js','tools/lib/config/config.js','tools/lib/config/config-contract.js','tools/lib/entities/context.js','tools/lib/entities/entities.js'])include(file);
  return [...files].sort();
 }
 // Possible final ports; callers without an explicit alias can rely only on a single common port.

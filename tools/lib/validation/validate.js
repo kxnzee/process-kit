@@ -22,7 +22,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { processModel, parameter, allowedReference, NAME } = require('../entities/process-model');
+const { processModel, parameter, NAME } = require('../entities/process-model');
 const { execFileSync } = require('child_process');
 
 // ---------- аргументы и корень ----------
@@ -86,7 +86,6 @@ const lines = (text) => text.split(/\r?\n/);
 
 const SECRET_REF = /^(?:Bearer )?\$secret:[\w.-]+\/[\w.-]+$/;
 const ACCESS_KEY = /(token|password|passwd|secret|api[-_]?key|authorization|auth)/i;
-const SEMVER = /^\d+\.\d+\.\d+$/;
 
 // ---------- шапка (frontmatter) ----------
 // Подмножество YAML: key: value, key: [a, b], key: { … } (строкой),
@@ -310,8 +309,6 @@ function ruleSkills() {
 // В разделе «## Шаги» подраздел «### <шаг>» даёт действие маркером списка
 // «- действие» / «- процесс», а строка нумерованного списка «1. <действие>» — шаг сразу.
 // Строки «- параметры:» внутри подраздела нужны сбору ссылок на поля конфига.
-function processSteps(text) { return processModel(text); }
-
 function ruleProcesses() {
   const dir = path.join(ROOT, 'processes');
   for (const n of ls(dir)) {
@@ -324,105 +321,13 @@ function ruleProcesses() {
     const fm = parseFrontmatter(text);
     if (fm.error) { E('процесс', file, 1, fm.error); continue; }
     if (!fm.data) { E('процесс', file, 1, 'нет шапки-манифеста --- … ---'); continue; }
-    const d = fm.data;
-    if (d.name !== base) E('процесс', file, 2, `name «${d.name || ''}» не совпадает с именем папки «${base}»`);
-    const desc = String(d.description || '');
-    if (!desc) E('процесс', file, 2, 'нет description: по нему помощник находит процесс');
-    else if (desc.length > 400) W('процесс', file, 2, 'description длиннее 400 символов');
-    if (!d.version) E('процесс', file, 2, 'нет version');
-    else if (!SEMVER.test(String(d.version))) E('процесс', file, 2, 'version не в формате X.Y.Z');
-    const ex = asList(d.examples).length ? asList(d.examples) : asList(d.example);
-    if (!ex.length) E('процесс', file, 2, 'нет examples или example');
-    else if (d.examples && (ex.length < 2 || ex.length > 5)) W('процесс', file, 2, 'examples: нужно от 2 до 5');
-    if (!d.area) E('процесс', file, 2, 'нет area');
-    if (!d.status) E('процесс', file, 2, 'нет status');
-    if (d.status && !['действует', 'устарел'].includes(d.status)) E('процесс', file, 2, 'status: «действует» или «устарел»');
+    let model;
+    try { model = require('../entities/process-definition').validateDefinition(ROOT, base); }
+    catch (error) { E('процесс', file, 0, error.message); continue; }
+    const d = model.data;
+    if (String(d.description).length > 400) W('процесс', file, 2, 'description длиннее 400 символов');
+    if (d.examples && (asList(d.examples).length < 2 || asList(d.examples).length > 5)) W('процесс', file, 2, 'examples: нужно от 2 до 5');
     if (d.status === 'устарел' && !d.replaced_by) W('процесс', file, 2, 'устаревший процесс без replaced_by');
-
-    const req = d.requires && typeof d.requires === 'object' ? d.requires : {};
-    try{require('../entities/entities').declarations(ROOT,base,processModel(text));}catch(error){E('процесс',file,2,error.message);}
-    for(const level of asList(req.context))try{require('../entities/context').contextLevel(ROOT,base,level);}catch(error){E('контекст',file,2,error.message);}
-
-    // шаги
-    const bodyRows = lines(fm.body);
-    const stepsAt = bodyRows.findIndex((l) => /^##\s+Шаги/.test(l));
-    if (stepsAt < 0) { E('процесс', file, fm.bodyLine, 'нет раздела «## Шаги»'); continue; }
-    const model = processSteps(text);
-    for (const error of model.errors) E('маршрут', file, 0, error);
-    const used = model.steps;
-    if (!used.length) W('процесс', file, fm.bodyLine + stepsAt, 'в разделе «Шаги» не найдено ни одного шага');
-    for (const u of used) {
-      if (u.ref && !allowedReference(base, u.ref)) E('уровни', file, u.ln, `ссылка вниз по уровням: ${base} → ${u.ref}`);
-      if (u.kind === 'action') {
-        const af = path.join(ROOT, 'actions', u.ref, 'ACTION.md');
-        const action = exists(af) ? parseFrontmatter(read(af)).data || {} : {};
-        for (const [key, folder] of Object.entries({ query: 'queries', template: 'templates', rule: 'rules' })) {
-          if (!asList(action.consumes?.params).some(p => String(p).split(/[ (]/)[0] === key) && !(key in u.params)) continue;
-          const value = parameter(model, u, key);
-          if (value == null) continue;
-          if (!NAME.test(String(value))) { E('процесс', file, u.ln, `параметр ${key}: нужно явное имя файла данных`); continue; }
-          const data = path.join(ROOT, 'actions', u.ref, folder, `${value}.md`);
-          if (!exists(data)) E('процесс', file, u.ln, `нет данных действия ${u.ref}/${folder}/${value}.md`);
-          if (!allowedReference(base, value)) E('уровни', file, u.ln, `ссылка на данные нижнего уровня: ${value}`);
-        }
-      }
-      if (u.kind === 'action' && !exists(path.join(ROOT, 'actions', u.ref, 'ACTION.md'))) E('процесс', file, u.ln, `шаг ссылается на несуществующее действие ${u.ref}`);
-      if (u.kind === 'process' && !exists(path.join(ROOT, 'processes', u.ref, 'PROCESS.md'))) E('процесс', file, u.ln, `подпроцесс ${u.ref} не найден`);
-    }
-    const reqA = asList(req.actions);
-    if (reqA.length) for (const u of used) if (u.kind === 'action' && !reqA.includes(u.ref)) E('процесс', file, u.ln, `действие ${u.ref} не перечислено в requires.actions`);
-
-    // Required input artifacts must be available on every incoming route.
-    const predecessors = new Map(used.map(step => [step.name, []]));
-    for (const step of used) for (const target of step.kind === 'branch' ? step.targets : step.next ? [step.next] : []) {
-      if (predecessors.has(target)) predecessors.get(target).push(step.name);
-    }
-    const cache = new Map(), activeFlow = new Set();
-    function after(name) {
-      if (cache.has(name)) return cache.get(name);
-      if (activeFlow.has(name)) return new Set();
-      activeFlow.add(name);
-      const step = used.find(step => step.name === name);
-      const parents = predecessors.get(name) || [];
-      let input = new Set();
-      if (parents.length && name !== model.entry) {
-        input = new Set(after(parents[0]));
-        for (const parent of parents.slice(1)) { const available = after(parent); input = new Set([...input].filter(key => available.has(key))); }
-      }
-      if (step?.kind === 'action') {
-        const af = path.join(ROOT, 'actions', step.ref, 'ACTION.md');
-        const action = exists(af) ? parseFrontmatter(read(af)).data || {} : {};
-        const bindings=Object.values(step.params||{}).flatMap(value=>typeof value==='string'?[...value.matchAll(/\{([a-z0-9-]+)\}/g)].map(m=>m[1]):[]);
-        for(const artifact of bindings)if(!input.has(artifact))E('контракт',file,step.ln,`вход ${artifact} недоступен на всех путях к шагу ${name}`);
-        for (const artifact of asList(action.consumes?.artifacts)) {
-          if (NAME.test(String(artifact)) && !input.has(artifact)) E('контракт', file, step.ln, `вход ${artifact} недоступен на всех путях к шагу ${name}`);
-        }
-        if (step.artifact) input.add(step.artifact);
-        else if (action.produces && typeof action.produces === 'object') for (const key of Object.keys(action.produces)) input.add(key);
-      }
-      if(step?.kind==='process'){
-        try { const ports=require('../entities/process-dependencies').resultPorts(ROOT,step.ref);if(step.artifact&&ports.length)input.add(step.artifact);else if(ports.length===1)input.add(ports[0]); }
-        catch(error){E('контракт',file,step.ln,error.message);}
-      }
-      activeFlow.delete(name); cache.set(name, input); return input;
-    }
-    for (const step of used) after(step.name);
-
-    // маршрут: entry, следующий, goto указывают на существующие шаги
-    const stepNames = bodyRows.slice(stepsAt + 1)
-      .map((l) => (l.match(/^###\s+([\w-]+)\s*$/) || [])[1]).filter(Boolean);
-    if (stepNames.length) {
-      const entry = d.entry;
-      if (!entry) E('процесс', file, 2, 'в шапке нет entry');
-      else if (!stepNames.includes(String(entry))) E('процесс', file, 2, `entry «${entry}» не совпадает ни с одним шагом (${stepNames.join(', ')})`);
-      bodyRows.slice(stepsAt + 1).forEach((l, i) => {
-        const ln = fm.bodyLine + stepsAt + 1 + i;
-        const next = (l.match(/^\s*(?:[-*]\s*)?следующий:\s*([\w-]+)\s*$/) || [])[1];
-        if (next && next !== 'end' && !stepNames.includes(next)) E('процесс', file, ln, `следующий: «${next}» — такого шага нет`);
-        const m = l.match(/[\w-]+:\s*(?:в артефакте[^→]*)?→\s*goto:\s*([\w-]+)/i) || l.match(/^\s*(?:[-*]\s*)?goto:\s*([\w-]+)\s*$/);
-        if (m && m[1] !== 'end' && !stepNames.includes(m[1])) E('процесс', file, ln, `goto: «${m[1]}» — такого шага нет`);
-      });
-    }
   }
 }
 
@@ -739,7 +644,7 @@ function checkSummary(file, names, isProbe) {
   }
   if (/\$secret:|Bearer\s|Authorization:|x-[a-z]+-token/i.test(t)) E('итог', file, 0, 'в итоге есть данные доступа');
   if (/^\s+at\s.+:\d+:\d+\)?$/m.test(t) || /\b(TypeError|ReferenceError|ECONNREFUSED|stack trace)\b/.test(t)) W('итог', file, 0, 'похоже на текст системной ошибки: причину пишите простыми словами');
-  const others = names.filter((n) => !n.startsWith('.') && n !== 'итог.md');
+  const others = names.filter((n) => !n.startsWith('.') && n !== 'итог.md' && !/^диагностика(?:-\d+)?\.md$/.test(n));
   const listAt = rows.findIndex((r) => /^Файлы в этой папке:/.test(r));
   if (others.length && listAt < 0) W('итог', file, 0, 'нет списка «Файлы в этой папке:»');
   if (listAt >= 0) {
@@ -753,9 +658,14 @@ function checkSummary(file, names, isProbe) {
 }
 
 function checkRunDir(dir) {
+  try {
+    const stateFile=path.join(dir,'state.json');
+    if(exists(stateFile)){const state=JSON.parse(read(stateFile));const verified=require('../runtime/run-storage').verify(dir);if(state.schemaVersion===2&&!verified)throw new Error('отсутствует checkpoint');if(!['running','completed','failed'].includes(state.status))throw new Error('недопустимый статус');}
+    if(exists(path.join(dir,'transaction.json')))E('прогон',dir,0,'незавершённая запись: используйте run recover');
+  } catch(error){E('прогон',dir,0,error.message);}
   for (const n of ls(dir)) {
     const f = path.join(dir, n);
-    if (['run.md', 'trace.jsonl', 'state.json'].includes(n)) continue;
+    if (['run.md', 'trace.jsonl', 'state.json', 'checkpoint.json', 'transaction.json', '.journal.lock', '.recovery.lock'].includes(n)) continue;
     if (n === 'inputs' && isDir(f)) continue;
     if (!/^\d{2}-[a-z0-9][\w-]*\.\w+$/i.test(n)) W('прогон', f, 0, 'файл шага: <NN>-<имя шага>.<расширение>, например 01-jira-search.json');
   }
@@ -829,10 +739,7 @@ function ruleProcessValues() {
     if (!exists(file)) { E('значения', file, 0, `нет процесса ${name}`); visiting.delete(name); return; }
     const model = processModel(read(file));
     model.data.params={...model.data.params,...inherited};
-    for (const error of model.errors) E('маршрут', file, 0, error);
     const req = model.data.requires || {};
-    try{require('../entities/entities').declarations(ROOT,name,model);}catch(error){E('процесс',file,0,error.message);}
-    for(const level of asList(req.context))try{require('../entities/context').contextLevel(ROOT,name,level);}catch(error){E('контекст',file,0,error.message);}
     for (const step of model.steps) {
       if (step.kind === 'process') { scan(step.ref, depth + 1, require('../entities/process-dependencies').childParams(ROOT,model,step,model.data.params,{},overrides)); continue; }
       if (step.kind !== 'action') continue;
@@ -854,7 +761,7 @@ function ruleProcessValues() {
         const policy=require('../actions/action-runtime').runtime(ROOT,step.ref,action);
         policy.dependencies?.({cwd:ROOT,processName:name,actionName:step.ref,meta:action,params:effective,mode:opt.demo?'demo':'live',preflight:true});
       } catch(error){E('значения',file,step.ln,error.message);}
-      if (opt.demo || action.kind === 'transform' || /^none(?: |$)/.test(String(action.adapter))) continue;
+      if (opt.demo || action.kind === 'transform' || (action.kind === 'source' && action.adapter === 'environment-tool') || /^none(?: |$)/.test(String(action.adapter))) continue;
       const slots=asList(action.consumes?.params);
       if(!Array.isArray(req.config)||!req.config.length){E('значения',file,0,'requires.config не объявлен для сетевого шага');continue;}
       try{
@@ -865,6 +772,8 @@ function ruleProcessValues() {
     }
     visiting.delete(name);
   }
+  try { const definition=require('../entities/process-definition'),model=definition.validateDefinition(ROOT,opt.process);definition.validateRunInput(ROOT,opt.process,model,{...model.data.params,...overrides}); }
+  catch(error){E('процесс',null,0,error.message);return;}
   scan(opt.process);
 }
 
@@ -874,19 +783,7 @@ const RULES = {
   layout: ruleLayout,
   levels: ruleLevels,
   skills: ruleSkills,
-  processes: () => {
-    ruleProcesses();
-    const active = new Set(),maxDepth=processDepthLimit();
-    function visit(name, depth) {
-      if (active.has(name) || depth > maxDepth) { E('маршрут', null, 0, `цикл или глубина подпроцесса больше ${maxDepth}: ${name}`); return; }
-      const file = path.join(ROOT, 'processes', name, 'PROCESS.md');
-      if (!exists(file)) return;
-      active.add(name);
-      for (const step of processModel(read(file)).steps) if (step.kind === 'process') visit(step.ref, depth + 1);
-      active.delete(name);
-    }
-    for (const name of ls(path.join(ROOT, 'processes'))) if (isDir(path.join(ROOT, 'processes', name))) visit(name, 1);
-  },
+  processes: ruleProcesses,
   actions: ruleActions,
   adapters: ruleAdapters,
   sources: ruleSources,

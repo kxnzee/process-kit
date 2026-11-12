@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const { validRunFolderName } = require('../core/paths');
-function updateHistory(cwd, record) {
+function updateHistory(cwd, record, {recover=false}={}) {
   const required = ['ts', 'process', 'output', 'итог'];
   const allowed = new Set([...required, 'уровень', 'режим', 'outcome']);
   if (!record || typeof record !== 'object' || Array.isArray(record) || required.some(k => typeof record[k] !== 'string' || !record[k]) || Object.keys(record).some(k => !allowed.has(k))) throw new Error('Некорректная запись истории');
@@ -16,8 +16,7 @@ function updateHistory(cwd, record) {
   const dir = path.join(cwd, '.history');
   if (fs.existsSync(dir) && fs.lstatSync(dir).isSymbolicLink()) throw new Error('Папка истории не должна быть ссылкой');
   fs.mkdirSync(dir, { recursive: true });
-  const lock = path.join(dir, '.lock');
-  fs.mkdirSync(lock); // Busy/stale lock is an explicit error; do not delete another writer's lock.
+  const release = require('./run-storage').lock(dir,recover,'.lock');
   const log = path.join(dir, 'runs.jsonl');
   const temp = path.join(dir, `.runs-${randomUUID()}.tmp`);
   try {
@@ -35,7 +34,7 @@ function updateHistory(cwd, record) {
     fs.renameSync(temp, log);
   } finally {
     if (fs.existsSync(temp)) fs.unlinkSync(temp);
-    fs.rmdirSync(lock);
+    release();
   }
 }
 module.exports = { updateHistory };

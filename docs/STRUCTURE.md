@@ -62,9 +62,13 @@ $ git ls-remote origin team-urmepk
 │   ├── settings.json                ссылки $secret:…, значений доступа нет
 │   ├── hooks/pre-push               исходник; копия ставится в .git/hooks/
 │   └── skills/
-│       ├── pp-ai-mentor/SKILL.md
-│       ├── pp-ai-init/SKILL.md
+│       ├── pp-ai-mentor/SKILL.md   общение с человеком
+│       ├── pp-ai-dispatch/SKILL.md выбор операций и исполнителя
+│       ├── pp-ai-guide/SKILL.md
+│       ├── pp-ai-init/SKILL.md     факты через setup-status; детали в references/
+│       ├── pp-ai-diagnose/SKILL.md
 │       ├── pp-ai-run-process/SKILL.md
+│       ├── pp-ai-run-action/SKILL.md
 │       ├── pp-ai-create-process/SKILL.md
 │       ├── pp-ai-create-action/SKILL.md
 │       ├── pp-ai-create-adapter/SKILL.md
@@ -72,6 +76,7 @@ $ git ls-remote origin team-urmepk
 │       └── pp-ai-promote-changes-master/SKILL.md
 ├── processes/<имя>/                 общие, team-<команда>-*, my-*
 │   ├── PROCESS.md                  точка входа и маршрут
+│   ├── publication.json            свидетельство допуска required-определения, создаёт код
 │   ├── queries/, rules/            запросы и предметные вычисления, если нужны
 │   ├── contracts/, templates/      схемы данных и инструкции оформления, если нужны
 │   └── renderers/                  формирование и проверка точного текста, если нужны
@@ -90,7 +95,8 @@ $ git ls-remote origin team-urmepk
 │       ├── contracts/              проверка результатов и JSON-схем
 │       ├── core/                   пути и Markdown
 │       ├── entities/               сущности, контекст и зависимости
-│       ├── runtime/                журнал и история
+│       ├── runtime/                контроллер, восстановление файлов и история
+│       ├── integrations/           граница вызова из GigaCode, без агентного цикла
 │       ├── git/                    hooks и план переноса
 │       └── validation/             структурный и предпусковой валидатор
 ├── tests/                          тестовый код, отдельно от рабочих инструментов

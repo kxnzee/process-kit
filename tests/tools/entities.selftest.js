@@ -2,6 +2,12 @@
 const ctx=require('../fixture')(),{fs,path,assert,tmp,write,check}=ctx;
 const {manifest}=require('../../tools/lib/entities/entities'),journal=require('../../tools/lib/runtime/run-journal');
 try{
+ check('JSON bindings preserve objects and arrays without rebinding user strings',()=>{
+  const {bind}=require('../../tools/lib/entities/process-dependencies');
+  const params={map:{section:['target','method'],literal:'{params.name}'},name:'Текст \"с кавычками\"',list:[1,true,'a']};
+  assert.deepEqual(bind('{"map":{params.map},"list":{params.list},"name":"{params.name}"}',params),{map:params.map,list:params.list,name:params.name});
+  assert.throws(()=>bind('{"missing":{params.unknown}}',params),/Нет параметра JSON/);
+ });
  check('entity manifest returns entry points and a context catalog, excluding tutorial topics',()=>{
   const result=manifest(tmp,'example');assert.equal(result.ready,true);
   assert.ok(result.entities.some(item=>item.kind==='action'&&item.entry==='actions/edit-text/ACTION.md'));
@@ -18,11 +24,11 @@ try{
  });
  check('whole action resources are protected without process-level file declarations',()=>{
   write('actions/edit-text/rules/internal.md','# Internal action resource\n');
-  const run=journal.start(tmp,{process:'example',mode:'local',date:'2026-11-05',inputText:'Text',params:{to:'User',subject:'Status'}});
+  const run=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,date:'2026-11-05',inputText:'Text',params:{to:'User',subject:'Status'}});
   assert.ok(run.entities.some(item=>item.kind==='action'&&item.name==='edit-text'));
   write('actions/edit-text/rules/internal.md','# Changed internal resource\n');
   assert.throws(()=>journal.operation(tmp,'begin',{output:run.output,step:'edit'}),/Изменён вход/);
-  const next=journal.start(tmp,{process:'example',mode:'local',date:'2026-11-05',inputText:'Text',params:{to:'User',subject:'Status'}});
+  const next=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,date:'2026-11-05',inputText:'Text',params:{to:'User',subject:'Status'}});
   write('actions/edit-text/rules/added.md','# Newly added resource\n');
   assert.throws(()=>journal.operation(tmp,'begin',{output:next.output,step:'edit'}),/состав зависимостей/);
  });

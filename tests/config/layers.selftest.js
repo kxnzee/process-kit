@@ -31,8 +31,8 @@ try{
   const {spawnSync}=require('node:child_process');
   my.teamId='a';my.defaults={};team.taskStores[0].enabled=false;save();
   write('processes/my-priority/queries/tasks.md','# Tasks\nRead the passed keys.\n');
-  write('processes/my-priority/PROCESS.md','---\nname: my-priority\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: Priority test\nexample: test\nrequires:\n  actions: [run-query]\n  config: [master, team, my]\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - `taskStore: team-tasks`\n  - `queryFile: processes/my-priority/queries/tasks.md`\n  - `parameters: {}`\n- артефакт: task-records\n- следующий: end\n');
-  write('processes/my-parent/PROCESS.md','---\nname: my-parent\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: Parent priority test\nexample: test\nentry: call\n---\n## Шаги\n### call\n- процесс: my-priority\n- параметры: `taskStore: team-tasks`\n- следующий: end\n');
+  write('processes/my-priority/PROCESS.md','---\nname: my-priority\nversion: 1.0.0\narea: test\nstatus: действует\npublication: legacy\ndescription: Priority test\nexample: test\nrequires:\n  actions: [run-query]\n  config: [master, team, my]\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - `taskStore: team-tasks`\n  - `queryFile: processes/my-priority/queries/tasks.md`\n  - `parameters: {}`\n- артефакт: task-records\n- следующий: end\n');
+  write('processes/my-parent/PROCESS.md','---\nname: my-parent\nversion: 1.0.0\narea: test\nstatus: действует\npublication: legacy\ndescription: Parent priority test\nexample: test\nentry: call\n---\n## Шаги\n### call\n- процесс: my-priority\n- параметры: `taskStore: team-tasks`\n- следующий: end\n');
   write('override.json','{"taskStore":"my-tasks"}');
   for(const name of ['my-priority','my-parent']){
    const preflight=spawnSync(process.execPath,[path.join(source,'tools/lib/validation/validate.js'),'--root',tmp,'--process',name,'--params',path.join(tmp,'override.json'),'--json'],{encoding:'utf8'});
@@ -75,7 +75,7 @@ try{
  check('live snapshots capture both active config layers and reject changes',()=>{
   my.defaults={};save();
   write('processes/my-select/queries/tasks.md','# Read tasks\n');
-  write('processes/my-select/PROCESS.md','---\nname: my-select\nrequires:\n  config: [master, team, my]\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - `queryFile: processes/my-select/queries/tasks.md`\n  - `parameters: {}`\n- артефакт: task-records\n- следующий: end\n');
+  write('processes/my-select/PROCESS.md','---\nname: my-select\nrequires:\n  config: [master, team, my]\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - `queryFile: processes/my-select/queries/tasks.md`\n  - `parameters: {}`\n- артефакт: task-records\n- следующий: end\n');
   const files=dependencies(tmp,'my-select',{},'live');for(const file of ['config/master/config.json','config/team/config.json','config/my/config.json'])assert.ok(files.includes(file),file);
   const resolved=require('../../tools/lib/config/config').resolveProcess(tmp,'my-select');
   assert.equal(resolved.ready,true);assert.equal(resolved.connections[0].adapterFile,'adapters/jira/ADAPTER.md');

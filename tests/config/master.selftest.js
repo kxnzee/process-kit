@@ -4,8 +4,8 @@ const {spawnSync}=require('node:child_process');
 const {dependencies,resultPorts}=require('../../tools/lib/entities/process-dependencies'),journal=require('../../tools/lib/runtime/run-journal'),{loadMaster}=require('../../tools/lib/config/config');
 try{
  check('master depth limit controls preflight, dependency resolution and snapshots in local mode',()=>{
-  write('processes/my-leaf/PROCESS.md','---\nname: my-leaf\nentry: edit\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- параметры: `text: {params.input}`\n- артефакт: report-text\n- следующий: end\n');
-  write('processes/my-tree/PROCESS.md','---\nname: my-tree\nentry: call\n---\n## Шаги\n### call\n- процесс: my-leaf\n- следующий: end\n');
+  write('processes/my-leaf/PROCESS.md','---\nname: my-leaf\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: edit\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- параметры: `text: {params.input}`\n- артефакт: report-text\n- следующий: end\n');
+  write('processes/my-tree/PROCESS.md','---\nname: my-tree\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: call\n---\n## Шаги\n### call\n- процесс: my-leaf\n- следующий: end\n');
   const master=loadMaster(tmp);master.execution.maxProcessDepth=2;write('config/master/config.json',JSON.stringify(master));
   assert.ok(dependencies(tmp,'my-tree',{},'local').includes('config/master/config.json'));
   const run=journal.start(tmp,{process:'my-tree',mode:'local',date:'2026-11-04',inputText:'Input'});

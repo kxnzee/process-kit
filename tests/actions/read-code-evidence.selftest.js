@@ -4,6 +4,8 @@ const ctx=fixture(),{fs,path,assert,tmp,source,write,check}=ctx;
 const journal=require('../../tools/lib/runtime/run-journal'),{dependencies}=require('../../tools/lib/entities/process-dependencies');
 const {selectionId}=require('../../tools/lib/actions/query-data'),{evidenceFromFixture}=require('../../tools/lib/actions/code-data');
 try {
+ const attempt=output=>JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'))).pending.id;
+
   check('two callers reuse code reading with different parameters and no SDD dependency',()=>{
     const original=fs.readFileSync(path.join(tmp,'actions/read-code-evidence/ACTION.md'),'utf8');
     for(const [name,parameters,pr] of [
@@ -12,7 +14,7 @@ try {
     ]) {
       const taskQuery=`processes/${name}/queries/tasks.md`,codeQuery=`processes/${name}/queries/code.md`;
       write(taskQuery,'# Задачи\nЧитать выбранные ключи.\n');write(codeQuery,'# Код\nЧитать PR по явным parameters.\n');
-      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nentry: tasks\n---\n## Шаги\n### tasks\n- действие: run-query\n- параметры:\n  - \`queryFile: ${taskQuery}\`\n  - \`parameters: {}\`\n- артефакт: task-records\n- следующий: code\n### code\n- действие: read-code-evidence\n- параметры:\n  - \`queryFile: ${codeQuery}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: code-evidence\n- следующий: end\n`);
+      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: tasks\n---\n## Шаги\n### tasks\n- действие: run-query\n- параметры:\n  - \`queryFile: ${taskQuery}\`\n  - \`parameters: {}\`\n- артефакт: task-records\n- следующий: code\n### code\n- действие: read-code-evidence\n- параметры:\n  - \`queryFile: ${codeQuery}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: code-evidence\n- следующий: end\n`);
       const files=dependencies(tmp,name,{},'demo');
       assert.ok(files.includes(codeQuery));assert.ok(files.includes('tools/lib/actions/code-data.js'));
       assert.ok(!files.some(f=>f.includes('sdd-data')||f.includes('sdd-stories-report')));
@@ -21,12 +23,12 @@ try {
       const state=()=>JSON.parse(fs.readFileSync(statePath));
       const readPort=port=>JSON.parse(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run',state().artifacts[port])));
       journal.operation(tmp,'begin',{output:run.output,step:'tasks'});
-      journal.operation(tmp,'save',{output:run.output,step:'tasks',artifact:'task-records',extension:'json',content:{meta:{},records:[{key:'TASK-1'}],excluded:[],unverified:[]},next:'code'});
+      journal.operation(tmp,'save',{attemptId:attempt(run.output),output:run.output,step:'tasks',artifact:'task-records',extension:'json',content:{meta:{},records:[{key:'TASK-1'}],excluded:[],unverified:[]},next:'code'});
       const tasks=readPort('task-records');
       journal.operation(tmp,'begin',{output:run.output,step:'code'});
       assert.deepEqual(state().pending.params.parameters,parameters);
       const code=evidenceFromFixture({codeEvidence:{queryFile:codeQuery,records:[{key:'TASK-1',prs:[pr],prsComplete:true}]}},tasks,codeQuery);
-      journal.operation(tmp,'save',{output:run.output,step:'code',artifact:'code-evidence',extension:'json',content:code,next:'end'});
+      journal.operation(tmp,'save',{attemptId:attempt(run.output),output:run.output,step:'code',artifact:'code-evidence',extension:'json',content:code,next:'end'});
       assert.deepEqual(readPort('code-evidence'),{selectionId:tasks.selectionId,queryFile:codeQuery,records:[{key:'TASK-1',prs:[pr],prsComplete:true}]});
       const changed=journal.start(tmp,{process:name,mode:'demo',date:'2026-11-04',slug:'changed'});
       write(codeQuery,'# Changed request\n');

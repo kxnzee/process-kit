@@ -1,3 +1,16 @@
-.gigacode/hooks/pre-push text eol=lf
+# Unknown formats and binary resources keep their exact committed bytes.
+# Publication and run snapshots hash raw bytes; core.autocrlf must not change them.
+* -text
 
+# Known text formats use canonical LF on every supported checkout platform.
+*.md text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.txt text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.gigacode/hooks/pre-push text eol=lf
 .gigacode/hooks/pre-commit text eol=lf

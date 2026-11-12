@@ -28,28 +28,44 @@ function visible(name,scope){
 // Public GigaCode admission. Parse the complete declared tree before loading any JS.
 // Core embedding APIs remain a trusted-host boundary, not a JavaScript sandbox.
 function assertAccess(cwd,name,params={},files=[]){
- const scope=scopeFor(cwd),seen=new Set();
+ const scope=scopeFor(cwd),{stepParams,childParams}=require('./process-dependencies');
+ const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
  function allowed(ref,from){
   if(!NAME.test(ref||'')||!visible(ref,scope)||from&&!allowedReference(from,ref))throw new Error('Определение недоступно по уровню владения');
  }
  function resources(value,from){
   if(Array.isArray(value)){for(const item of value)resources(item,from);return;}
   if(value&&typeof value==='object'){for(const item of Object.values(value))resources(item,from);return;}
-  if(typeof value!=='string'||value.includes('{'))return;
-  const resource=value.match(/^(processes|actions)\/([^/]+)\//);
+  if(typeof value!=='string')return;
+  if(/^[{[]/.test(value.trimStart())){let parsed;try{parsed=JSON.parse(value);}catch{}if(parsed&&typeof parsed==='object'){resources(parsed,from);return;}}
+  const resource=value.match(/^(processes|actions)\/([^/]+)(?:\/|$)/);
   if(resource)allowed(resource[2],from);
   if(value.startsWith('context/')&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
  }
- function visit(ref,from){
-  allowed(ref,from);if(seen.has(ref))return;seen.add(ref);
+ function visit(ref,inherited,stack=[]){
+  allowed(ref,stack.at(-1));
+  if(stack.includes(ref)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
   const model=processModel(fs.readFileSync(inside(cwd,`processes/${ref}/PROCESS.md`),'utf8'));
-  const declared=model.data.requires||{};
-  resources(model.data.params,ref);resources(model.steps.map(s=>s.params),ref);
-  resources(params,ref);
-  for(const action of [...(Array.isArray(declared.actions)?declared.actions:[]),...model.steps.filter(s=>s.kind==='action').map(s=>s.ref)])allowed(action,ref);
-  for(const child of [...(Array.isArray(declared.processes)?declared.processes:[]),...model.steps.filter(s=>s.kind==='process').map(s=>s.ref)])visit(child,ref);
+  const declared=model.data.requires||{},values={...model.data.params,...inherited};
+  resources(values,ref);
+  const actions=new Set([...(Array.isArray(declared.actions)?declared.actions:[]),...model.steps.filter(s=>s.kind==='action').map(s=>s.ref)]);
+  for(const action of actions){
+   allowed(action,ref);
+   const meta=require('../core/markdown').parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${action}/ACTION.md`),'utf8')).data||{};
+   resources(meta.requiresFiles,ref);
+   for(const step of model.steps.filter(s=>s.kind==='action'&&s.ref===action)){
+    const effective=stepParams(values,step,params,{},meta.defaults);resources(effective,ref);
+    for(const key of ['query','template','rule'])if(NAME.test(effective[key]||''))allowed(effective[key],ref);
+   }
+  }
+  const children=new Set(Array.isArray(declared.processes)?declared.processes:[]);
+  for(const step of model.steps.filter(s=>s.kind==='process')){
+   allowed(step.ref,ref);children.delete(step.ref);
+   visit(step.ref,childParams(cwd,model,step,values,{},params),[...stack,ref]);
+  }
+  for(const child of children)visit(child,values,[...stack,ref]);
  }
- visit(name);resources(files,name);
+ visit(name,params);resources(files,name);
 }
 function visibleFile(file,name,scope){
  if(!canonicalFile(file))return false;

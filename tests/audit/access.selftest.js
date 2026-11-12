@@ -38,4 +38,17 @@ try{
   assert.doesNotThrow(()=>access(tmp,'my-allowed'));
   assert.throws(()=>access(tmp,'my-allowed',{text:'processes/team-b-foreign/data.txt'}),/недоступ|владени/i);
  });
+ check('ARCH-001: bindings, literal braces, JSON parameters and Action defaults cannot hide foreign resources',()=>{
+  const access=require('../../tools/lib/entities/process-facts').assertAccess;
+  for(const text of ['processes/team-b-foreign/data{literal}.txt','{"data":"processes/team-b-foreign/data.txt"}'])assert.throws(()=>access(tmp,'my-allowed',{text}),/недоступ|владени/i);
+  const file=path.join(tmp,'processes/my-allowed/PROCESS.md'),original=fs.readFileSync(file,'utf8');
+  fs.writeFileSync(file,original.replace('text: {params.input}','text: processes/{params.team}/data.md'));
+  assert.throws(()=>access(tmp,'my-allowed',{team:'team-b-foreign'}),/недоступ|владени/i);fs.writeFileSync(file,original);
+  const actionFile=path.join(tmp,'actions/edit-text/ACTION.md'),actionText=fs.readFileSync(actionFile,'utf8');
+  fs.writeFileSync(file,original.replace('  - `text: {params.input}`\n',''));
+  fs.writeFileSync(actionFile,actionText.replace('defaults:','defaults:\n  text: processes/team-b-foreign/data.txt'));
+  assert.throws(()=>access(tmp,'my-allowed'),/недоступ|владени/i);fs.writeFileSync(actionFile,actionText);
+  fs.writeFileSync(actionFile,actionText.replace('requiresFiles: [tools/lib/actions/action-support.js]','requiresFiles: [processes/team-b-foreign/data.txt]'));
+  assert.throws(()=>access(tmp,'my-allowed'),/недоступ|владени/i);
+ });
 }finally{c.close();}

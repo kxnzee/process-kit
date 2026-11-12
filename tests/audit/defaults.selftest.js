@@ -16,4 +16,10 @@ try{
   const begun=journal.operation(tmp,'begin',{output,step:'work'});assert.equal(begun.pending.params.greeting,'explicit');
   journal.operation(tmp,'save',{...begun.save,content:'explicit'});
  });
+ check('ARCH-005: the shipped edit-text Action resolves its default style during preflight',()=>{
+  write('processes/audit-edit-default/PROCESS.md','---\nname: audit-edit-default\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: shipped defaults\nexample: test\nentry: work\nrequires:\n  actions: [edit-text]\n  processes: []\n  context: [master]\n---\n## Шаги\n### work\n- действие: edit-text\n- артефакт: result\n- следующий: end\n');
+  const {output}=journal.start(tmp,{process:'audit-edit-default',mode:'local',definitionTest:true,params:{inputText:'12 задач.'}});
+  const card=journal.operation(tmp,'next',{output});assert.equal(card.params.styleFile,'context/master/writing-style/CONTEXT.md');
+  const begun=journal.operation(tmp,'begin',card.spec);journal.operation(tmp,'save',{...begun.save,content:'12 задач.'});
+ });
 }finally{c.close();}

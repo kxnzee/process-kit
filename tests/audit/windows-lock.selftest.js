@@ -33,4 +33,17 @@ try{
   finally{fs.unlinkSync=unlink;fs.linkSync=link;fs.closeSync(reader);}
   assert.deepEqual(fs.readdirSync(tmp),[]);
  });
+ check('ARCH-004: recovery does not remove a replacement live owner after the old owner exits',()=>{
+  const file=path.join(tmp,'.journal.lock'),owner={pid:2147483647,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()};
+  // The process/FS boundary replaces the lock exactly while liveness is checked.
+  for(const legacy of [false,true]){
+   if(legacy){fs.mkdirSync(file);fs.writeFileSync(path.join(file,'owner.json'),JSON.stringify(owner));}else fs.writeFileSync(file,JSON.stringify(owner));
+   const kill=process.kill,newOwner={...owner,pid:process.pid,id:require('node:crypto').randomUUID()};let replaced=false;
+   process.kill=function(pid){if(pid===owner.pid){replaced=true;fs.rmSync(file,{recursive:true,force:true});if(legacy){fs.mkdirSync(file);fs.writeFileSync(path.join(file,'owner.json'),JSON.stringify(newOwner));}else fs.writeFileSync(file,JSON.stringify(newOwner));throw Object.assign(new Error('Owner exited'),{code:'ESRCH'});}return kill.apply(this,arguments);};
+   try{assert.throws(()=>storage.lock(tmp,true),/Журнал занят работающим процессом/);}
+   finally{process.kill=kill;}
+   assert.ok(replaced);assert.equal(JSON.parse(fs.readFileSync(legacy?path.join(file,'owner.json'):file,'utf8')).id,newOwner.id);fs.rmSync(file,{recursive:true,force:true});
+  }
+  assert.deepEqual(fs.readdirSync(tmp),[]);
+ });
 }finally{c.close();}

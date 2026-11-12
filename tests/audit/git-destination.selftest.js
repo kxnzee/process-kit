@@ -17,4 +17,13 @@ try{
  check('ARCH-006: every personal push URL must be isolated, including common fetch URLs',()=>{
   git('remote','set-url','origin','https://github.com/org/common');git('remote','set-url','mine','https://github.com/org/personal');git('config','--add','remote.mine.pushurl','https://github.com/org/personal');git('config','--add','remote.mine.pushurl','ssh://git@github.com/org/common.git');rejected('https://github.com/org/personal');
  });
+ check('ARCH-006: a worktree root, .git path and gitfile identify the same repository',()=>{
+  git('config','--unset-all','remote.mine.pushurl');
+  git('remote','set-url','origin',tmp);git('remote','set-url','mine',path.join(tmp,'.git'));rejected(path.join(tmp,'.git'));
+  const {identity}=require('../../tools/lib/git/destination');
+  assert.equal(identity(tmp,tmp),identity(tmp,path.join(tmp,'.git')));
+  const linked=path.join(tmp,'linked-worktree');git('worktree','add','--detach',linked,'HEAD');
+  assert.equal(identity(tmp,linked),identity(tmp,tmp));assert.equal(identity(tmp,path.join(linked,'.git')),identity(tmp,tmp));
+  git('remote','set-url','mine',linked);rejected(linked);
+ });
 }finally{c.close();}

@@ -14,6 +14,7 @@ function lock(dir,recover=false,name='.journal.lock'){
  const file=inside(dir,name),owner={pid:process.pid,host:os.hostname(),id:crypto.randomUUID()};
  const candidateFor=owner=>inside(dir,`${name}.${owner.pid}.${owner.id}.candidate`);
  const same=(a,b)=>a&&b&&a.dev===b.dev&&a.ino===b.ino;
+ const sameOwner=(a,b)=>a?.pid===b?.pid&&a?.host===b?.host&&a?.id===b?.id;
  function readOwner(entry){return JSON.parse(fs.readFileSync(entry.isDirectory()?inside(file,'owner.json'):file,'utf8'));}
  function claim(){
   // Publish closed, complete owner bytes exclusively. A file rename could overwrite a lock.
@@ -50,13 +51,21 @@ function lock(dir,recover=false,name='.journal.lock'){
      try{process.kill(previous.pid,0);throw new Error('Журнал занят работающим процессом');}catch(error){if(error.code!=='ESRCH')throw error;}
      if(entry.isDirectory()){
       // Legacy locks remain recoverable only after their local owner is proven dead.
+      const latest=fs.statSync(file,{throwIfNoEntry:false});
+      if(!same(latest,entry)||!sameOwner(readOwner(latest),previous))throw new Error('Журнал занят работающим процессом');
       const stale=file+'.'+crypto.randomUUID()+'.stale';fs.renameSync(file,stale);fs.rmSync(stale,{recursive:true,force:true});
      }else{
       // A crash immediately after link may leave its candidate hard link. Remove only
       // that same inode, never an unrelated candidate or a path supplied by metadata.
       const anchor=candidateFor(owner);
-      fs.linkSync(file,anchor); // Also protect old locks that predate retained anchors.
-      try{
+      try{fs.linkSync(file,anchor);}catch(error){
+       if(error.code!=='ENOENT')throw error;
+       if(!claim())throw new Error('Журнал занят работающим процессом');
+       acquired=true;
+      }
+      if(!acquired)try{
+       const anchored=fs.statSync(anchor),captured=JSON.parse(fs.readFileSync(anchor,'utf8'));
+       if(!same(anchored,entry)||!sameOwner(captured,previous))throw new Error('Журнал занят работающим процессом');
        fs.unlinkSync(file);
        if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
         const candidate=candidateFor(previous);

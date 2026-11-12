@@ -16,16 +16,21 @@ function environment(mode){
 }
 function run(cwd,command,spec){
  if(!commands.includes(command))throw new Error('Неизвестная операция run');
+ if(command==='diagnose')return require('../runtime/diagnostics').report(cwd,spec.output);
+ const access=state=>require('../entities/process-facts').assertAccess(cwd,state.identity.process,state.identity.params,state.identity.extraFiles);
  if(command==='start')require('../entities/process-facts').assertAccess(cwd,spec.process,{...spec.params,...spec.explicitParams},spec.files);
  else {
   if(!require('../core/paths').validRunFolderName(spec.output))throw new Error('Неверный output');
-  const state=JSON.parse(fs.readFileSync(require('../core/safe-path').inside(cwd,`outputs/${spec.output}/.run/state.json`),'utf8'));
-  require('../entities/process-facts').assertAccess(cwd,state.identity.process,state.identity.params,state.identity.extraFiles);
+  const {inside}=require('../core/safe-path'),dir=inside(cwd,`outputs/${spec.output}/.run`);
+  const stateFile=inside(dir,'state.json'),transaction=inside(dir,'transaction.json');
+  if(fs.existsSync(stateFile))access(JSON.parse(fs.readFileSync(stateFile,'utf8')));
+  else if(command!=='recover'||!fs.existsSync(transaction))throw new Error('Состояние отсутствует: требуется run recover');
+  // Admission is pure. The existing Controller alone validates/restores the transaction.
+  if(command==='recover'&&fs.existsSync(transaction))access(JSON.parse(JSON.parse(fs.readFileSync(transaction,'utf8')).state));
  }
  const options=environment(spec.mode);
  if(command==='start')return controller.start(cwd,spec,options);
  if(command==='execute')return controller.execute(cwd,spec,options);
- if(command==='diagnose')return require('../runtime/diagnostics').report(cwd,spec.output);
  return controller.operation(cwd,command,spec,options);
 }
 module.exports={run};

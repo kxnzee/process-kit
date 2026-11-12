@@ -16,6 +16,12 @@ function environment(mode){
 }
 function run(cwd,command,spec){
  if(!commands.includes(command))throw new Error('Неизвестная операция run');
+ if(command==='start')require('../entities/process-facts').assertAccess(cwd,spec.process,{...spec.params,...spec.explicitParams},spec.files);
+ else {
+  if(!require('../core/paths').validRunFolderName(spec.output))throw new Error('Неверный output');
+  const state=JSON.parse(fs.readFileSync(require('../core/safe-path').inside(cwd,`outputs/${spec.output}/.run/state.json`),'utf8'));
+  require('../entities/process-facts').assertAccess(cwd,state.identity.process,state.identity.params,state.identity.extraFiles);
+ }
  const options=environment(spec.mode);
  if(command==='start')return controller.start(cwd,spec,options);
  if(command==='execute')return controller.execute(cwd,spec,options);

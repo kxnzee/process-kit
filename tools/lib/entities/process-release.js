@@ -18,7 +18,22 @@ function current(cwd,receipt,process=receipt?.process){
   return Object.entries(receipt.files).every(([file,digest])=>hash(fs.readFileSync(inside(cwd,file)))===digest);
  }catch(error){if(error.code==='ENOENT')return false;throw error;}
 }
+// Safe admission before deep validation or dependency hooks load definition JS.
+function admitPublished(cwd,name,seen=new Set()){
+ const {NAME,processModel}=require('./process-model');
+ if(!NAME.test(name||''))throw new Error('Неверный процесс');
+ if(seen.has(name))return;seen.add(name);
+ const model=processModel(fs.readFileSync(inside(cwd,`processes/${name}/PROCESS.md`),'utf8'));
+ if(model.data.publication!==undefined&&model.data.publication!=='required')throw new Error('publication: допускается только required; legacy нужно перевести через validate/test/publish');
+ const file=inside(cwd,`processes/${name}/publication.json`);
+ const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
+ if(receipt?.status!=='published'||!current(cwd,receipt,name))throw new Error('Определение не опубликовано или изменилось после проверки: выполните definition validate/test/publish');
+ function covered(file){if(receipt.files[file]!==hash(fs.readFileSync(inside(cwd,file))))throw new Error('Выбранная зависимость не проверена при публикации: '+file);}
+ for(const file of require('./process-dependencies').definitionFiles(cwd,name))covered(file);
+ for(const ref of new Set([...(model.data.requires?.processes||[]),...model.steps.filter(s=>s.kind==='process').map(s=>s.ref)]))admitPublished(cwd,ref,seen);
+}
 function assertPublished(cwd,name,files=[]){
+ admitPublished(cwd,name);
  validateDefinition(cwd,name);
  const file=inside(cwd,`processes/${name}/publication.json`);
  const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
@@ -26,6 +41,7 @@ function assertPublished(cwd,name,files=[]){
  for(const [file,digest]of Object.entries(snapshot(cwd,files)))if(receipt.files[file]!==digest)throw new Error('Выбранная зависимость не проверена при публикации: '+file);
 }
 function assertPublishedTree(cwd,name,params,mode,overrides,files){
+ admitPublished(cwd,name);
  const model=validateDefinition(cwd,name);
  assertPublished(cwd,name,(files||dependencies(cwd,name,params,mode,[],overrides)).filter(f=>f!==params.dataFile));
  const {childParams}=require('./process-dependencies');
@@ -74,11 +90,13 @@ function lifecycle(cwd,operation,spec){
  receipt.updated=new Date().toISOString();atomic(file,receipt);
  return {process:spec.process,status:receipt.status,file,scope:receipt.scope||null};
 }
-module.exports={assertPublished,assertPublishedTree,lifecycle,current,validReceipt};
+module.exports={admitPublished,assertPublished,assertPublishedTree,lifecycle,current,validReceipt};
 if(require.main===module){
  const [operation,file,...rest]=process.argv.slice(2);
  try{
   if(!file||rest.length)throw new Error('node tools/kit.js definition <inspect|validate|test|publish|status> <spec.json>');
-  console.log(JSON.stringify(lifecycle(root(),operation,JSON.parse(fs.readFileSync(file,'utf8'))),null,2));
+  const cwd=root(),spec=JSON.parse(fs.readFileSync(file,'utf8'));
+  if(operation!=='inspect')require('./process-facts').assertAccess(cwd,spec.process,spec.params);
+  console.log(JSON.stringify(lifecycle(cwd,operation,spec),null,2));
  }catch(error){console.error(operation==='inspect'?'Не удалось прочитать факты. Использование: node tools/kit.js definition inspect <spec.json>; нужны process и необязательные level/team.':error.message);process.exitCode=1;}
 }

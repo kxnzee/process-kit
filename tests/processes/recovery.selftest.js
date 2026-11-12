@@ -105,7 +105,8 @@ try{
   const moduleFile=path.join(tmp,'tools/lib/runtime/run-storage.js'),file=path.join(dir,'.journal.lock');
   const dead=spawnSync(process.execPath,['-e',"require(process.argv[1]).lock(process.argv[2]);",moduleFile,dir],{encoding:'utf8'});assert.equal(dead.status,0,dead.stderr);
   const owner=JSON.parse(fs.readFileSync(file,'utf8')),candidate=path.join(dir,`.journal.lock.${owner.pid}.${owner.id}.candidate`);
-  fs.writeFileSync(candidate,'unrelated');const release=storage.lock(dir,true);release();assert.equal(fs.readFileSync(candidate,'utf8'),'unrelated');fs.unlinkSync(candidate);
+  // Replace the retained anchor with a genuinely unrelated inode.
+  fs.unlinkSync(candidate);fs.writeFileSync(candidate,'unrelated');const release=storage.lock(dir,true);release();assert.equal(fs.readFileSync(candidate,'utf8'),'unrelated');fs.unlinkSync(candidate);
   const original=fs.linkSync;
   try{fs.linkSync=()=>{throw Object.assign(new Error('NO_HARD_LINKS'),{code:'ENOTSUP'});};assert.throws(()=>storage.lock(dir),/NO_HARD_LINKS/);}
   finally{fs.linkSync=original;}

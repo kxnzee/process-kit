@@ -17,12 +17,13 @@ function lock(dir,recover=false,name='.journal.lock'){
  function readOwner(entry){return JSON.parse(fs.readFileSync(entry.isDirectory()?inside(file,'owner.json'):file,'utf8'));}
  function claim(){
   // Publish closed, complete owner bytes exclusively. A file rename could overwrite a lock.
-  // Readers may hold this file open: unlink avoids Windows directory-rename sharing races.
-  const candidate=candidateFor(owner);
+  // Keep the candidate as an anchor until after unlinking the reusable name.
+  // On Windows a last-link delete can leave that name pending while a reader is open.
+  const candidate=candidateFor(owner);let published=false;
   try{
    fs.writeFileSync(candidate,encode(owner),{flag:'wx',mode:0o600});
-   try{fs.linkSync(candidate,file);return true;}catch(error){if(error.code==='EEXIST'||fs.existsSync(file))return false;throw error;}
-  }finally{fs.rmSync(candidate,{force:true});}
+   try{fs.linkSync(candidate,file);published=true;return true;}catch(error){if(error.code==='EEXIST'||fs.existsSync(file))return false;throw error;}
+  }finally{if(!published)fs.rmSync(candidate,{force:true});}
  }
  if(!claim()){
   if(!recover)throw new Error('Журнал занят или прерван: используйте run recover, не удаляйте lock вручную');
@@ -36,11 +37,13 @@ function lock(dir,recover=false,name='.journal.lock'){
     try{previous=readOwner(entry);}
     catch(error){
      const current=fs.statSync(file,{throwIfNoEntry:false});
-     // An ordinary release may remove/replace the path between stat and read.
-     if(['ENOENT','ENOTDIR','EISDIR'].includes(error.code)&&!same(current,entry)){
+     // A file may disappear/reappear between stat and read, including inode reuse.
+     // Never infer ownership from stat: one exclusive claim either succeeds or is busy.
+     // Missing owner.json in the same legacy directory remains an unknown owner.
+     if(['ENOENT','ENOTDIR','EISDIR'].includes(error.code)&&(!entry.isDirectory()||!same(current,entry))){
       if(!claim())throw new Error('Журнал занят работающим процессом');
       acquired=true;
-     }else throw new Error('Владелец lock неизвестен: требуется проверка разработчиком');
+     }else throw Object.assign(new Error('Владелец lock неизвестен: требуется проверка разработчиком ('+name+': '+(error.code||error.name)+')'),{cause:error});
     }
     if(!acquired){
      if(!previous||previous.host!==os.hostname()||!Number.isInteger(previous.pid)||previous.pid<=0)throw new Error('Нельзя проверить владельца lock на этом компьютере');
@@ -51,11 +54,15 @@ function lock(dir,recover=false,name='.journal.lock'){
      }else{
       // A crash immediately after link may leave its candidate hard link. Remove only
       // that same inode, never an unrelated candidate or a path supplied by metadata.
-      if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
-       const candidate=candidateFor(previous);
-       if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
-      }
-      fs.unlinkSync(file);
+      const anchor=candidateFor(owner);
+      fs.linkSync(file,anchor); // Also protect old locks that predate retained anchors.
+      try{
+       fs.unlinkSync(file);
+       if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
+        const candidate=candidateFor(previous);
+        if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
+       }
+      }finally{fs.unlinkSync(anchor);}
      }
     }
    }
@@ -64,9 +71,11 @@ function lock(dir,recover=false,name='.journal.lock'){
   }finally{releaseGuard();}
  }
  return ()=>{
-  const current=readOwner(fs.statSync(file));
+  const entry=fs.statSync(file),current=readOwner(entry);
   if(current.id!==owner.id)throw new Error('Изменился владелец блокировки');
   fs.unlinkSync(file);
+  const candidate=candidateFor(owner);
+  if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
  };
 }
 

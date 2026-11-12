@@ -13,8 +13,8 @@ const git = (...args) => {
 function reject(message) { console.error(message); process.exit(1); }
 if (!remote || !address) reject('Не указан адрес отправки. Защита не проверена.');
 const own = git('remote', 'get-url', '--push', '--all', 'mine')?.split('\n') || [];
-const common = git('remote', 'get-url', '--push', '--all', 'origin')?.split('\n') || [];
-const isOwn = git('config', 'branch.my.pushRemote') === 'mine' && own.includes(address) && !common.includes(address);
+const common = [...(git('remote','get-url','--all','origin')?.split('\n')||[]),...(git('remote','get-url','--push','--all','origin')?.split('\n')||[])];
+const isOwn = git('config', 'branch.my.pushRemote') === 'mine' && own.includes(address) && require('./destination').isolated(cwd,own,common);
 if (!isOwn) {
   for (const line of input.split('\n').filter(Boolean)) {
     const fields = line.trim().split(/\s+/);

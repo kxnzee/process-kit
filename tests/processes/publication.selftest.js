@@ -3,6 +3,9 @@ const ctx=require('../fixture')(),{fs,path,assert,tmp,check,write}=ctx;
 const {publishDefinition}=require('./publication-helpers');
 const journal=require('../../tools/lib/runtime/run-journal'),{lifecycle}=require('../../tools/lib/entities/process-release');
 try{
+ // The public GigaCode seam requires a real personal scope for private definitions.
+ require('node:child_process').execFileSync('git',['init','-b','my'],{cwd:tmp,stdio:'ignore'});
+ write('config/my/config.json',JSON.stringify({schemaVersion:2,teamId:null,profile:{name:'Test',email:'test@example.invalid'},storage:{mode:'local'},taskStores:[],codeStores:[],defaults:{},preferences:{}}));
  check('definitionTest does not bypass act approval in local/demo or permit publication of incomplete runs',()=>{
   fs.cpSync(path.join(tmp,'actions/example'),path.join(tmp,'actions/my-publication-act'),{recursive:true});
   const file=path.join(tmp,'actions/my-publication-act/ACTION.md');

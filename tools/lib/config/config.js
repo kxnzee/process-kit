@@ -81,7 +81,7 @@ function resolveProcess(cwd,name,params={},overrides=params){
    for(const slot of ['taskStore','codeStore'].filter(slot=>meta.consumes.params.includes(slot))){
     try{
      const levels=model.data.requires?.config||[];if(!levels.length)throw new Error('requires.config не объявлен для сетевого шага');
-     const config=loadConfig(cwd,levels),effective=stepParams(values,step,overrides),fields=requiredFields(cwd,process,effective);
+     const config=loadConfig(cwd,levels),effective=stepParams(values,step,overrides,{},meta.defaults),fields=requiredFields(cwd,process,effective);
      for(const file of config.files)configFiles.add(file);
      const selected=resolveStore(cwd,config,slot,effective[slot],fields);
      connections.push({process,step:step.name,slot,...selected});

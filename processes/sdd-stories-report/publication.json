@@ -34,10 +34,10 @@
     "processes/sdd-stories-report/templates/mail.md": "d1d76bd55ea88fa87df40ba2e95ddb69a0d33ec40dffca9cd893434ae090f225",
     "processes/sdd-stories-report/templates/report.md": "c35adbaabc6d895c3b5e89f9cc5c0051a2c3a9f8022c7cfe9827ebc656aa6aa6"
   },
-  "updated": "2026-11-12T09:02:14.064Z",
+  "updated": "2026-11-12T22:56:21.422Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-12_проба-проверка-сдд",
-    "2026-11-12_проба-проверка-сдд-2"
+    "2026-11-13_проба-проверка-сдд",
+    "2026-11-13_проба-проверка-сдд-2"
   ]
 }

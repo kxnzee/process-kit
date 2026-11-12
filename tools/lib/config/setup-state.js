@@ -63,7 +63,8 @@ function inspect(cwd){
   const addresses=(...args)=>(git('remote','get-url',...args)||'').split(/\r?\n/).filter(Boolean);
   const own=addresses('--push','--all','mine');
   const common=[...addresses('--all','origin'),...addresses('--push','--all','origin')];
-  destinationMatches=push==='mine'&&git('remote','get-url','mine')===my.storage.repositoryUrl&&own.length>0&&own.every(address=>address===my.storage.repositoryUrl&&!common.includes(address));
+  const {identity,isolated}=require('../git/destination'),expected=identity(cwd,my.storage.repositoryUrl);
+  destinationMatches=push==='mine'&&!!expected&&identity(cwd,git('remote','get-url','mine'))===expected&&own.every(address=>identity(cwd,address)===expected)&&isolated(cwd,own,common);
  }
  result.protection.push=upstream===null&&destinationMatches;
  if(!result.protection.push)result.issues.push('personal-push-mismatch');

@@ -55,6 +55,7 @@ function start(cwd,spec,environment={}){
  const current=new Date();spec={...spec,date:spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
  if(!NAME.test(spec.process||'')||!['local','live','demo'].includes(spec.mode))throw new Error('Нужны process и mode');
+ if(!spec.definitionTest)require('../entities/process-release').admitPublished(cwd,spec.process);
  const model=validateDefinition(cwd,spec.process);if(model.data.status!=='действует')throw new Error('Процесс устарел');
  const params=effectiveParams(cwd,spec,model.data.params||{}),slug=(spec.mode==='demo'?'проба-':'')+(spec.slug||spec.process);
  validateRunInput(cwd,spec.process,model,params);
@@ -81,11 +82,16 @@ function saveRequest(cwd,state,output){
  return {output,step:step.name,attemptId:state.pending.id,artifact:step.artifact,extension:meta.contracts[Object.keys(meta.produces)[0]]==='text'?'md':'json',next:step.next};
 }
 function operation(cwd,command,spec,environment={}){
+ if(!validRunFolderName(spec.output))throw new Error('Неверный output');
+ const release=storage.lock(inside(cwd,`outputs/${spec.output}/.run`),command==='recover');
+ try{return operationLocked(cwd,command,spec,environment);}finally{release();}
+}
+// The caller holds the existing run lock, including during local computation.
+function operationLocked(cwd,command,spec,environment={}){
  const fingerprint=environment.fingerprint||((file,body)=>hash(body));
  if(Object.hasOwn(spec,'confirmed'))throw new Error('confirmed больше не принимается: это непроверяемый флаг, используйте approval receipt');
  if(!validRunFolderName(spec.output))throw new Error('Неверный output');
- const dir=inside(cwd,`outputs/${spec.output}/.run`),release=storage.lock(dir,command==='recover');
- try{
+ const dir=inside(cwd,`outputs/${spec.output}/.run`);
   if(command==='recover'){
    const recovered=storage.restore(dir);
    if(recovered){project(cwd,spec.output,recovered.state,recovered.spec,true);storage.finish(dir);}
@@ -96,6 +102,7 @@ function operation(cwd,command,spec,environment={}){
   const events=[];
   function event(unused,type,data={}){const row={ts:now(),type,...data};events.push(row);return row;}
   for(const [file,digest]of Object.entries(state.identity.files))if(fingerprint(file,fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
+  for(const file of require('../entities/process-dependencies').definitionFiles(cwd,state.identity.process))if(!Object.hasOwn(state.identity.files,file))throw new Error('Изменён состав зависимостей; нужен новый запуск');
   const inventory=dependencies(cwd,state.identity.process,state.identity.params,state.identity.mode,state.identity.extraFiles||[],state.identity.overrides);
   const expected=Object.keys(state.identity.files).filter(file=>file!==state.identity.params.input&&!(state.identity.environmentFiles||[]).includes(file)).sort();
   if(JSON.stringify(inventory.sort())!==JSON.stringify(expected))throw new Error('Изменён состав зависимостей; нужен новый запуск');
@@ -112,7 +119,7 @@ function operation(cwd,command,spec,environment={}){
   function approvalFor(branch,target){return trust.request(state,spec.output,'user-decision',{step:branch.name,target,params:state.params});}
   function needsApproval(target){return target!=='end'||state.stack.length>0;}
   function prepareAction(step,meta){
-   const params=stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))])));
+   const params=stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))])),meta.defaults);
    const inputs=Object.fromEntries(meta.consumes.artifacts.map(name=>[name,state.artifacts[name]?.endsWith('.json')?json(inside(dir,state.artifacts[name])):fs.readFileSync(inside(dir,state.artifacts[name]),'utf8')]));
    const context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,inputs,mode:state.identity.mode};
    const prepared=require('../actions/action-runtime').runtime(cwd,step.ref,meta).prepare?.(context);if(prepared)Object.assign(params,prepared);
@@ -141,7 +148,7 @@ function operation(cwd,command,spec,environment={}){
     return {...responsePaths,status:state.status,operation:'choose',spec:{output:spec.output,step:step.name,...(resolved?{target:resolved.target}:{})},targets:resolved?[resolved.target]:step.targets,decision:resolved?.reason,decisionMode:resolved?'code':step.decision||'model',requiresApproval:step.decision==='user',verificationAvailable:typeof environment.verifyApproval==='function',approvalRequests:step.decision==='user'?step.targets.filter(needsApproval).map(target=>approvalFor(step,target)):[],step:step.name,branch:step.body.join('\n').trim(),facts:facts(Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,inside(dir,file)]))),instruction:'Вызовите run choose с данным spec и target. Для model нужен decision; user требует проверенный approval receipt доверенной интеграции, кроме end корневого процесса. После выбора снова вызовите next.'};
    }
    if(step.kind==='process')return {...responsePaths,status:state.status,operation:'enter',spec:{output:spec.output,step:step.name},process:step.ref};
-   const meta=action(cwd,step.ref),params=state.pending?.params||stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))]))),context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,mode:state.identity.mode};
+   const meta=action(cwd,step.ref),params=state.pending?.params||stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))])),meta.defaults),context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,mode:state.identity.mode};
    if(state.pending&&meta.kind==='act')return {...responsePaths,status:state.status,operation:'reconcile',action:step.ref,params:state.pending.params,readFiles:[`actions/${step.ref}/ACTION.md`],save:saveRequest(cwd,state,spec.output),effectRequest:effectRequest(),verificationAvailable:typeof environment.verifyEffect==='function',attemptId:state.pending.id,spec:{output:spec.output,step:step.name,attemptId:state.pending.id},instruction:'Исход внешнего действия неизвестен. Проверьте результат в системе; не повторяйте действие. Save требует adapter receipt, проверенный verifyEffect с outcome=applied. Retry разрешён только с проверенным outcome=not-applied. Заявления агента не разрешают повтор.'};
    if(meta.kind==='act'){const prepared=prepareAction(step,meta);return {...responsePaths,stepStatus:'blocked',status:state.status,operation:'approval-required',action:step.ref,params:prepared,approvalRequest:actionRequest(step,prepared),verificationAvailable:typeof environment.verifyApproval==='function',spec:{output:spec.output,step:step.name},instruction:'До begin требуется approval receipt доверенной интеграции, привязанный к этому запросу. Без verifyApproval внешнее действие заблокировано.'};}
    const policy=require('../actions/action-runtime').runtime(cwd,step.ref,meta),automatic=meta.kind!=='act'&&typeof policy.execute==='function'&&(policy.canExecute?.(context)??true);
@@ -245,19 +252,24 @@ function operation(cwd,command,spec,environment={}){
   state.updated=now();if(spec.summary)state.summary=spec.summary;
   storage.stage(dir,state,events,spec);storage.restore(dir);project(cwd,spec.output,state,spec);storage.finish(dir);
   return {...state,save:saveRequest(cwd,state,spec.output),summaryFile:path.join(path.dirname(dir),'итог.md'),outputDir:path.dirname(dir),resultFile:state.result?path.join(path.dirname(dir),state.result):null};
- }finally{release();}
 }
 // Отказ шага при известной позиции завершает прогон: иначе он остаётся «выполняется» без записи в истории.
 // Неизвестный output, чужой путь или нарушенная целостность отказом шага не считаются.
-function failStep(cwd,output,reason,environment={}){
+function failStep(cwd,output,reason,environment={},perform=operation){
  let dir;
- try{dir=inside(cwd,`outputs/${output}/.run`);const state=json(inside(dir,'state.json'));if(state.status!=='running')return;operation(cwd,'fail',{output,reason},environment);}
+ try{dir=inside(cwd,`outputs/${output}/.run`);const state=json(inside(dir,'state.json'));if(state.status!=='running')return;perform(cwd,'fail',{output,reason},environment);}
  catch(error){
   const integrity=['Нарушена согласованность','Незавершённая запись','Журнал занят','Изменён вход: ','Изменён сохранённый шаг: ','Изменены параметры','Изменён результат: ','Изменён состав зависимостей'];
   if(!dir||integrity.some(part=>error.message.startsWith(part)))throw error;
  }
 }
 function execute(cwd,spec,environment={}){
+ if(!validRunFolderName(spec.output))throw new Error('Неверный output');
+ const release=storage.lock(inside(cwd,`outputs/${spec.output}/.run`));
+ try{return executeLocked(cwd,spec,environment);}finally{release();}
+}
+function executeLocked(cwd,spec,environment){
+ const operation=operationLocked;
  const dir=inside(cwd,`outputs/${spec.output}/.run`),card=operation(cwd,'next',{output:spec.output},environment);
  if(card.operation==='choose')throw new Error('Сначала отдельный run choose, затем next и execute');
  if(card.operation==='done')throw new Error('Прогон завершён: новый шаг не выполняется, нужен новый запуск');
@@ -280,6 +292,6 @@ function execute(cwd,spec,environment={}){
   if(meta.kind==='act'||typeof policy.execute!=='function'||!(policy.canExecute?.(context)??true))throw new Error('Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md');
   const value=policy.execute(context),extension=meta.contracts[Object.keys(meta.produces)[0]]==='text'?'md':'json';
   return operation(cwd,'save',{output:spec.output,step:step.name,attemptId:state.pending.id,artifact:step.artifact,extension,content:value,next:step.next},environment);
- }catch(error){if(attemptId&&json(inside(dir,'state.json')).pending?.id===attemptId)failStep(cwd,spec.output,error.message,environment);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
+ }catch(error){if(attemptId&&json(inside(dir,'state.json')).pending?.id===attemptId)failStep(cwd,spec.output,error.message,environment,operationLocked);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
 }
 module.exports={start,operation,execute,failStep,effectiveParams};

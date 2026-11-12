@@ -745,7 +745,7 @@ function ruleProcessValues() {
       const action = parseFrontmatter(read(af)).data || {};
       for (const [key, folder] of Object.entries({ query: 'queries', template: 'templates', rule: 'rules' })) {
         if (!asList(action.consumes?.params).some(p => String(p).split(/[ (]/)[0] === key) && !(key in step.params)) continue;
-        const value = parameter(model, step, key, overrides);
+        const value = require('../entities/process-dependencies').stepParams(model.data.params,step,overrides,{},action.defaults)[key];
         if (value == null || typeof value === 'string' && !value.trim()) {
           E('значения', file, step.ln, `нет обязательного параметра ${key} для ${step.ref}`); continue;
         }
@@ -754,7 +754,7 @@ function ruleProcessValues() {
         }
       }
       try {
-        const effective=require('../entities/process-dependencies').stepParams(model.data.params,step,overrides);
+        const effective=require('../entities/process-dependencies').stepParams(model.data.params,step,overrides,{},action.defaults);
         const policy=require('../actions/action-runtime').runtime(ROOT,step.ref,action);
         policy.dependencies?.({cwd:ROOT,processName:name,actionName:step.ref,meta:action,params:effective,mode:opt.demo?'demo':'live',preflight:true});
       } catch(error){E('значения',file,step.ln,error.message);}
@@ -762,7 +762,7 @@ function ruleProcessValues() {
       const slots=asList(action.consumes?.params);
       if(!Array.isArray(req.config)||!req.config.length){E('значения',file,0,'requires.config не объявлен для сетевого шага');continue;}
       try{
-        const selectedConfig=require('../config/config').loadConfig(ROOT,req.config),effective=require('../entities/process-dependencies').stepParams(model.data.params,step,overrides),fields=require('../config/config').requiredFields(ROOT,name,effective);
+        const selectedConfig=require('../config/config').loadConfig(ROOT,req.config),effective=require('../entities/process-dependencies').stepParams(model.data.params,step,overrides,{},action.defaults),fields=require('../config/config').requiredFields(ROOT,name,effective);
         for(const slot of ['taskStore','codeStore'].filter(slot=>slots.includes(slot)))require('../config/config').resolveStore(ROOT,selectedConfig,slot,effective[slot],fields);
       }catch(error){E('значения',file,0,error.message);}
 

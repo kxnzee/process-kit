@@ -1,7 +1,7 @@
 'use strict';
 // Shared read-only scope and receipt facts. No definition modules or live systems.
 const fs=require('node:fs'),{execFileSync}=require('node:child_process');
-const {inside}=require('../core/safe-path'),{owner,allowedReference}=require('./process-model');
+const {inside}=require('../core/safe-path'),{owner,allowedReference,processModel,NAME}=require('./process-model');
 const {current,validReceipt}=require('./process-release');
 function scopeFor(cwd,options={},issue=()=>{}){
  if(Object.keys(options).some(key=>!['level','team'].includes(key))||options.level!==undefined&&!['master','team','my'].includes(options.level)||options.team!==undefined&&(!/^[a-z0-9]+$/.test(options.team)||options.level!=='team'))throw new Error('Нужны --level master|team|my и, при необходимости, --team <код> для team');
@@ -25,6 +25,32 @@ function visible(name,scope){
  const ownership=owner(name);
  return !(ownership.level===2&&!scope.personal||ownership.level===1&&ownership.team!==scope.teamId);
 }
+// Public GigaCode admission. Parse the complete declared tree before loading any JS.
+// Core embedding APIs remain a trusted-host boundary, not a JavaScript sandbox.
+function assertAccess(cwd,name,params={},files=[]){
+ const scope=scopeFor(cwd),seen=new Set();
+ function allowed(ref,from){
+  if(!NAME.test(ref||'')||!visible(ref,scope)||from&&!allowedReference(from,ref))throw new Error('Определение недоступно по уровню владения');
+ }
+ function resources(value,from){
+  if(Array.isArray(value)){for(const item of value)resources(item,from);return;}
+  if(value&&typeof value==='object'){for(const item of Object.values(value))resources(item,from);return;}
+  if(typeof value!=='string'||value.includes('{'))return;
+  const resource=value.match(/^(processes|actions)\/([^/]+)\//);
+  if(resource)allowed(resource[2],from);
+  if(value.startsWith('context/')&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
+ }
+ function visit(ref,from){
+  allowed(ref,from);if(seen.has(ref))return;seen.add(ref);
+  const model=processModel(fs.readFileSync(inside(cwd,`processes/${ref}/PROCESS.md`),'utf8'));
+  const declared=model.data.requires||{};
+  resources(model.data.params,ref);resources(model.steps.map(s=>s.params),ref);
+  resources(params,ref);
+  for(const action of [...(Array.isArray(declared.actions)?declared.actions:[]),...model.steps.filter(s=>s.kind==='action').map(s=>s.ref)])allowed(action,ref);
+  for(const child of [...(Array.isArray(declared.processes)?declared.processes:[]),...model.steps.filter(s=>s.kind==='process').map(s=>s.ref)])visit(child,ref);
+ }
+ visit(name);resources(files,name);
+}
 function visibleFile(file,name,scope){
  if(!canonicalFile(file))return false;
  const [folder,ref]=file.split('/');
@@ -43,4 +69,4 @@ function publicationFacts(cwd,name,scope,issue){
   return {status:valid?receipt.status:'stale',current:valid};
  }catch{issue('publication-unavailable',file);return {status:'unknown',current:false};}
 }
-module.exports={scopeFor,visible,visibleFile,canonicalFile,publicationFacts};
+module.exports={assertAccess,scopeFor,visible,visibleFile,canonicalFile,publicationFacts};

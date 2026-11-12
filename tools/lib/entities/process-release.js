@@ -32,10 +32,11 @@ function assertPublishedTree(cwd,name,params,mode,overrides,files){
  for(const step of model.steps.filter(s=>s.kind==='process'))assertPublishedTree(cwd,step.ref,childParams(cwd,model,step,params,{},overrides),mode,overrides);
 }
 function lifecycle(cwd,operation,spec){
+ if(operation==='inspect')return require('./process-inspect').inspect(cwd,spec);
  const model=validateDefinition(cwd,spec.process),file=inside(cwd,`processes/${spec.process}/publication.json`);
  const previous=operation!=='validate'&&fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(operation==='status')return {process:spec.process,status:current(cwd,previous,spec.process)?previous.status:'draft',policy:model.data.publication||'required',scope:previous?.scope||null};
- if(!['validate','test','publish'].includes(operation))throw new Error('Нужна операция validate/test/publish/status');
+ if(!['validate','test','publish'].includes(operation))throw new Error('Нужна операция inspect/validate/test/publish/status');
  let receipt;
  if(operation==='validate'){
   const params={...model.data.params,...spec.params};
@@ -74,4 +75,10 @@ function lifecycle(cwd,operation,spec){
  return {process:spec.process,status:receipt.status,file,scope:receipt.scope||null};
 }
 module.exports={assertPublished,assertPublishedTree,lifecycle,current,validReceipt};
-if(require.main===module){try{const [operation,file,...rest]=process.argv.slice(2);if(!file||rest.length)throw new Error('node tools/kit.js definition <validate|test|publish|status> <spec.json>');console.log(JSON.stringify(lifecycle(root(),operation,JSON.parse(fs.readFileSync(file,'utf8'))),null,2));}catch(error){console.error(error.message);process.exitCode=1;}}
+if(require.main===module){
+ const [operation,file,...rest]=process.argv.slice(2);
+ try{
+  if(!file||rest.length)throw new Error('node tools/kit.js definition <inspect|validate|test|publish|status> <spec.json>');
+  console.log(JSON.stringify(lifecycle(root(),operation,JSON.parse(fs.readFileSync(file,'utf8'))),null,2));
+ }catch(error){console.error(operation==='inspect'?'Не удалось прочитать факты. Использование: node tools/kit.js definition inspect <spec.json>; нужны process и необязательные level/team.':error.message);process.exitCode=1;}
+}

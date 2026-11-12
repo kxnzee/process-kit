@@ -6,6 +6,7 @@ try{
  check('public CLI has a machine-readable catalog and rejects unknown commands',()=>{
   const result=call(['--json']);assert.equal(result.status,0,result.stderr);
   const catalog=JSON.parse(result.stdout);assert.deepEqual(Object.keys(catalog),Object.keys(commands));
+  assert.ok(catalog.definition.usage.includes('inspect'));assert.ok(catalog.definition.purpose.includes('status'));
   const help=call(['--help']);assert.equal(help.status,0,help.stderr);
   for(const flag of ['--process','--demo','--params','--json','--level','--team','--only','--root']){assert.ok(catalog.check.usage.includes(flag),flag+' missing from check metadata');assert.ok(help.stdout.includes(flag),flag+' missing from CLI help');}
   for(const item of Object.values(catalog)){assert.ok(item.purpose);assert.ok(item.scope);assert.equal(item.file,undefined);}
@@ -15,6 +16,8 @@ try{
  });
  check('public commands resolve entities, inspect config and complete a local process',()=>{
   execFileSync('git',['init'],{cwd:tmp,stdio:'ignore'});
+  write('inspect.json',JSON.stringify({process:'example',level:'master'}));
+  const inspected=call(['definition','inspect',path.join(tmp,'inspect.json')]);assert.equal(inspected.status,0,inspected.stderr);assert.equal(JSON.parse(inspected.stdout).definition.status,'parsed');
   assert.equal(call(['check','--root',tmp,'--only','actions']).status,0);
   const master=path.join(tmp,'config/master/config.json');
   assert.ok(fs.existsSync(master),JSON.stringify({tmp,source,entries:fs.readdirSync(tmp),config:fs.existsSync(path.join(tmp,'config'))?fs.readdirSync(path.join(tmp,'config')):null}));

@@ -14,7 +14,7 @@ function validateDefinition(cwd,name,stack=[]){
  if(!['действует','устарел'].includes(d.status))errors.push('status: действует или устарел');
  if(!d.example&&!(Array.isArray(d.examples)&&d.examples.length))errors.push('нет example/examples');
  if(d.params!==undefined&&(!d.params||typeof d.params!=='object'||Array.isArray(d.params)))errors.push('params: нужен объект');
- if(d.publication!==undefined&&!['required','legacy'].includes(d.publication))errors.push('publication: required или legacy');
+ if(d.publication!==undefined&&d.publication!=='required')errors.push('publication: допускается только required; legacy нужно перевести через validate/test/publish');
  if(d.branchRule!==undefined&&!/^rules\/[a-z0-9][a-z0-9.-]*\.js$/.test(d.branchRule))errors.push('branchRule: нужен JS-файл в rules/ процесса');
  if(errors.length)throw new Error(errors.join('; '));
  require('./entities').declarations(cwd,name,model);

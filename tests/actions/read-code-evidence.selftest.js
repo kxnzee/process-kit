@@ -1,7 +1,7 @@
 'use strict';
 const fixture=require('../fixture');
 const ctx=fixture(),{fs,path,assert,tmp,source,write,check}=ctx;
-const journal=require('../../tools/lib/runtime/run-journal'),{dependencies}=require('../../tools/lib/entities/process-dependencies');
+const journal=require('../fixture').runtimeJournal(),{dependencies}=require('../../tools/lib/entities/process-dependencies');
 const {selectionId}=require('../../tools/lib/actions/query-data'),{evidenceFromFixture}=require('../../tools/lib/actions/code-data');
 try {
  const attempt=output=>JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'))).pending.id;
@@ -14,7 +14,7 @@ try {
     ]) {
       const taskQuery=`processes/${name}/queries/tasks.md`,codeQuery=`processes/${name}/queries/code.md`;
       write(taskQuery,'# Задачи\nЧитать выбранные ключи.\n');write(codeQuery,'# Код\nЧитать PR по явным parameters.\n');
-      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: tasks\n---\n## Шаги\n### tasks\n- действие: run-query\n- параметры:\n  - \`queryFile: ${taskQuery}\`\n  - \`parameters: {}\`\n- артефакт: task-records\n- следующий: code\n### code\n- действие: read-code-evidence\n- параметры:\n  - \`queryFile: ${codeQuery}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: code-evidence\n- следующий: end\n`);
+      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Проверочный процесс\nexample: test\nentry: tasks\n---\n## Шаги\n### tasks\n- действие: run-query\n- параметры:\n  - \`queryFile: ${taskQuery}\`\n  - \`parameters: {}\`\n- артефакт: task-records\n- следующий: code\n### code\n- действие: read-code-evidence\n- параметры:\n  - \`queryFile: ${codeQuery}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: code-evidence\n- следующий: end\n`);
       const files=dependencies(tmp,name,{},'demo');
       assert.ok(files.includes(codeQuery));assert.ok(files.includes('tools/lib/actions/code-data.js'));
       assert.ok(!files.some(f=>f.includes('sdd-data')||f.includes('sdd-stories-report')));

@@ -25,7 +25,7 @@
     "actions/run-query/contracts/result.json": "a59216afff5f0288ab8763712acd0416ec6ec8a2a59d5400150536ba1ef8326d",
     "actions/run-query/runtime.js": "963db802cbe3025d22b99167c6afbbb79c937d1e20ac7796626c3018dfebe4b3",
     "context/master/writing-style/CONTEXT.md": "a187c1e1e3a3645b639303b2e7cba7c11ce64824786d1766b1688f6f2a6198aa",
-    "processes/info-povod/PROCESS.md": "25362421ce5cea13c8a1f616e729fc7fe3c5a10ec7e86e729edcefd7b52d5e21",
+    "processes/info-povod/PROCESS.md": "ff6c67b71c32a08ba2e81878654becb952a1eb6a0eb229bb676cd513bf9c1205",
     "processes/info-povod/contracts/report-data.json": "6b25cb1ac235b7bcfdc66d3bd9983eaa744568c790297d9e4cb7352772d75f55",
     "processes/info-povod/queries/releases.md": "3e92d7065a0f32a1d68ec0bb65ceb53913d1b668edccb5b8e35d58d598317888",
     "processes/info-povod/renderers/report-html.js": "80f3fbe4cea863be79b7c4420227bc6ba951ceb0ba4c2c5246347c2e2b5e6872",
@@ -34,7 +34,7 @@
     "processes/info-povod/rules/info-povod.js": "e8ac9f84cdd99f8f159c6552be07acc55a919f63061177273276864a641bef07",
     "processes/info-povod/templates/report.md": "4573001a2b360aa6c0864fbbaa559c388b4f916515cb65488e66dd34aad166db"
   },
-  "updated": "2026-11-12T07:55:07.747Z",
+  "updated": "2026-11-12T09:02:15.558Z",
   "scope": "local/demo",
   "outputs": [
     "2026-11-12_проба-проверка-поводы",

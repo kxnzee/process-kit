@@ -26,6 +26,7 @@ try{
   assert.ok(Math.abs(new Date(run.output.slice(0,10)+'T12:00:00').valueOf()-Date.now())<86400000,'Run folder uses today, not fixture date');
   for(const step of ['fetch','read-code','assess','compose']){const card=j.operation(tmp,'next',{output:run.output});assert.equal(card.operation,'execute');assert.equal(card.spec.step,step);j.execute(tmp,card.spec);}
   const card=j.operation(tmp,'next',{output:run.output});assert.equal(card.operation,'choose');
+  j.operation(tmp,'choose',{output:run.output,step:'gate',target:'end'});
   const state=j.operation(tmp,'finish',{output:run.output,resultName:'отчёт.md',decision:'Письмо не запрошено'});
   const text=fs.readFileSync(path.join(tmp,'outputs',run.output,state.result),'utf8');
   for(const fact of ['75,0','DEMO-401','DEMO-402','ДАННЫЕ ДЕМО','01.01.2026 — 20.01.2026'])assert.ok(text.includes(fact),fact);

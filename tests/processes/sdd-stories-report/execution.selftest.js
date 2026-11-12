@@ -28,12 +28,14 @@ try {
     const reportBody=fs.readFileSync(path.join(tmp,'outputs',run.output,'.run',composedState.artifacts['sdd-report']),'utf8');
     for(const fact of ['75,0','DEMO-401','DEMO-402','ДАННЫЕ ДЕМО',report.meta.window])assert.ok(reportBody.includes(fact),fact);
     if(!wantsMail){
+      journal.operation(tmp,'choose',{output:run.output,step:'gate',target:'end'});
       journal.operation(tmp,'finish',{output:run.output,resultName:'отчёт.md',decision:'Письмо не запрошено'});
       const finished=JSON.parse(fs.readFileSync(statePath));
       assert.equal(finished.status,'completed');assert.ok(!finished.artifacts['mail-draft']);
       assert.equal(fs.readFileSync(path.join(tmp,'outputs',run.output,'отчёт.md'),'utf8'),reportBody);
       continue;
     }
+    journal.operation(tmp,'choose',{output:run.output,step:'gate',target:'prepare-mail-data'});
     journal.operation(tmp,'begin',{output:run.output,step:'prepare-mail-data',decision:'Запрошен черновик; есть истории без SDD'});
     const pending=JSON.parse(fs.readFileSync(statePath)).pending;
     const mail=require('../../../processes/sdd-stories-report/rules/mail').evaluate({report},pending.params.parameters);

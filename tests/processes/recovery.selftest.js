@@ -85,31 +85,5 @@ try{
   assert.ok(total>0);assert.equal(total,counts.reduce((sum,n)=>sum+n,0));
   assert.deepEqual(fs.readdirSync(dir),['count.json']);
  });
- check('unknown external outcome requires reconciliation; retry needs proof and creates a new attempt',()=>{
-  fs.cpSync(path.join(tmp,'actions/example'),path.join(tmp,'actions/my-write'),{recursive:true});
-  const actionFile=path.join(tmp,'actions/my-write/ACTION.md');fs.writeFileSync(actionFile,fs.readFileSync(actionFile,'utf8').replace('name: example','name: my-write').replace('kind: transform','kind: act'));
-  fs.writeFileSync(actionFile,fs.readFileSync(actionFile,'utf8').replace('kind: act','kind: act\nruntime: runtime.js'));
-  write('actions/my-write/runtime.js',"exports.execute=ctx=>{const fs=require('node:fs'),path=require('node:path'),file=path.join(ctx.cwd,'external-counter.json');const calls=JSON.parse(fs.readFileSync(file,'utf8')).calls;fs.writeFileSync(file,JSON.stringify({calls:calls+1}));return {text:'receipt'};};\n");
-  write('processes/my-write/PROCESS.md','---\nname: my-write\nversion: 1.0.0\narea: test\nstatus: действует\npublication: legacy\ndescription: External operation test\nexample: test\nentry: write\nparams:\n  text: receipt\n  rule: default\n---\n## Шаги\n### write\n- действие: my-write\n- артефакт: receipt\n- следующий: end\n');
-  const output=journal.start(tmp,{process:'my-write',mode:'live'}).output;
-  const first=journal.operation(tmp,'begin',{output,step:'write'});
-  // The fake external system persists an effect; the harness stops before save.
-  write('external-counter.json','{"calls":0}');
-  require(path.join(tmp,'actions/my-write/runtime.js')).execute({cwd:tmp});
-  const externalCalls=()=>JSON.parse(fs.readFileSync(path.join(tmp,'external-counter.json'),'utf8')).calls;
-  const system={reference:'test-system/receipt-1'};
-  const card=journal.operation(tmp,'recover',{output});assert.equal(card.operation,'reconcile');assert.equal(card.attemptId,first.pending.id);
-  assert.equal(externalCalls(),1);assert.throws(()=>journal.execute(tmp,card.spec),/run next/);
-  assert.throws(()=>journal.operation(tmp,'begin',{output,step:'write'}));
-  assert.throws(()=>journal.operation(tmp,'retry',{output,attemptId:first.pending.id,effect:{status:'unknown',reference:'checked'}}),/not-applied/);
-  assert.throws(()=>journal.operation(tmp,'save',{...first.save,artifact:'receipt',extension:'json',content:{text:'receipt'},next:'end'}),/подтверждения/);
-  journal.operation(tmp,'save',{...first.save,artifact:'receipt',extension:'json',content:{text:'receipt'},next:'end',effect:{status:'confirmed',reference:system.reference}});
-  journal.operation(tmp,'finish',{output,resultName:'receipt.json'});assert.equal(externalCalls(),1);
-  const another=journal.start(tmp,{process:'my-write',mode:'live'}).output;
-  const pending=journal.operation(tmp,'begin',{output:another,step:'write'}).pending;
-  journal.operation(tmp,'retry',{output:another,attemptId:pending.id,effect:{status:'not-applied',reference:'test-system/no-effect'}});
-  const retried=journal.operation(tmp,'begin',{output:another,step:'write'});
-  assert.notEqual(retried.pending.id,pending.id);
-  assert.throws(()=>journal.operation(tmp,'save',{output:another,step:'write',attemptId:pending.id,artifact:'receipt',extension:'json',content:{text:'receipt'},next:'end',effect:{status:'confirmed',reference:'old'}}),/attemptId/);
- });
+
 }finally{ctx.close();}

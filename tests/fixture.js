@@ -48,3 +48,23 @@ return { fs, path, assert, tmp, source, write, check, validate, model, allowedRe
 module.exports.declare=declare;
 
 module.exports.copyProject=copyProject;
+
+// Synthetic publication fixtures isolate runtime/config tests from the publication workflow.
+// Genuine lifecycle acceptance uses process-release + completed runs in publication.selftest.js.
+// This helper is never imported by tools/, skills, or a production run.
+function seedPublication(cwd,name,spec={}){
+ if(path.resolve(cwd)===path.resolve(source))throw new Error('Synthetic publication is restricted to test copies');
+ const model=require('../tools/lib/entities/process-definition').validateDefinition(cwd,name);
+ const params=require('../tools/lib/runtime/run-journal').effectiveParams(cwd,{...spec,date:spec.date||new Date().toISOString().slice(0,10)},model.data.params||{});
+ for(const step of model.steps.filter(step=>step.kind==='process')){const child=require('../tools/lib/entities/process-dependencies').childParams(cwd,model,step,params,{},spec.explicitParams||spec.params||{});seedPublication(cwd,step.ref,{...spec,params:child});}
+ const release=require('../tools/lib/entities/process-release');
+ release.lifecycle(cwd,'validate',{process:name,mode:spec.mode==='demo'?'demo':'local',params});
+ const file=path.join(cwd,'processes',name,'publication.json'),receipt=JSON.parse(fs.readFileSync(file,'utf8'));
+ Object.assign(receipt,{status:'published',scope:'local/demo',outputs:['2026-01-01_синтетическая-фикстура'],syntheticTestFixture:true});
+ fs.writeFileSync(file,JSON.stringify(receipt,null,2)+'\n');
+}
+module.exports.seedPublication=seedPublication;
+module.exports.runtimeJournal=function(){
+ const controller=require('../tools/lib/runtime/run-journal');
+ return {...controller,start(cwd,spec,environment){if(!spec.definitionTest)seedPublication(cwd,spec.process,spec);return controller.start(cwd,spec,environment);}};
+};

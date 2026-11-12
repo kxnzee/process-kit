@@ -1,6 +1,6 @@
 'use strict';
 const ctx=require('../fixture')(),{fs,path,assert,tmp,write,check}=ctx;
-const {dependencies}=require('../../tools/lib/entities/process-dependencies'),journal=require('../../tools/lib/runtime/run-journal');
+const {dependencies}=require('../../tools/lib/entities/process-dependencies'),journal=require('../fixture').runtimeJournal();
 const {validateArtifact}=require('../../tools/lib/contracts/artifact-contract');
 try{
  const attempt=output=>JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'))).pending.id;
@@ -16,7 +16,7 @@ try{
   const context={cwd:tmp,processName:'my-release',actionName:'evaluate-data',params};
   assert.deepEqual(runtime.evaluate(context),{accepted:true});
   assert.deepEqual(runtime.evaluate({...context,params:{...params,parameters:{required:4}}}),{accepted:false});
-  write(`${base}/PROCESS.md`,`---\nname: my-release\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: evaluate\n---\n## Шаги\n### evaluate\n- действие: evaluate-data\n- параметры:\n  - \`inputs: ${JSON.stringify(params.inputs)}\`\n  - \`rulesFile: ${params.rulesFile}\`\n  - \`parameters: ${JSON.stringify(params.parameters)}\`\n  - \`resultContract: ${params.resultContract}\`\n- артефакт: verdict\n- следующий: compose\n### compose\n- действие: compose-report\n- параметры:\n  - \`data: {verdict}\`\n  - \`templateFile: ${base}/templates/verdict.md\`\n- артефакт: report-text\n- следующий: end\n`);
+  write(`${base}/PROCESS.md`,`---\nname: my-release\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Проверочный процесс\nexample: test\nentry: evaluate\n---\n## Шаги\n### evaluate\n- действие: evaluate-data\n- параметры:\n  - \`inputs: ${JSON.stringify(params.inputs)}\`\n  - \`rulesFile: ${params.rulesFile}\`\n  - \`parameters: ${JSON.stringify(params.parameters)}\`\n  - \`resultContract: ${params.resultContract}\`\n- артефакт: verdict\n- следующий: compose\n### compose\n- действие: compose-report\n- параметры:\n  - \`data: {verdict}\`\n  - \`templateFile: ${base}/templates/verdict.md\`\n- артефакт: report-text\n- следующий: end\n`);
   const deps=dependencies(tmp,'my-release',{},'local');
   for(const file of [params.rulesFile,params.resultContract,params.inputs.release,`${base}/templates/verdict.md`])assert.ok(deps.includes(file),file);
   assert.ok(!deps.some(file=>file.includes('sdd-stories-report')));
@@ -46,7 +46,7 @@ try{
   assert.throws(()=>validateArtifact(tmp,'my-query','task-records','json',{meta:{queryFile:'processes/my-release/queries/tasks.md'},records:[{key:'A-1'}],excluded:[{key:'A-1',reason:'duplicate'}],unverified:[],selectionId:'id'}),/повторяющийся/);
  });
  check('edit-text requires its style context level to be declared',()=>{
-  write('processes/my-short/PROCESS.md','---\nname: my-short\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: edit\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- артефакт: report-text\n- следующий: end\n');
+  write('processes/my-short/PROCESS.md','---\nname: my-short\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Проверочный процесс\nexample: test\nentry: edit\nparams:\n  styleFile: context/master/writing-style/CONTEXT.md\n---\n## Шаги\n### edit\n- действие: edit-text\n- артефакт: report-text\n- следующий: end\n');
   assert.ok(dependencies(tmp,'my-short',{},'local').includes('context/master/writing-style/CONTEXT.md'));
   const file=path.join(tmp,'processes/my-short/PROCESS.md');
   fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('context: [master]','context: []'));

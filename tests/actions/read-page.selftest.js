@@ -1,6 +1,6 @@
 'use strict';
 const fixture=require('../fixture'),ctx=fixture(),{fs,path,assert,tmp,write,check,validate}=ctx;
-const journal=require('../../tools/lib/runtime/run-journal');
+const journal=require('../fixture').runtimeJournal();
 try{
  const attempt=output=>JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'))).pending.id;
 
@@ -9,7 +9,7 @@ name: my-page
 version: 1.0.0
 area: test
 status: действует
-publication: legacy
+publication: required
 description: Чтение страницы
 example: test
 entry: read

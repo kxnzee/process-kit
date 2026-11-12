@@ -15,8 +15,7 @@ function current(cwd,receipt,process=receipt?.process){
  }catch(error){if(error.code==='ENOENT')return false;throw error;}
 }
 function assertPublished(cwd,name,files=[]){
- const model=validateDefinition(cwd,name);
- if(model.data.publication==='legacy')return; // Explicit migration exception; every definition still passes runtime validation.
+ validateDefinition(cwd,name);
  const file=inside(cwd,`processes/${name}/publication.json`);
  const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(receipt?.status!=='published'||receipt.process!==name||!current(cwd,receipt))throw new Error('Определение не опубликовано или изменилось после проверки: выполните definition validate/test/publish');

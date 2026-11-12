@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict');
-const source=path.join(__dirname,'..','..'),cwd=fs.mkdtempSync(path.join(os.tmpdir(),'pk-foundation-')),journal=require('../../tools/lib/runtime/run-journal'),{dependencies}=require('../../tools/lib/entities/process-dependencies'),{validateArtifact}=require('../../tools/lib/contracts/artifact-contract');
+const source=path.join(__dirname,'..','..'),cwd=fs.mkdtempSync(path.join(os.tmpdir(),'pk-foundation-')),journal=require('../fixture').runtimeJournal(),{dependencies}=require('../../tools/lib/entities/process-dependencies'),{validateArtifact}=require('../../tools/lib/contracts/artifact-contract');
 let count=0;const check=(name,fn)=>{fn();count++;console.log(`✓ ${name}`);};
 const read=f=>fs.readFileSync(path.join(cwd,f),'utf8'),write=(f,t)=>{fs.mkdirSync(path.dirname(path.join(cwd,f)),{recursive:true});fs.writeFileSync(path.join(cwd,f),f.endsWith('/PROCESS.md')?require('../fixture').declare(t):t);},state=o=>JSON.parse(read(`outputs/${o}/.run/state.json`));
-const process=(name,steps,entry='call')=>`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Тестовый процесс\nexample: test\nentry: ${entry}\nrequires:\n  actions: [${[...new Set([...steps.matchAll(/- действие: ([a-z0-9-]+)/g)].map(m=>m[1]))].join(', ')}]\n  context: [master]\nparams:\n  режим: проще\n---\n## Шаги\n${steps}\n`;
+const process=(name,steps,entry='call')=>`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Тестовый процесс\nexample: test\nentry: ${entry}\nrequires:\n  actions: [${[...new Set([...steps.matchAll(/- действие: ([a-z0-9-]+)/g)].map(m=>m[1]))].join(', ')}]\n  context: [master]\nparams:\n  режим: проще\n---\n## Шаги\n${steps}\n`;
 const spec={process:'my-parent',mode:'local',date:'2026-11-03',slug:'вложенный',inputText:'12 задач DEMO-42.'};
 try{
  require('../fixture').copyProject(source,cwd);

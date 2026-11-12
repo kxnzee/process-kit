@@ -34,26 +34,25 @@ Date передаётся только при явном требовании ч
   функцию экшена и делает begin/save. В demo источники читают fixture без MCP;
   evaluate-data считает по правилу; compose-report с rendererFile создаёт и проверяет текст.
 - begin: вызовите begin с данным spec. Возврат содержит pending.id и save с attemptId.
-  Для source/transform можно получить параметры через next. Для act исполняйте внешний
-  вызов ровно в рамках полученного begin и согласия; повторное чтение next уже требует
-  reconcile, потому что контроллер не знает, состоялся ли внешний вызов.
+  Для source/transform можно получить параметры через next. Act допускается только
+  после approval-required и проверенного approval receipt доверенного хоста. После
+  успешного begin повторное next требует reconcile, поскольку исход вызова неизвестен.
 - model: сами выполните ACTION.md и сохраните content через save с текущим attemptId. Это ваша работа,
   а не отсутствие исполнителя. Своего движка, парсера шаблонов или рендера не пишите.
-- choose: при decisionMode=code используйте единственную цель targets; условие уже
-  вычислено кодом. При decisionMode=model прочитайте branch и facts, выберите разрешённую
-  цель по данным и запросу человека, передайте непустой decision. При decisionMode=user
-  покажите сводку человеку и дождитесь ответа; продолжение вне default передайте
-  с confirmed=true и фактическим ответом в decision. Не подставляйте своё согласие. Выполните
-  run choose с spec карточки и target, затем снова next. Старые прямые переходы через
-  begin/enter/finish/leave также проверяются контроллером. Служебные файлы шагов для выбора не читайте: нужные счётчики уже в facts.
-- reconcile: не выполняйте act повторно. Проверьте результат в системе по текущей
-  попытке; подтверждённый результат сохраните через save с attemptId и
-  effect={"status":"confirmed","reference":"фактическое подтверждение системы"}.
-  Если отсутствие эффекта подтверждено, retry с тем же attemptId и
-  effect.status=not-applied, reference разрешает новый begin. Неизвестный исход —
-  остановка до проверки; не выдумывайте reference и не завершайте процесс. Если
-  внешний API поддерживает идемпотентность, используйте pending.id как стабильный
-  ключ первой попытки; не придумывайте новый ключ при восстановлении той же попытки.
+- choose: при decisionMode=code используйте единственную цель; при model предложите
+  объявленный target и непустой decision. Для user продолжение требует approval
+  receipt доверенного хоста из approvalRequests; confirmed=true не принимается.
+  Без verifyApproval разрешён только end корневого процесса; end подпроцесса требует approval. Выбор выполняется отдельным
+  run choose, затем next: begin/enter/execute/finish/leave ветку не выбирают.
+- approval-required: это состояние ожидания, а не команда. Не вызывайте внешнее
+  действие и не создавайте разрешение сами. Передайте approvalRequest доверенному
+  хосту, который проверяет человека и связывает согласие с payload/requestId. При
+  verificationAvailable=false сообщите блокировку; обычный CLI такого канала не имеет.
+- reconcile: не повторяйте act. Доверенный адаптер проверяет систему и выдаёт receipt
+  для effectRequest текущей попытки. Save требует outcome=applied, retry — not-applied.
+  Формат effect: source=adapter, requestId и непрозрачный proof. Проверка идёт через
+  verifyEffect, а не по заявленному агентом status/reference. Unknown оставляет pending.
+  Если API поддерживает идемпотентность, сохраняйте pending.id как ключ той же попытки.
 - enter/leave: выполните указанную команду.
 - finish: сохраните конечный файл; затем проверьте файл на соответствие задаче.
 - done: проверьте status. Только completed позволяет сообщить готовый результат.
@@ -149,8 +148,8 @@ failed; после failed новый шаг не выполняется — ну
    остался, повтори save того же attemptId/content, не само внешнее действие.
 6. На branch следуй decisionMode карточки: code выбирает контроллер, model предлагает
    агент из разрешённых targets, user требует фактического ответа человека после сводки.
-   Для user продолжение вне default передаётся с confirmed=true и непустым decision;
-   отсутствие ответа не является согласием. Выбор фиксируется через choose, затем next.
+   Для user продолжение требует проверенный approval receipt и непустой decision;
+   отсутствие доверенного канала или ответа не является согласием. Выбор фиксируется через choose, затем next.
    Человеку перескажи сводку отдельного исполнителя до запроса подтверждения.
 ### Шаг в отдельном агенте (`params.agentSteps`)
 
@@ -179,8 +178,8 @@ failed; после failed новый шаг не выполняется — ну
 
 ## 3. Завершение
 
-Вызови run-journal finish с resultName, кратким фактическим summary и decision,
-если маршрут завершается через branch. Он сохраняет файл для человека побайтно из
+Сначала выбери терминальную цель отдельным choose, если текущий узел — развилка.
+Затем вызови run finish с resultName и кратким фактическим summary. Он сохраняет файл для человека побайтно из
 последнего артефакта, итог.md и одну актуальную запись истории. Не вызывай history.js
 второй раз и не дописывай JSONL вручную. Ошибка индекса не отменяет результат, но
 сообщается отдельно. При failed итог сохраняется через fail.
@@ -231,15 +230,15 @@ JSON.stringify/json.dump, без ручного экранирования shell
 |---|---|---|
 | start | process, mode: local/live/demo; необязательные date (только по явному требованию), slug, title, inputText, params, explicitParams, files | Один раз до первого действия. |
 | next | output | Получить проверенную карточку следующего шага без выполнения. |
-| choose | output, step (имя текущей развилки), target; decision для model/user, confirmed=true для продолжения user вне default | Зафиксировать разрешённую ветку; поддерживает цепочки развилок. Затем next. |
+| choose | output, step текущей развилки, target; decision для model/user, approval: {source: adapter, requestId, proof} для продолжения user | Зафиксировать разрешённую ветку; поддерживает цепочки развилок. Затем next. |
 | recover | output | Завершить прерванную запись и получить следующую карточку без повтора внешнего действия. |
-| retry | output, attemptId, effect: {status: not-applied, reference} | Только после фактической проверки, что внешний эффект не произошёл; разрешает новый begin. |
-| execute | output, step; attemptId для уже начатой попытки, decision/confirmed при прямом branch | Выполнить объявленную локальную функцию и сохранить результат. Не вызывает MCP и не выполняет act. |
-| begin | output, step; decision и при необходимости confirmed для прямого перехода через branch | Непосредственно перед действием. Результат содержит pending.params. |
-| save | output, step, attemptId, artifact, extension: json/md/txt, content, next; для act effect: {status: confirmed, reference} | После действия: artifact и next ровно из шага, JSON content — объект, текст — строка. |
-| enter | output, step; decision/confirmed при прямом branch | Для узла процесс:, step — узел родителя, не имя ребёнка. |
-| leave | output; decision/confirmed при завершении ребёнка через branch | После end ребёнка; возвращает параметры и продолжение родителя. |
-| finish | output, resultName; summary и decision/confirmed при необходимости | После конца корневого маршрута без pending и без stack. |
+| retry | output, attemptId, effect: {source: adapter, requestId, proof} | VerifyEffect должен подтвердить not-applied; новый begin требует нового approval. |
+| execute | output, step; attemptId для уже начатой попытки | Выполнить объявленную локальную функцию и сохранить результат. Не вызывает MCP и не выполняет act. |
+| begin | output, step; для act approval: {source: adapter, requestId, proof} | Только текущий узел после choose. Результат содержит pending.params и attemptId. |
+| save | output, step, attemptId, artifact, extension: json/md/txt, content, next; для act effect: {source: adapter, requestId, proof}, проверенный verifyEffect с applied | После действия: artifact и next ровно из шага, JSON content — объект, текст — строка. |
+| enter | output, step | Для узла процесс:, step — узел родителя, не имя ребёнка. |
+| leave | output | После end ребёнка; возвращает параметры и продолжение родителя. |
+| finish | output, resultName; необязательный summary | После конца корневого маршрута без pending и без stack. |
 | publish | output, artifact, name | После finish, только если рядом с главным результатом нужен ещё один артефакт прогона: отчёт при черновике письма. |
 | fail | output, reason | При остановке: безопасная причина без секретов. |
 | diagnose | output | Вызывает только pp-ai-diagnose по поручению диспетчера. Исполнитель возвращает output и безопасную причину, сам эту операцию не вызывает. |

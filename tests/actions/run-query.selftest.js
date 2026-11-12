@@ -2,7 +2,7 @@
 const fixture = require('../fixture');
 const ctx = fixture();
 const {fs,path,assert,tmp,source,write,check} = ctx;
-const journal = require('../../tools/lib/runtime/run-journal');
+const journal = require('../fixture').runtimeJournal();
 const {dependencies} = require('../../tools/lib/entities/process-dependencies');
 const {queryFile} = require('../../tools/lib/actions/query-file');
 try {
@@ -16,7 +16,7 @@ try {
     ]) {
       const request=`processes/${name}/queries/select.md`;
       write(request,'# Выборка\nЧитай записи по переданным parameters; ошибки и неполноту возвращай явно.\n');
-      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: legacy\ndescription: Проверочный процесс\nexample: test\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - \`queryFile: ${request}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: task-records\n- следующий: end\n`);
+      write(`processes/${name}/PROCESS.md`,`---\nname: ${name}\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Проверочный процесс\nexample: test\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - \`queryFile: ${request}\`\n  - \`parameters: ${JSON.stringify(parameters)}\`\n- артефакт: task-records\n- следующий: end\n`);
       const files=dependencies(tmp,name,{},'demo');
       assert.ok(files.includes(request));
       assert.ok(!files.some(f=>f.includes('rules/sdd.js')||f.includes('sdd-stories-report')));

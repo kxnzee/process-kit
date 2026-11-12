@@ -28,6 +28,7 @@ try{
  check('classification rejects inconsistent counters and missing members before advancing',()=>{
   const params={dataFile:'processes/info-povod/fixture.json',methodologyCheck:'no',runDate:'2026-11-07'};
   const {output}=journal.start(tmp,{process:'info-povod',mode:'demo',params});
+  journal.operation(tmp,'choose',{output,step:'methodology-gate',target:'fetch-sigma'});
   for(const step of ['fetch-sigma','fetch-delta'])journal.execute(tmp,{output,step});
   journal.operation(tmp,'begin',{output,step:'classify-sigma'});
   const card=journal.operation(tmp,'next',{output}),value=require('./publication-helpers').modelResult(tmp,output,card);
@@ -42,17 +43,21 @@ try{
   assert.throws(()=>journal.start(tmp,{process:'info-povod',mode:'demo',params:{...params,methodologyCheck:'ask'}}),/до start/);
   const run=journal.start(tmp,{process:'info-povod',mode:'demo',params}),output=run.output;
   const gate=journal.operation(tmp,'next',{output});assert.equal(gate.decisionMode,'code');assert.deepEqual(gate.targets,['check-methodology']);
-  assert.throws(()=>journal.operation(tmp,'begin',{output,step:'fetch-sigma',decision:'Пропустить'}),/Выбор ветки/);
+  assert.throws(()=>journal.operation(tmp,'begin',{output,step:'fetch-sigma',decision:'Пропустить'}),/run choose/);
+  journal.operation(tmp,'choose',{output,step:'methodology-gate',target:'check-methodology'});
   journal.operation(tmp,'begin',{output,step:'check-methodology'});
   const pending=journal.operation(tmp,'next',{output});assert.equal(pending.stepStatus,'running');
   const value=require('./publication-helpers').modelResult(tmp,output,pending);
   assert.throws(()=>journal.operation(tmp,'save',{...pending.save,content:{...value,matched:1}}),/Счётчики/);
   const partial=structuredClone(value);partial.sections[0].status='matched';partial.matched=1;partial.unverified--;partial.unverifiedSections=partial.unverifiedSections.filter(row=>row.section!==partial.sections[0].section);
   journal.operation(tmp,'save',{...pending.save,content:partial});
-  const review=journal.operation(tmp,'next',{output});assert.equal(review.decisionMode,'user');assert.equal(review.requiresConfirmation,true);assert.equal(review.stepStatus,'blocked');
-  assert.throws(()=>journal.operation(tmp,'begin',{output,step:'fetch-sigma',decision:'Я согласен'}),/confirmed/);
+  const review=journal.operation(tmp,'next',{output});assert.equal(review.decisionMode,'user');assert.equal(review.requiresApproval,true);assert.equal(review.stepStatus,'blocked');
+  assert.throws(()=>journal.operation(tmp,'begin',{output,step:'fetch-sigma',decision:'Я согласен'}),/run choose/);
   assert.equal(journal.operation(tmp,'next',{output}).step,'methodology-review');
-  journal.operation(tmp,'begin',{output,step:'fetch-sigma',confirmed:true,decision:'Проверочный фактический ответ человека: продолжить'});
+  const host=require('../trusted-integration')(),request=review.approvalRequests.find(r=>r.target==='fetch-sigma');
+  assert.throws(()=>journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',confirmed:true}),/confirmed/);
+  assert.throws(()=>journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',decision:'Продолжай'}),/доверенного канала/);
+  journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',approval:host.receipt(request),decision:'Синтетический ответ доверенного хоста'},host.environment);
   assert.equal(journal.operation(tmp,'next',{output}).spec.step,'fetch-sigma');
  });
 }finally{ctx.close();}

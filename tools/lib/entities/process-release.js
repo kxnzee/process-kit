@@ -7,11 +7,15 @@ const {validateDefinition}=require('./process-definition'),{dependencies}=requir
 const {atomic,hash}=require('../runtime/run-storage');
 const relevant=file=>/^(processes|actions|context)\//.test(file)&&!file.endsWith('/publication.json');
 function snapshot(cwd,files){return Object.fromEntries([...new Set(files)].filter(relevant).sort().map(file=>[file,hash(fs.readFileSync(inside(cwd,file)))]));}
+function validReceipt(receipt,process=receipt?.process){
+ if(!receipt||receipt.schemaVersion!==1||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
+ if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!Array.isArray(receipt.outputs)||!receipt.outputs.length))return false;
+ return Object.entries(receipt.files).every(([file,digest])=>relevant(file)&&/^[a-f0-9]{64}$/.test(digest));
+}
 function current(cwd,receipt,process=receipt?.process){
  try{
-  if(!receipt||receipt.schemaVersion!==1||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
-  if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!Array.isArray(receipt.outputs)||!receipt.outputs.length))return false;
-  return Object.entries(receipt.files).every(([file,digest])=>relevant(file)&&/^[a-f0-9]{64}$/.test(digest)&&hash(fs.readFileSync(inside(cwd,file)))===digest);
+  if(!validReceipt(receipt,process))return false;
+  return Object.entries(receipt.files).every(([file,digest])=>hash(fs.readFileSync(inside(cwd,file)))===digest);
  }catch(error){if(error.code==='ENOENT')return false;throw error;}
 }
 function assertPublished(cwd,name,files=[]){
@@ -69,5 +73,5 @@ function lifecycle(cwd,operation,spec){
  receipt.updated=new Date().toISOString();atomic(file,receipt);
  return {process:spec.process,status:receipt.status,file,scope:receipt.scope||null};
 }
-module.exports={assertPublished,assertPublishedTree,lifecycle};
+module.exports={assertPublished,assertPublishedTree,lifecycle,current,validReceipt};
 if(require.main===module){try{const [operation,file,...rest]=process.argv.slice(2);if(!file||rest.length)throw new Error('node tools/kit.js definition <validate|test|publish|status> <spec.json>');console.log(JSON.stringify(lifecycle(root(),operation,JSON.parse(fs.readFileSync(file,'utf8'))),null,2));}catch(error){console.error(error.message);process.exitCode=1;}}

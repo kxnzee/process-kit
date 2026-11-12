@@ -3,6 +3,21 @@ const ctx=require('../fixture')(),{fs,path,assert,tmp,check,write}=ctx;
 const {publishDefinition}=require('./publication-helpers');
 const journal=require('../../tools/lib/runtime/run-journal'),{lifecycle}=require('../../tools/lib/entities/process-release');
 try{
+ check('definitionTest does not bypass act approval in local/demo or permit publication of incomplete runs',()=>{
+  fs.cpSync(path.join(tmp,'actions/example'),path.join(tmp,'actions/my-publication-act'),{recursive:true});
+  const file=path.join(tmp,'actions/my-publication-act/ACTION.md');
+  fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: example','name: my-publication-act').replace('kind: transform','kind: act'));
+  write('processes/my-publication-act/PROCESS.md','---\nname: my-publication-act\nversion: 1.0.0\narea: test\nstatus: действует\npublication: required\ndescription: Definition approval regression\nexample: test\nentry: write\nparams:\n  text: receipt\n  rule: default\n---\n## Шаги\n### write\n- действие: my-publication-act\n- артефакт: receipt\n- следующий: end\n');
+  assert.equal(lifecycle(tmp,'validate',{process:'my-publication-act'}).status,'validated');
+  const integration=require('../../tools/lib/integrations/gigacode-run');
+  for(const mode of ['local','demo']){
+   const {output}=integration.run(tmp,'start',{process:'my-publication-act',mode,definitionTest:true});
+   const card=integration.run(tmp,'next',{output});assert.equal(card.operation,'approval-required');assert.equal(card.verificationAvailable,false);
+   assert.throws(()=>integration.run(tmp,'begin',card.spec),/Нет доверенного канала verifyApproval/);
+   assert.throws(()=>lifecycle(tmp,'test',{process:'my-publication-act',outputs:[output]}),/Требуется завершённый/);
+  }
+  assert.throws(()=>lifecycle(tmp,'publish',{process:'my-publication-act'}),/Сначала definition test/);
+ });
  for(const process of ['example','sdd-stories-report','info-povod'])check(`${process}: validate, every branch, publish and normal run`,()=>{
   const published=publishDefinition(tmp,process);
   assert.equal(published.receipt.status,'published');assert.ok(fs.existsSync(published.normal.resultFile));
@@ -14,6 +29,15 @@ try{
   const file=path.join(tmp,'processes/my-copy/PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: example','name: my-copy'));
   assert.equal(lifecycle(tmp,'status',{process:'my-copy'}).status,'draft');
   assert.throws(()=>journal.start(tmp,{process:'my-copy',mode:'local',inputText:'12 задач.'}),/не опубликовано/);
+ });
+ check('a new draft copied without the template receipt remains discoverable but cannot run',()=>{
+  const template=path.join(tmp,'processes/example'),folder=path.join(tmp,'processes/catalog-draft');
+  fs.cpSync(template,folder,{recursive:true,filter:source=>source!==path.join(template,'publication.json')});
+  const file=path.join(folder,'PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: example','name: catalog-draft'));
+  const rows=require('../../tools/lib/entities/process-catalog').catalog(tmp,{level:'master'});
+  assert.equal(rows.complete,true);assert.deepEqual(rows.processes.find(p=>p.name==='catalog-draft').publication,{status:'draft',current:false});
+  assert.equal(fs.existsSync(path.join(folder,'publication.json')),false);
+  assert.throws(()=>journal.start(tmp,{process:'catalog-draft',mode:'local',inputText:'12 задач.',params:{to:'User',subject:'Status'}}),/не опубликовано/);
  });
  check('methodology credential URLs are rejected before a run is created',()=>{
   const before=fs.readdirSync(path.join(tmp,'outputs')).sort(),params={dataFile:'processes/info-povod/fixture.json',methodologyCheck:'yes',runDate:'2026-11-07'};

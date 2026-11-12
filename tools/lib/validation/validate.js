@@ -297,9 +297,6 @@ function ruleSkills() {
     if (fm.data.name !== name) E('скилл', file, 2, `name «${fm.data.name || ''}» не совпадает с папкой «${name}»`);
     const desc = String(fm.data.description || '');
     if (!desc) E('скилл', file, 2, 'нет description');
-    if (name.startsWith('pp-ai-') && name !== 'pp-ai-mentor' && !/вызывается помощником|вызывается ментором|не предлагается человеку/i.test(desc)) {
-      W('скилл', file, 2, 'служебный скилл без пометки, что человеку он не предлагается');
-    }
   }
 }
 

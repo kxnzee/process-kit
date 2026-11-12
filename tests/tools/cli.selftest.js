@@ -9,6 +9,7 @@ try{
   for(const item of Object.values(catalog)){assert.ok(item.purpose);assert.ok(item.scope);assert.equal(item.file,undefined);}
   for(const command of Object.values(commands))assert.ok(fs.existsSync(path.join(source,'tools',command.file)));
   assert.equal(call(['unknown']).status,2);assert.equal(call(['--help']).status,0);
+  const processes=call(['processes','--level','master']);assert.equal(processes.status,0,processes.stderr);assert.ok(JSON.parse(processes.stdout).processes.some(p=>p.name==='example'));
  });
  check('public commands resolve entities, inspect config and complete a local process',()=>{
   execFileSync('git',['init'],{cwd:tmp,stdio:'ignore'});

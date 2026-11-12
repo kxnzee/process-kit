@@ -62,9 +62,7 @@ $ git ls-remote origin team-urmepk
 │   ├── settings.json                ссылки $secret:…, значений доступа нет
 │   ├── hooks/pre-push               исходник; копия ставится в .git/hooks/
 │   └── skills/
-│       ├── pp-ai-mentor/SKILL.md   общение с человеком
-│       ├── pp-ai-dispatch/SKILL.md выбор операций и исполнителя
-│       ├── pp-ai-guide/SKILL.md
+│       ├── pp-ai-mentor/SKILL.md   консультация; знакомство в references/guide.md
 │       ├── pp-ai-init/SKILL.md     факты через setup-status; детали в references/
 │       ├── pp-ai-diagnose/SKILL.md
 │       ├── pp-ai-run-process/SKILL.md
@@ -88,7 +86,7 @@ $ git ls-remote origin team-urmepk
 │   ├── team/                        EXAMPLE.json и командный config.json
 │   └── my/                          EXAMPLE.json и личный config.json
 ├── tools/
-│   ├── kit.js                      единый CLI и каталог команд (--help / --json)
+│   ├── kit.js                      единый CLI: --help / --json, skills, processes
 │   └── lib/                        внутренние модули, не отдельные инструменты
 │       ├── actions/                поддержка функций-экшенов
 │       ├── config/                 загрузка и контракты настроек
@@ -211,3 +209,16 @@ prepare-mail-draft → mail-draft (необязательно). Контракт
 Одиночная локальная утилита: kit.js action, без процесса-обёртки. Исполнитель процесса:
 kit.js run next/execute либо begin/save для работы модели. Формирование и проверка
 предметного отчёта принадлежат renderers/ процесса, общий compose-report переиспользуется.
+
+## Способности и общие references
+
+В .gigacode/skills/ остаются десять самостоятельных способностей. Обязательных
+посредников нет. Общие инварианты и policy-driven продолжение — GIGACODE.md;
+подробные случаи — docs/references/interaction.md. Общая процедура двух переносов
+находится в docs/references/promotion.md, правила назначения — в соответствующих skills.
+References одной способности хранятся рядом; рабочие данные процессов/Actions — у владельцев.
+
+Каталог tools/lib/entities/process-catalog.js читает текущие метаданные без исполнения
+runtime/branchRule. Владение и команда проверяются до выдачи закрытых записей. Это
+помощь discovery, не замена проверки ссылок, публикации и готовности при запуске.
+Новый task runtime, постоянный continuation или второй Run Journal не создаются.

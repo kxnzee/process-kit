@@ -2,6 +2,33 @@
 const c=require('../fixture')({copy:false}),{tmp,fs,path,assert,check}=c;
 const storage=require('../../tools/lib/runtime/run-storage');
 try{
+ check('ARCH-004: EPERM while linking a released or replaced owner is distinct from stable permission denial',()=>{
+  const file=path.join(tmp,'.journal.lock'),link=fs.linkSync;
+  for(const change of ['released','replaced','unchanged']){
+   const owner={pid:process.pid,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()},bytes=JSON.stringify(owner);
+   fs.writeFileSync(file,bytes);const old=path.join(tmp,'old-anchor');link(file,old);
+   let injected=false;const replacement={...owner,id:require('node:crypto').randomUUID()};
+   fs.linkSync=function(from,to){
+    if(from===file&&String(to).endsWith('.reader')&&!injected){
+     injected=true;
+     if(change!=='unchanged')fs.unlinkSync(file);
+     if(change==='replaced')fs.writeFileSync(file,JSON.stringify(replacement));
+     throw Object.assign(new Error('WINDOWS_LINK_SOURCE_DENIED'),{code:'EPERM',syscall:'link',path:file,dest:to});
+    }
+    return link.apply(this,arguments);
+   };
+   try{
+    if(change==='released'){const release=storage.lock(tmp,true);release();assert.equal(fs.existsSync(file),false);}
+    else{
+     assert.throws(()=>storage.lock(tmp,true),change==='replaced'?/Журнал занят работающим процессом/:/Владелец lock неизвестен/);
+     assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).id,change==='replaced'?replacement.id:owner.id);
+     fs.unlinkSync(file);
+    }
+    assert.ok(injected);
+   }finally{fs.linkSync=link;fs.unlinkSync(old);}
+   assert.deepEqual(fs.readdirSync(tmp),[]);
+  }
+ });
  check('ARCH-004: release never deletes the last link at a reusable lock path while a reader is open',()=>{
   // Deterministic model of Windows delete-pending: recreating the same name fails
   // if unlink removed the last hard link while another process still reads it.

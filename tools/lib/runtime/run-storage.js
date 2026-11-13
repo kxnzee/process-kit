@@ -48,10 +48,16 @@ function lock(dir,recover=false,name='.journal.lock'){
      // A file may disappear/reappear between stat and read, including inode reuse.
      // Never infer ownership from stat: one exclusive claim either succeeds or is busy.
      // Missing owner.json in the same legacy directory remains an unknown owner.
-     if(['ENOENT','ENOTDIR','EISDIR'].includes(error.code)&&(!entry.isDirectory()||!same(current,entry))){
+     // Windows may report EPERM for link when its source was unlinked concurrently.
+     // Only an observed path change proves this race; stable permission errors remain unknown.
+     const changedLink=error.code==='EPERM'&&error.syscall==='link'&&error.path===file&&!same(current,entry);
+     if(changedLink||['ENOENT','ENOTDIR','EISDIR'].includes(error.code)&&(!entry.isDirectory()||!same(current,entry))){
       if(!claim())throw new Error('Журнал занят работающим процессом');
       acquired=true;
-     }else throw Object.assign(new Error('Владелец lock неизвестен: требуется проверка разработчиком ('+name+': '+(error.code||error.name)+')'),{cause:error});
+     }else{
+      const fact=stat=>stat?{dev:stat.dev,ino:stat.ino,nlink:stat.nlink,mode:stat.mode,birthtimeMs:stat.birthtimeMs,mtimeMs:stat.mtimeMs}:null;
+      throw Object.assign(new Error('Владелец lock неизвестен: требуется проверка разработчиком ('+name+': '+(error.code||error.name)+')'),{cause:error,observation:{before:fact(entry),after:fact(current)}});
+     }
     }
     if(!acquired){
      if(!previous||previous.host!==os.hostname()||!Number.isInteger(previous.pid)||previous.pid<=0)throw new Error('Нельзя проверить владельца lock на этом компьютере');

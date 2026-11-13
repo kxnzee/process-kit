@@ -19,7 +19,8 @@ description: >
 - Проверка назначения: `node tools/kit.js check --level master`.
 - План из исходной копии: `node tools/kit.js promote-plan --target origin/master`.
 
-config/team/config.json, config/my/config.json, my-* и team-* исключены. Общая ссылка не может зависеть от материалов команды или человека.
+config/team/config.json, config/my/config.json и каталоги командных/личных определений
+исключены по [модели владения](../../../docs/OWNERSHIP.md).
 
 Согласие на подготовку не означает отправку. Сначала проверенный локальный коммит и
 конкретный diff, затем согласие на его отправку. Цель изменилась — повторная подготовка.

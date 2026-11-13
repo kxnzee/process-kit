@@ -15,7 +15,14 @@ function lock(dir,recover=false,name='.journal.lock'){
  const candidateFor=owner=>inside(dir,`${name}.${owner.pid}.${owner.id}.candidate`);
  const same=(a,b)=>a&&b&&a.dev===b.dev&&a.ino===b.ino;
  const sameOwner=(a,b)=>a?.pid===b?.pid&&a?.host===b?.host&&a?.id===b?.id;
- function readOwner(entry){return JSON.parse(fs.readFileSync(entry.isDirectory()?inside(file,'owner.json'):file,'utf8'));}
+ function readOwner(entry){
+  if(entry.isDirectory())return JSON.parse(fs.readFileSync(inside(file,'owner.json'),'utf8'));
+  // Never open the reusable lock name. Windows can deny that open when a writer
+  // unlinks it concurrently. Read a private hard-link snapshot, then close/remove it.
+  const reader=file+'.'+crypto.randomUUID()+'.reader';
+  fs.linkSync(file,reader);
+  try{return JSON.parse(fs.readFileSync(reader,'utf8'));}finally{fs.unlinkSync(reader);}
+ }
  function claim(){
   // Publish closed, complete owner bytes exclusively. A file rename could overwrite a lock.
   // Keep the candidate as an anchor until after unlinking the reusable name.

@@ -18,7 +18,7 @@ try{
  check('ARCH-004: a disappearing owner read cannot turn a cached stat into unknown ownership or steal a live lock',()=>{
   const file=path.join(tmp,'.journal.lock'),bytes=JSON.stringify({pid:process.pid,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()});
   fs.writeFileSync(file,bytes);const read=fs.readFileSync;let injected=false;
-  fs.readFileSync=function(target){if(target===file&&!injected){injected=true;throw Object.assign(new Error('Cached stat / disappearing path'),{code:'ENOENT'});}return read.apply(this,arguments);};
+  fs.readFileSync=function(target){if(String(target).startsWith(file)&&String(target).endsWith('.reader')&&!injected){injected=true;throw Object.assign(new Error('Cached stat / disappearing path'),{code:'ENOENT'});}return read.apply(this,arguments);};
   try{assert.throws(()=>storage.lock(tmp,true),/Журнал занят работающим процессом/);}
   finally{fs.readFileSync=read;}
   assert.equal(fs.readFileSync(file,'utf8'),bytes);fs.unlinkSync(file);assert.deepEqual(fs.readdirSync(tmp),[]);
@@ -45,5 +45,21 @@ try{
    assert.ok(replaced);assert.equal(JSON.parse(fs.readFileSync(legacy?path.join(file,'owner.json'):file,'utf8')).id,newOwner.id);fs.rmSync(file,{recursive:true,force:true});
   }
   assert.deepEqual(fs.readdirSync(tmp),[]);
+ });
+ check('ARCH-004: canonical lock open can fail during deletion without reading or removing an unknown owner',()=>{
+  const file=path.join(tmp,'.journal.lock'),owner={pid:process.pid,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()},bytes=JSON.stringify(owner);
+  fs.writeFileSync(file,bytes);const read=fs.readFileSync;
+  fs.readFileSync=function(target){if(target===file)throw Object.assign(new Error('WINDOWS_CANONICAL_OPEN_DENIED'),{code:'EPERM'});return read.apply(this,arguments);};
+  try{assert.throws(()=>storage.lock(tmp,true),/Журнал занят работающим процессом/);}
+  finally{fs.readFileSync=read;}
+  assert.equal(fs.readFileSync(file,'utf8'),bytes);fs.unlinkSync(file);assert.deepEqual(fs.readdirSync(tmp),[]);
+ });
+ check('ARCH-004: genuine permission failure reading an owner remains unknown and cannot reclaim it',()=>{
+  const file=path.join(tmp,'.journal.lock'),bytes=JSON.stringify({pid:process.pid,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()});
+  fs.writeFileSync(file,bytes);const read=fs.readFileSync;
+  fs.readFileSync=function(target){if(String(target).startsWith(file)&&String(target).endsWith('.reader'))throw Object.assign(new Error('OWNER_READ_DENIED'),{code:'EPERM'});return read.apply(this,arguments);};
+  try{assert.throws(()=>storage.lock(tmp,true),/Владелец lock неизвестен/);}
+  finally{fs.readFileSync=read;}
+  assert.equal(fs.readFileSync(file,'utf8'),bytes);fs.unlinkSync(file);assert.deepEqual(fs.readdirSync(tmp),[]);
  });
 }finally{c.close();}

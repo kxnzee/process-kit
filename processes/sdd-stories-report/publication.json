@@ -10,12 +10,12 @@
     "actions/evaluate-data/contracts/result.json": "31259dcce1aec6aac8a7352eda5cc970d4fed2a21e1a0b6bdd8a3a139a3252d7",
     "actions/evaluate-data/runtime.js": "0dce312dd46136e2d98c4b717af85e3f148f955db6377a7742adc56d7bbb9739",
     "actions/prepare-mail-draft/ACTION.md": "1e72faa5cecc1db8a703a4e6d4e55dc326907e9f747bfb8f41e755e55a041ecf",
-    "actions/read-code-evidence/ACTION.md": "0cb4eb69247800c757bf4857be0705c9271ab52197f165025e1913515103cf82",
+    "actions/read-code-evidence/ACTION.md": "3553bce839aba4e68dd469af898f5519032777075e247ccaa48f4bc34dcff2a2",
     "actions/read-code-evidence/contracts/input.json": "4a991e22328454d4e7c52183ceb914ea4f103a8c8db2e3a541df257f03936721",
     "actions/read-code-evidence/contracts/result.json": "e66de63af3b812ed5c23a87cb9574892ef5a90cd19f679f05f0921b5537bbbe0",
     "actions/read-code-evidence/contracts/task-records.json": "a59216afff5f0288ab8763712acd0416ec6ec8a2a59d5400150536ba1ef8326d",
     "actions/read-code-evidence/runtime.js": "b192e95e06c94bdd4810c326644715b8303b214a293723210de5d777ae805da1",
-    "actions/run-query/ACTION.md": "436ec6cb3663de5fc28b41005bedb044aa86ecc4f0ab50af1236444fcfcd375e",
+    "actions/run-query/ACTION.md": "5e6ee3e6203d779c27d641954a33358f359372c53400856b74216bd73e8cdc9f",
     "actions/run-query/contracts/input.json": "f5f61bb3888b924441699c6d5842a7ddf7e5c9a798ed46b7b093bc5520a5b92b",
     "actions/run-query/contracts/result.json": "a59216afff5f0288ab8763712acd0416ec6ec8a2a59d5400150536ba1ef8326d",
     "actions/run-query/runtime.js": "963db802cbe3025d22b99167c6afbbb79c937d1e20ac7796626c3018dfebe4b3",
@@ -34,7 +34,7 @@
     "processes/sdd-stories-report/templates/mail.md": "d1d76bd55ea88fa87df40ba2e95ddb69a0d33ec40dffca9cd893434ae090f225",
     "processes/sdd-stories-report/templates/report.md": "c35adbaabc6d895c3b5e89f9cc5c0051a2c3a9f8022c7cfe9827ebc656aa6aa6"
   },
-  "updated": "2026-11-13T13:50:21.516Z",
+  "updated": "2026-11-13T14:33:00.945Z",
   "scope": "local/demo",
   "outputs": [
     "2026-11-13_проба-проверка-сдд",

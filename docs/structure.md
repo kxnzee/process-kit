@@ -2,26 +2,12 @@
 
 Этот файл — эталон раскладки файлов для разработчика.
 Количество и имена веток, владельцы, префиксы определений и допустимые ссылки заданы
-только в [модели владения](OWNERSHIP.md). Изменение эталона под существующую
+только в [модели владения](ownership.md). Изменение эталона под существующую
 реализацию требует явного решения владельца Process Kit; иначе исправляется реализация.
-
-## Было → стало (что устарело и больше не используется)
-
-| Устарело | Стало |
-|---|---|
-| папки system/, team/, user/, файл process-kit.local.json | единая раскладка; уровни и ветки — по модели владения |
-| переменные PROCESS_KIT_TEAM_DIR, PROCESS_KIT_USER_DIR, CLAUDE_PLUGIN_ROOT | не используются |
-| gigacode-extension.json в корне, хук process-guard, CODEOWNERS | не используются; защита — правила веток Bitbucket и pre-push |
-| токены в .gigacode/.env, подстановки $PK_*, заглушки ВАШ_ТОКЕН_* | ссылки $secret:<имя>/<ключ> в .gigacode/settings.json; значение в хранилище секретов GigaCode |
-| папка результатов «Process Kit/» (с пробелом), служебная .runs/ | outputs/<дата>_<коротко>/, служебное — в её .run/ |
-| подпапки outputs/tasks, setup, requests, .runs | одна папка на запуск, без подпапок по видам |
-| новый процесс человека с префиксом команды | имя личного определения — по модели владения |
-| team-<команда> и my с привязкой к origin/master | ветки создаются с --no-track |
-| настройка и задача в одном прогоне и одном коммите | два этапа, два коммита |
 
 ## Ветки
 
-Нормативная модель — [OWNERSHIP.md](OWNERSHIP.md#ветки-и-количество). Ниже только
+Нормативная модель — [ownership.md](ownership.md#ветки-и-количество). Ниже только
 примеры состояния Git после настройки; они не вводят дополнительных типов веток.
 
 Пример вывода у человека из команды test, личное только на компьютере:
@@ -73,13 +59,13 @@ $ git ls-remote origin team-urmepk
 │       ├── pp-ai-create-adapter/SKILL.md
 │       ├── pp-ai-promote-changes-team/SKILL.md
 │       └── pp-ai-promote-changes-master/SKILL.md
-├── processes/<имя>/                 имя определения — по OWNERSHIP.md
+├── processes/<имя>/                 имя определения — по ownership.md
 │   ├── PROCESS.md                  точка входа и маршрут
 │   ├── publication.json            свидетельство допуска required-определения, создаёт код
 │   ├── queries/, rules/            запросы и предметные вычисления, если нужны
 │   ├── contracts/, templates/      схемы данных и инструкции оформления, если нужны
 │   └── renderers/                  формирование и проверка точного текста, если нужны
-├── actions/<имя>/ACTION.md          имя определения — по OWNERSHIP.md
+├── actions/<имя>/ACTION.md          имя определения — по ownership.md
 ├── adapters/<имя>/ADAPTER.md
 ├── context/<master|team|my>/<тема>/CONTEXT.md          уровни master/team/my, без префиксов у тем
 ├── config/
@@ -111,28 +97,23 @@ $ git ls-remote origin team-urmepk
 ├── .history/                        в .gitignore
 │   ├── runs.jsonl                   память помощника, не чистится
 │   └── cache/                       можно удалить в любой момент
-└── outputs/                         в .gitignore; см. docs/ARCHITECTURE.md
+└── outputs/                         в .gitignore; см. docs/architecture.md
 ```
 
-В корне нет: system/, team/, user/, process-kit.local.json, «Process Kit/», .runs/,
-runs/, trace.jsonl, run.md, .gigacode/.env. Отдельного каталога `config/fixtures/` тоже
-нет: вымышленные данные лежат в файле `processes/<имя>/fixture.json`.
+Вымышленные данные лежат в файле `processes/<имя>/fixture.json`.
 У каждой фикстуры должно быть соответствующее определение `processes/<имя>/PROCESS.md`.
 Ресурсы экшена хранятся в `actions/<имя>/`; запросы, правила и оформление конкретного
 сценария — в `processes/<имя>/`. Создавай только используемые подпапки.
-В tests/ хранится только тестовый код; рабочие данные остаются у процессов и экшенов. Общая fixtures/ не используется.
+В tests/ хранится только тестовый код; рабочие данные остаются у процессов и экшенов.
 
 ## .gitignore (обязательные строки)
 
 ```
 outputs/
 .history/
-# старые имена папок результатов, удалить в следующей версии
-Process Kit/
-.runs/
 ```
 
-Плюс строки для файлов, которые GigaCode пишет в папку проекта сам (как уже есть).
+Также исключаются служебные файлы GigaCode и IDE; полный список — в `.gitignore`.
 
 ## Настройки клиента, подключений и команды
 
@@ -178,7 +159,7 @@ error: failed to push some refs ...
 Нигде в скиллах и README нет git push --all, --mirror, --tags в общий репозиторий и
 отправки refs/notes.
 
-## Уточнения проверенной реализации
+## Правила работы
 
 - Защита устанавливается tools/lib/git/install-hooks.js и сохраняет прежний hook; не
   копируйте новый файл поверх пользовательского. Hook проверяет ref-обновления,
@@ -189,7 +170,7 @@ error: failed to push some refs ...
 - Контексты master/team/my подключаются уровнями; аргументы выбирают темы внутри них.
   Чужие уровни/команды не загружаются, тексты не сливаются по приоритету.
 - Физический артефакт — .run/<NN>-<шаг>.<ext>, логическое имя сопоставляется через
-  state.artifacts. Продолжение требует identity и хеши; подробности — [архитектура](ARCHITECTURE.md).
+  state.artifacts. Продолжение требует identity и хеши; подробности — [архитектура](architecture.md).
 - Конфиг нужен только сетевому live. Transform/demo не требуют адресов или секретов.
 - Данные и запросы переиспользуются по точной ссылке, не обязаны повторять имя процесса.
 
@@ -206,7 +187,7 @@ SDD 1.1: run-query → task-records; read-code-evidence → code-evidence;
 evaluate-data с SDD-правилом процесса → report-data; compose-report → report-text;
 prepare-mail-draft → mail-draft (необязательно). Контракт — processes/sdd-stories-report/reference.md.
 
-Устройство CLI и группы внутренних модулей: [архитектура](ARCHITECTURE.md).
+Устройство CLI и группы внутренних модулей: [архитектура](architecture.md).
 
 Одиночная локальная утилита: kit.js action, без процесса-обёртки. Исполнитель процесса:
 kit.js run next/execute либо begin/save для работы модели. Формирование и проверка
@@ -228,4 +209,3 @@ References одной способности хранятся рядом; раб
 Каталог tools/lib/entities/process-catalog.js читает текущие метаданные без исполнения
 runtime/branchRule. Владение и команда проверяются до выдачи закрытых записей. Это
 помощь discovery, не замена проверки ссылок, публикации и готовности при запуске.
-Новый task runtime, постоянный continuation или второй Run Journal не создаются.

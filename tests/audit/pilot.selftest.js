@@ -3,7 +3,7 @@ const c=require('../fixture')(),{tmp,source,fs,path,assert,write}=c;
 const {execFileSync,spawnSync}=require('node:child_process');
 const git=(...args)=>execFileSync('git',args,{cwd:tmp,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 try{
- const guide=path.join(source,'docs/PILOT-INSTALL.md');
+ const guide=path.join(source,'docs/pilot-install.md');
  assert.ok(fs.existsSync(guide),'ARCH-008: missing pinned pilot installation procedure');
  const script=fs.readFileSync(guide,'utf8').match(/```javascript\n([\s\S]*?)\n```/)[1];
  write('pilot-install.cjs',script);fs.copyFileSync(path.join(source,'.gitattributes'),path.join(tmp,'.gitattributes'));

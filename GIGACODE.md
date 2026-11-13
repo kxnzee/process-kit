@@ -12,7 +12,7 @@ skills, затем читай полный SKILL.md выбранной опер�
 - [interaction.md](.gigacode/references/interaction.md): подробные случаи Event/Intent, изменений, отмены и композиции;
   читай при соответствующей неоднозначности, не как обязательный вход каждого turn.
 - [Модель владения](docs/OWNERSHIP.md): единственный источник правил веток, уровней и имён определений.
-- docs/STRUCTURE.md: раскладка файлов; docs/ARCHITECTURE.md: состояние и контракты.
+- [STRUCTURE.md](docs/STRUCTURE.md): раскладка файлов; [ARCHITECTURE.md](docs/ARCHITECTURE.md): состояние и контракты.
 - Выбранный SKILL.md: процедура операции; указанный им обязательный reference прочитай до зависимой работы.
 - .gigacode/references/: общие операционные инструкции; .gigacode/skills/<skill>/references/:
   методики конкретной способности. Читай по указанному условию, не всё дерево при каждом запросе.

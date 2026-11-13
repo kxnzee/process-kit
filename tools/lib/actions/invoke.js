@@ -21,4 +21,4 @@ function invoke(cwd,spec){
  return {status:'completed',action:spec.action,port,value,resultFile:file?inside(cwd,file):null,outputDir:file?require('node:path').dirname(inside(cwd,file)):null,note:'Локальный экшен; внешние изменения не выполнялись. Журнал процесса не создавался.'};
 }
 module.exports={invoke};
-if(require.main===module){try{const [file,...rest]=process.argv.slice(2);if(!file||rest.length)throw new Error('node tools/kit.js action <spec.json>');console.log(JSON.stringify(invoke(root(),JSON.parse(fs.readFileSync(file,'utf8'))),null,2));}catch(error){console.error(error.message);process.exitCode=1;}}
+if(require.main===module){try{const [file,...rest]=process.argv.slice(2);if(!file||rest.length)throw new Error('node tools/kit.js action <spec.json>');const cwd=root(),spec=JSON.parse(fs.readFileSync(file,'utf8'));require('../entities/process-facts').assertActionAccess(cwd,spec?.action);console.log(JSON.stringify(invoke(cwd,spec),null,2));}catch(error){console.error(error.message);process.exitCode=1;}}

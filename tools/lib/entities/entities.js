@@ -20,7 +20,7 @@ function declarations(cwd,name,model){
  levels(req.context||[],'requires.context');levels(req.config||[],'requires.config');
  return req;
 }
-function manifest(cwd,name,params={},mode='local',overrides=params){
+function manifest(cwd,name,params={},mode='local',overrides=params,options={}){
  if(!NAME.test(name||'')||!params||typeof params!=='object'||Array.isArray(params)||!['local','demo','live'].includes(mode))throw new Error('Нужны имя процесса, объект параметров и режим local/demo/live');
  const {processModel}=require('./process-model'),{dependencies,childParams}=require('./process-dependencies');
  const entities=[],seen=new Set();
@@ -38,8 +38,8 @@ function manifest(cwd,name,params={},mode='local',overrides=params){
  const connections=mode==='live'?require('../config/config').resolveProcess(cwd,name,params,overrides):null;
  if(connections&&!connections.ready)return {ready:false,entities,connections,missing:connections.missing,readFiles:[]};
  for(const connection of connections?.connections||[])add('adapter',connection.id,connection.adapterFile,{mcpServer:connection.mcpServer});
- const files=dependencies(cwd,name,params,mode,[],overrides);
+ const files=dependencies(cwd,name,params,mode,[],overrides,options);
  return {ready:true,entities,connections,files,readFiles:entities.flatMap(item=>item.kind==='context'?['context/README.md']:item.available===false?[]:[item.entry]),note:'Сначала читайте точки входа нужных сущностей. Темы контекста выбирайте по задаче; конфликты не разрешаются приоритетом.'};
 }
 module.exports={levels,declarations,manifest};
-if(require.main===module){try{const [name,mode='local',paramsFile,...rest]=process.argv.slice(2);if(rest.length||!['local','demo','live'].includes(mode))throw new Error('node tools/kit.js entities <процесс> [local|demo|live] [params.json]');require('./process-facts').assertAccess(process.cwd(),name);const result=manifest(process.cwd(),name,paramsFile?JSON.parse(fs.readFileSync(paramsFile,'utf8')):{},mode);console.log(JSON.stringify(result,null,2));if(!result.ready)process.exitCode=1;}catch(error){console.error(error.message);process.exitCode=1;}}
+if(require.main===module){try{const [name,mode='local',paramsFile,...rest]=process.argv.slice(2);if(rest.length||!['local','demo','live'].includes(mode))throw new Error('node tools/kit.js entities <процесс> [local|demo|live] [params.json]');const params=paramsFile?JSON.parse(fs.readFileSync(paramsFile,'utf8')):{};require('./process-facts').assertAccess(process.cwd(),name,params);const result=manifest(process.cwd(),name,params,mode);console.log(JSON.stringify(result,null,2));if(!result.ready)process.exitCode=1;}catch(error){console.error(error.message);process.exitCode=1;}}

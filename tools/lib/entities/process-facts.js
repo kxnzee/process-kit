@@ -27,9 +27,8 @@ function visible(name,scope){
 }
 // Public GigaCode admission. Parse the complete declared tree before loading any JS.
 // Core embedding APIs remain a trusted-host boundary, not a JavaScript sandbox.
-function assertAccess(cwd,name,params={},files=[]){
- const scope=scopeFor(cwd),{stepParams,childParams}=require('./process-dependencies');
- const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
+function accessRules(cwd){
+ const scope=scopeFor(cwd);
  function allowed(ref,from){
   if(!NAME.test(ref||'')||!visible(ref,scope)||from&&!allowedReference(from,ref))throw new Error('Определение недоступно по уровню владения');
  }
@@ -38,10 +37,25 @@ function assertAccess(cwd,name,params={},files=[]){
   if(value&&typeof value==='object'){for(const item of Object.values(value))resources(item,from);return;}
   if(typeof value!=='string')return;
   if(/^[{[]/.test(value.trimStart())){let parsed;try{parsed=JSON.parse(value);}catch{}if(parsed&&typeof parsed==='object'){resources(parsed,from);return;}}
-  const resource=value.match(/^(processes|actions)\/([^/]+)(?:\/|$)/);
+  const resource=value.match(/^(processes|actions|adapters)\/([^/]+)(?:\/|$)/);
   if(resource)allowed(resource[2],from);
   if(value.startsWith('context/')&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
  }
+ function paths(value,from){
+  if(value===undefined)return;
+  if(!Array.isArray(value)||value.some(file=>!canonicalFile(file)||!(/^(processes|actions|adapters|context|tools|config|docs)\//.test(file)||file==='.gigacode/settings.json')))throw new Error('Нужен список канонических относительных путей файлов');
+  for(const file of value)resources(file,from);
+ }
+ return {allowed,resources,paths};
+}
+function assertActionAccess(cwd,name){
+ const {allowed,paths}=accessRules(cwd);allowed(name);
+ const meta=require('../core/markdown').parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${name}/ACTION.md`),'utf8')).data||{};
+ paths(meta.requiresFiles,name);
+}
+function assertAccess(cwd,name,params={},files=[]){
+ const {allowed,resources,paths}=accessRules(cwd),{stepParams,childParams}=require('./process-dependencies');
+ const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
  function visit(ref,inherited,stack=[]){
   allowed(ref,stack.at(-1));
   if(stack.includes(ref)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
@@ -52,7 +66,7 @@ function assertAccess(cwd,name,params={},files=[]){
   for(const action of actions){
    allowed(action,ref);
    const meta=require('../core/markdown').parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${action}/ACTION.md`),'utf8')).data||{};
-   resources(meta.requiresFiles,ref);
+   paths(meta.requiresFiles,action);
    for(const step of model.steps.filter(s=>s.kind==='action'&&s.ref===action)){
     const effective=stepParams(values,step,params,{},meta.defaults);resources(effective,ref);
     for(const key of ['query','template','rule'])if(NAME.test(effective[key]||''))allowed(effective[key],ref);
@@ -65,7 +79,7 @@ function assertAccess(cwd,name,params={},files=[]){
   }
   for(const child of children)visit(child,values,[...stack,ref]);
  }
- visit(name,params);resources(files,name);
+ visit(name,params);paths(files,name);
 }
 function visibleFile(file,name,scope){
  if(!canonicalFile(file))return false;
@@ -73,7 +87,7 @@ function visibleFile(file,name,scope){
  if(['processes','actions'].includes(folder))return /^[a-z0-9][a-z0-9-]*$/.test(ref||'')&&visible(ref,scope)&&allowedReference(name,ref);
  return folder==='context'&&['master','team','my'].includes(ref)&&{master:0,team:1,my:2}[ref]<=owner(name).level&&(ref!=='team'||!!scope.teamId)&&(ref!=='my'||scope.personal);
 }
-function canonicalFile(file){return typeof file==='string'&&!file.includes('\\')&&!file.split('/').some(part=>!part||part==='.'||part==='..');}
+function canonicalFile(file){return typeof file==='string'&&!/^[a-zA-Z]:/.test(file)&&!file.includes('\\')&&!file.split('/').some(part=>!part||part==='.'||part==='..');}
 function publicationFacts(cwd,name,scope,issue){
  const file=`processes/${name}/publication.json`;
  try{
@@ -85,4 +99,4 @@ function publicationFacts(cwd,name,scope,issue){
   return {status:valid?receipt.status:'stale',current:valid};
  }catch{issue('publication-unavailable',file);return {status:'unknown',current:false};}
 }
-module.exports={assertAccess,scopeFor,visible,visibleFile,canonicalFile,publicationFacts};
+module.exports={assertActionAccess,assertAccess,scopeFor,visible,visibleFile,canonicalFile,publicationFacts};

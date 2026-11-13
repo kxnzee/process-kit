@@ -19,33 +19,35 @@ function current(cwd,receipt,process=receipt?.process){
  }catch(error){if(error.code==='ENOENT')return false;throw error;}
 }
 // Safe admission before deep validation or dependency hooks load definition JS.
-function admitPublished(cwd,name,seen=new Set()){
+function admitPublished(cwd,name,params={},overrides=params,stack=[]){
  const {NAME,processModel}=require('./process-model');
  if(!NAME.test(name||''))throw new Error('Неверный процесс');
- if(seen.has(name))return;seen.add(name);
+ if(stack.includes(name)||stack.length>=require('../config/config').loadMaster(cwd).execution.maxProcessDepth)throw new Error('Цикл или глубина подпроцессов');
  const model=processModel(fs.readFileSync(inside(cwd,`processes/${name}/PROCESS.md`),'utf8'));
  if(model.data.publication!==undefined&&model.data.publication!=='required')throw new Error('publication: допускается только required; legacy нужно перевести через validate/test/publish');
  const file=inside(cwd,`processes/${name}/publication.json`);
  const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(receipt?.status!=='published'||!current(cwd,receipt,name))throw new Error('Определение не опубликовано или изменилось после проверки: выполните definition validate/test/publish');
  function covered(file){if(receipt.files[file]!==hash(fs.readFileSync(inside(cwd,file))))throw new Error('Выбранная зависимость не проверена при публикации: '+file);}
- for(const file of require('./process-dependencies').definitionFiles(cwd,name))covered(file);
- for(const ref of new Set([...(model.data.requires?.processes||[]),...model.steps.filter(s=>s.kind==='process').map(s=>s.ref)]))admitPublished(cwd,ref,seen);
+ for(const file of require('./process-dependencies').definitionFiles(cwd,name,params,overrides))covered(file);
+ const {childParams}=require('./process-dependencies'),values={...model.data.params,...params},declared=new Set(model.data.requires?.processes||[]);
+ for(const step of model.steps.filter(s=>s.kind==='process')){declared.delete(step.ref);admitPublished(cwd,step.ref,childParams(cwd,model,step,values,{},overrides),overrides,[...stack,name]);}
+ for(const ref of declared)admitPublished(cwd,ref,childParams(cwd,model,{ref,params:{}},values,{},overrides),overrides,[...stack,name]);
 }
-function assertPublished(cwd,name,files=[]){
- admitPublished(cwd,name);
+function assertPublished(cwd,name,files=[],params={},overrides=params){
+ admitPublished(cwd,name,params,overrides);
  validateDefinition(cwd,name);
  const file=inside(cwd,`processes/${name}/publication.json`);
  const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(receipt?.status!=='published'||receipt.process!==name||!current(cwd,receipt))throw new Error('Определение не опубликовано или изменилось после проверки: выполните definition validate/test/publish');
  for(const [file,digest]of Object.entries(snapshot(cwd,files)))if(receipt.files[file]!==digest)throw new Error('Выбранная зависимость не проверена при публикации: '+file);
 }
-function assertPublishedTree(cwd,name,params,mode,overrides,files){
- admitPublished(cwd,name);
+function assertPublishedTree(cwd,name,params,mode,overrides,files,options={}){
+ admitPublished(cwd,name,params,overrides);
  const model=validateDefinition(cwd,name);
- assertPublished(cwd,name,(files||dependencies(cwd,name,params,mode,[],overrides)).filter(f=>f!==params.dataFile));
+ assertPublished(cwd,name,(files||dependencies(cwd,name,params,mode,[],overrides,options)).filter(f=>f!==params.dataFile),params,overrides);
  const {childParams}=require('./process-dependencies');
- for(const step of model.steps.filter(s=>s.kind==='process'))assertPublishedTree(cwd,step.ref,childParams(cwd,model,step,params,{},overrides),mode,overrides);
+ for(const step of model.steps.filter(s=>s.kind==='process'))assertPublishedTree(cwd,step.ref,childParams(cwd,model,step,params,{},overrides),mode,overrides,undefined,options);
 }
 function lifecycle(cwd,operation,spec){
  if(operation==='inspect')return require('./process-inspect').inspect(cwd,spec);

@@ -2,6 +2,33 @@
 const c=require('../fixture')(),{tmp,write,fs,path,assert,check}=c;
 const journal=require('../../tools/lib/runtime/run-journal');
 try{
+ check('ARCH-002: caller-provided params.input remains a frozen file input without start.inputText',()=>{
+  const file='processes/example/data/explicit-input.md';
+  for(const params of [{input:file},{input:file,text:file},{input:file,text:file,generatedInput:file}]){
+   write(file,'12 задач.');
+   const {output,files}=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,params:{...params,to:'Test',subject:'Audit'}});
+   assert.ok(files.includes(file),'Caller input was mistaken for the Controller-generated copy');
+   assert.equal(journal.operation(tmp,'next',{output}).operation,'begin');
+   write(file,'99 задач.');
+   for(const command of ['next','begin'])assert.throws(()=>journal.operation(tmp,command,{output,step:'edit'}),/Изменён вход/);
+  }
+ });
+ check('ARCH-002: only the Controller-owned input copy is excluded from static inventory',()=>{
+  const started=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,inputText:'12 задач.',params:{input:'processes/example/missing-input.md',to:'Test',subject:'Audit'}});
+  assert.notEqual(started.state.params.input,'processes/example/missing-input.md');
+  assert.equal(started.state.identity.overrides.input,started.state.params.input);
+  assert.ok(started.files.includes(started.state.params.input));
+  assert.equal(journal.operation(tmp,'next',{output:started.output}).operation,'begin');
+  fs.writeFileSync(path.join(tmp,started.state.params.input),'99 задач.');
+  assert.throws(()=>journal.operation(tmp,'next',{output:started.output}),/Изменён вход/);
+ });
+ check('ARCH-002: an unresolved artifact token cannot be used as an unsnapshotted literal file',()=>{
+  write('{untracked}','12 задач.');
+  assert.throws(()=>{
+   const {output}=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,params:{input:'{untracked}',to:'Test',subject:'Audit'}});
+   journal.operation(tmp,'begin',{output,step:'edit'});
+  },/Не разрешена ссылка на артефакт|Недопустимый ресурс/);
+ });
  check('ARCH-002: a changed file input is rejected before the next step',()=>{
   const file='processes/example/data/input.md';write(file,'12 задач.');
   const {output}=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,params:{text:file,to:'Test',subject:'Audit'}});

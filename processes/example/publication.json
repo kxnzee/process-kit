@@ -5,12 +5,12 @@
   "files": {
     "actions/edit-text/ACTION.md": "b422d83de03fd22cc83e773e9c3e68cb39af2b26b53f60d77eb053c799d802e1",
     "actions/edit-text/rules/before-after.md": "70f12568bb7f7f753b0906cf4dff05b8ac268cf41e22d0612485b20be28b8254",
-    "actions/edit-text/runtime.js": "e877d1b74c1c56ee9453914909212fad50bb8a82bcdc86028bdf4060ac9f6d81",
+    "actions/edit-text/runtime.js": "d6fdd3aec26f6dce452c5722e072a27918d1418f55f2163d3f852898e859761c",
     "actions/prepare-mail-draft/ACTION.md": "1e72faa5cecc1db8a703a4e6d4e55dc326907e9f747bfb8f41e755e55a041ecf",
     "context/master/writing-style/CONTEXT.md": "a187c1e1e3a3645b639303b2e7cba7c11ce64824786d1766b1688f6f2a6198aa",
     "processes/example/PROCESS.md": "2116169729557cedaad906ea63ed90d5cac9e0db4b4c1ad4733933680538f0d3"
   },
-  "updated": "2026-11-12T22:56:20.723Z",
+  "updated": "2026-11-13T13:50:20.580Z",
   "scope": "local/demo",
   "outputs": [
     "2026-11-13_проверка-письмо"

@@ -52,21 +52,32 @@ function childParams(cwd,parent,step,params,artifacts={},overrides={}){
  return {...params,...child.data.params,...Object.fromEntries(Object.entries(step.params).map(([key,value])=>[key,bind(value,scope,artifacts)])),...overrides};
 }
 // Static owner inventory: safe to compare before loading any definition hooks.
-function definitionFiles(cwd,name){
- const files=new Set(),seen=new Set();
- function tree(folder){for(const entry of fs.readdirSync(inside(cwd,folder),{withFileTypes:true})){const file=folder+'/'+entry.name;if(entry.isDirectory())tree(file);else{inside(cwd,file);files.add(file);}}}
- function visit(name){
+function definitionFiles(cwd,name,params={},overrides=params){
+ const files=new Set(),maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
+ function tree(folder){for(const entry of fs.readdirSync(inside(cwd,folder),{withFileTypes:true})){const file=folder+'/'+entry.name;if(file.endsWith('/publication.json'))continue;if(entry.isDirectory())tree(file);else{inside(cwd,file);files.add(file);}}}
+ function visit(name,inherited,stack=[]){
   if(!NAME.test(name||''))throw new Error('Неверное имя процесса');
-  if(seen.has(name))return;seen.add(name);
+  if(stack.includes(name)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
   const file=`processes/${name}/PROCESS.md`;files.add(file);
-  const model=processModel(fs.readFileSync(inside(cwd,file),'utf8'));
+  const model=processModel(fs.readFileSync(inside(cwd,file),'utf8')),values={...model.data.params,...inherited};
   if(model.data.branchRule)tree(`processes/${name}/rules`);
   for(const ref of model.data.requires?.actions||[]){if(!NAME.test(ref))throw new Error('Неверное действие');tree('actions/'+ref);}
-  for(const ref of new Set([...(model.data.requires?.processes||[]),...model.steps.filter(s=>s.kind==='process').map(s=>s.ref)]))visit(ref);
+  for(const step of model.steps.filter(s=>s.kind==='action')){
+   const meta=action(cwd,step.ref),effective=stepParams(values,step,overrides,{},meta.defaults);
+   for(const key of ['rulesFile','rendererFile'])if(meta.consumes.params.includes(key)&&effective[key]!==undefined){
+    const selected=require('../actions/action-support').resource(cwd,name,effective[key],model.data.requires);
+    if(!/^(processes|actions)\/[a-z0-9][a-z0-9-]*\/.+\.js$/.test(selected))throw new Error(key+': нужен JS-модуль владельца Process/Action');
+    // Collect the selected module and colocated helpers as data, before any require().
+    tree(selected.slice(0,selected.lastIndexOf('/')));
+   }
+  }
+  const declared=new Set(model.data.requires?.processes||[]);
+  for(const step of model.steps.filter(s=>s.kind==='process')){declared.delete(step.ref);visit(step.ref,childParams(cwd,model,step,values,{},overrides),[...stack,name]);}
+  for(const ref of declared)visit(ref,childParams(cwd,model,{ref,params:{}},values,{},overrides),[...stack,name]);
  }
- visit(name);return [...files].sort();
+ visit(name,params);return [...files].sort();
 }
-function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params){
+function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params,options={}){
  const files=new Set(),visiting=new Set();const include=file=>{const full=inside(cwd,file);if(!fs.statSync(full).isFile())throw new Error('Нет файла '+file);files.add(file);return fs.readFileSync(full,'utf8');};
  function entityFiles(folder){for(const item of fs.readdirSync(inside(cwd,folder),{withFileTypes:true})){const file=folder+'/'+item.name;if(item.isDirectory())entityFiles(file);else include(file);}}
  const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;include('config/master/config.json');
@@ -87,7 +98,7 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
    for(const [key,folder]of Object.entries({query:'queries',template:'templates',rule:'rules'}))if(meta.consumes?.params?.includes(key)){
     const selected=effective[key];if(!NAME.test(selected||'')||!allowedReference(process,selected))throw new Error('Неверный/отсутствующий '+key+' для '+step.ref);include(`actions/${step.ref}/${folder}/${selected}.md`);
    }
-   const context={cwd,processName:process,actionName:step.ref,meta,params:effective,mode,preflight:true};
+   const context={cwd,processName:process,actionName:step.ref,meta,params:effective,mode,preflight:true,generatedInput:options.generatedInput};
    if(meta.runtime)include(`actions/${step.ref}/${meta.runtime}`);
    for(const file of meta.requiresFiles||[])include(file);
    const policy=require('../actions/action-runtime').runtime(cwd,step.ref,meta);
@@ -103,7 +114,7 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
   }
   visiting.delete(process);
  }
- for(const file of definitionFiles(cwd,name))include(file);
+ for(const file of definitionFiles(cwd,name,params,overrides))include(file);
  visit(name,params);
  for(const file of extras)if(!files.has(file)){
   if(file.startsWith('context/'))require('../actions/action-support').resource(cwd,name,file);

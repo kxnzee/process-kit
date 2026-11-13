@@ -55,16 +55,21 @@ function start(cwd,spec,environment={}){
  const current=new Date();spec={...spec,date:spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
  if(!NAME.test(spec.process||'')||!['local','live','demo'].includes(spec.mode))throw new Error('Нужны process и mode');
- if(!spec.definitionTest)require('../entities/process-release').admitPublished(cwd,spec.process);
+ const draft=processModel(fs.readFileSync(inside(cwd,`processes/${spec.process}/PROCESS.md`),'utf8'));
+ const params=effectiveParams(cwd,spec,draft.data.params||{});
+ const overrides=Object.fromEntries(Object.keys({...spec.params,...spec.explicitParams}).map(key=>[key,params[key]]));
+ if(!spec.definitionTest)require('../entities/process-release').admitPublished(cwd,spec.process,params,overrides);
  const model=validateDefinition(cwd,spec.process);if(model.data.status!=='действует')throw new Error('Процесс устарел');
- const params=effectiveParams(cwd,spec,model.data.params||{}),slug=(spec.mode==='demo'?'проба-':'')+(spec.slug||spec.process);
+ const slug=(spec.mode==='demo'?'проба-':'')+(spec.slug||spec.process);
  validateRunInput(cwd,spec.process,model,params);
  const proposed=runFolderUnique(cwd,`${spec.date}_${slug}`);if(!proposed)throw new Error('Неверное/занятое имя output');const output=path.basename(proposed),dir=inside(cwd,`outputs/${output}/.run`);
- const overrides=Object.fromEntries(Object.keys({...spec.params,...spec.explicitParams}).map(key=>[key,params[key]]));
- const files=new Set([...dependencies(cwd,spec.process,params,spec.mode,spec.files||[],overrides),...(environment.files||[])]);
+ const generatedInput=spec.inputText!==undefined?path.relative(cwd,inside(dir,'inputs/input.md')):null;
+ if(generatedInput){params.input=generatedInput;if(Object.hasOwn(overrides,'input'))overrides.input=generatedInput;}
+ const dependencyOptions={generatedInput};
+ const files=new Set([...dependencies(cwd,spec.process,params,spec.mode,spec.files||[],overrides,dependencyOptions),...(environment.files||[])]);
  if(spec.definitionTest&&spec.mode==='live')throw new Error('definitionTest допускает только local/demo без внешних изменений');
- if(!spec.definitionTest)require('../entities/process-release').assertPublishedTree(cwd,spec.process,params,spec.mode,overrides,[...files]);
- const resolved=require('../entities/entities').manifest(cwd,spec.process,params,spec.mode,overrides),connections=resolved.connections;
+ if(!spec.definitionTest)require('../entities/process-release').assertPublishedTree(cwd,spec.process,params,spec.mode,overrides,[...files],dependencyOptions);
+ const resolved=require('../entities/entities').manifest(cwd,spec.process,params,spec.mode,overrides,dependencyOptions),connections=resolved.connections;
  if(connections&&!connections.ready)throw new Error(connections.missing.map(item=>item.reason).join('; '));
  const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&!(environment.files||[]).includes(file))throw new Error('Недопустимый файл снимка');snapshots[file]=fingerprint(file,fs.readFileSync(inside(cwd,file)));}
  fs.mkdirSync(inside(cwd,'outputs'),{recursive:true});fs.mkdirSync(path.dirname(dir));fs.mkdirSync(dir);
@@ -102,9 +107,11 @@ function operationLocked(cwd,command,spec,environment={}){
   const events=[];
   function event(unused,type,data={}){const row={ts:now(),type,...data};events.push(row);return row;}
   for(const [file,digest]of Object.entries(state.identity.files))if(fingerprint(file,fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
-  for(const file of require('../entities/process-dependencies').definitionFiles(cwd,state.identity.process))if(!Object.hasOwn(state.identity.files,file))throw new Error('Изменён состав зависимостей; нужен новый запуск');
-  const inventory=dependencies(cwd,state.identity.process,state.identity.params,state.identity.mode,state.identity.extraFiles||[],state.identity.overrides);
-  const expected=Object.keys(state.identity.files).filter(file=>file!==state.identity.params.input&&!(state.identity.environmentFiles||[]).includes(file)).sort();
+  for(const file of require('../entities/process-dependencies').definitionFiles(cwd,state.identity.process,state.identity.params,state.identity.overrides))if(!Object.hasOwn(state.identity.files,file))throw new Error('Изменён состав зависимостей; нужен новый запуск');
+  const ownInput=path.relative(cwd,inside(dir,'inputs/input.md'));
+  const generatedInput=state.identity.params.input===ownInput?ownInput:null;
+  const inventory=dependencies(cwd,state.identity.process,state.identity.params,state.identity.mode,state.identity.extraFiles||[],state.identity.overrides,{generatedInput});
+  const expected=Object.keys(state.identity.files).filter(file=>file!==generatedInput&&!(state.identity.environmentFiles||[]).includes(file)).sort();
   if(JSON.stringify(inventory.sort())!==JSON.stringify(expected))throw new Error('Изменён состав зависимостей; нужен новый запуск');
   state.stack ||= [];state.cursorProcess ||= state.identity.process;
   for(const [file,digest]of Object.entries(state.recordedArtifacts||{}))if(hash(fs.readFileSync(inside(dir,file)))!==digest)throw new Error('Изменён сохранённый шаг: '+file);

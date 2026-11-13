@@ -34,7 +34,7 @@
     "processes/info-povod/rules/info-povod.js": "e8ac9f84cdd99f8f159c6552be07acc55a919f63061177273276864a641bef07",
     "processes/info-povod/templates/report.md": "4573001a2b360aa6c0864fbbaa559c388b4f916515cb65488e66dd34aad166db"
   },
-  "updated": "2026-11-12T22:56:23.003Z",
+  "updated": "2026-11-13T13:50:23.664Z",
   "scope": "local/demo",
   "outputs": [
     "2026-11-13_проба-проверка-поводы",

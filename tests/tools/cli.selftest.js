@@ -56,14 +56,11 @@ try{
   const next=call(['run','next','literal-next.json']);assert.equal(next.status,0,next.stderr);assert.equal(JSON.parse(next.stdout).operation,'begin');
  });
  check('public CLI rejects foreign diagnosis without creating an export',()=>{
-  console.log('CLI ownership fixture: copy definition');
-  const folder=path.join(tmp,'processes/team-b-private');fs.cpSync(path.join(tmp,'processes/example'),folder,{recursive:true});
-  const file=path.join(folder,'PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: example','name: team-b-private'));
-  console.log('CLI ownership fixture: start foreign run');
+  // Only the definition is needed. Avoid native recursive copy in this Unicode fixture.
+  write('processes/team-b-private/PROCESS.md',fs.readFileSync(path.join(tmp,'processes/example/PROCESS.md'),'utf8').replace('name: example','name: team-b-private'));
   const started=require('../../tools/lib/runtime/run-journal').start(tmp,{process:'team-b-private',mode:'local',definitionTest:true,inputText:'12 задач.',params:{to:'Test',subject:'Private'}});
   const dir=path.join(tmp,'outputs',started.output),before=fs.readdirSync(dir).sort();
   write('foreign-diagnose.json',JSON.stringify({output:started.output}));
-  console.log('CLI ownership fixture: invoke public diagnosis');
   const result=call(['run','diagnose','foreign-diagnose.json']);assert.notEqual(result.status,0);assert.equal(result.stdout,'');assert.match(result.stderr,/владени|недоступ/i);
   assert.deepEqual(fs.readdirSync(dir).sort(),before);
  });

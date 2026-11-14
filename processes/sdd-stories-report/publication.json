@@ -9,7 +9,7 @@
     "actions/evaluate-data/ACTION.md": "8383c9464264355304f42fdd2d6288ab676ccf97bc4199b98eb3d1708dd4cedc",
     "actions/evaluate-data/contracts/result.json": "31259dcce1aec6aac8a7352eda5cc970d4fed2a21e1a0b6bdd8a3a139a3252d7",
     "actions/evaluate-data/runtime.js": "0dce312dd46136e2d98c4b717af85e3f148f955db6377a7742adc56d7bbb9739",
-    "actions/prepare-mail-draft/ACTION.md": "1e72faa5cecc1db8a703a4e6d4e55dc326907e9f747bfb8f41e755e55a041ecf",
+    "actions/prepare-mail-draft/ACTION.md": "3cdbc4c123ae576934a43384074101212ab4aea75cb6d87320fafa38f24cf51b",
     "actions/read-code-evidence/ACTION.md": "3553bce839aba4e68dd469af898f5519032777075e247ccaa48f4bc34dcff2a2",
     "actions/read-code-evidence/contracts/input.json": "4a991e22328454d4e7c52183ceb914ea4f103a8c8db2e3a541df257f03936721",
     "actions/read-code-evidence/contracts/result.json": "e66de63af3b812ed5c23a87cb9574892ef5a90cd19f679f05f0921b5537bbbe0",
@@ -34,7 +34,7 @@
     "processes/sdd-stories-report/templates/mail.md": "d1d76bd55ea88fa87df40ba2e95ddb69a0d33ec40dffca9cd893434ae090f225",
     "processes/sdd-stories-report/templates/report.md": "c35adbaabc6d895c3b5e89f9cc5c0051a2c3a9f8022c7cfe9827ebc656aa6aa6"
   },
-  "updated": "2026-11-13T14:33:00.945Z",
+  "updated": "2026-11-13T16:00:19.043Z",
   "scope": "local/demo",
   "outputs": [
     "2026-11-13_проба-проверка-сдд",

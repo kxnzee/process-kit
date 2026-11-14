@@ -2,10 +2,17 @@
 // Resolve declared files only. Does not execute steps, inspect expected data or choose branches.
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path'),{processModel,NAME,allowedReference}=require('./process-model'),{parseFrontmatter}=require('../core/markdown'),{loadContract}=require('../contracts/value-contract');
+function literalParams(meta){
+ const list=Object.hasOwn(meta.consumes||{},'literalParams')?meta.consumes.literalParams:[];
+ if(!Array.isArray(list)||list.some(key=>typeof key!=='string'||!meta.consumes?.params?.includes(key))||new Set(list).size!==list.length)throw new Error('consumes.literalParams: нужен список уникальных имён из consumes.params');
+ if(list.some(key=>/File$/.test(key)||['inputs','resultContract','data','records'].includes(key)||key==='text'&&meta.runtime&&meta.consumes.params.includes('inputText')))throw new Error('Файловый параметр нельзя объявить literalParams');
+ return list;
+}
 function action(cwd,name){
  if(!NAME.test(name||''))throw new Error('Неверное действие');const data=parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${name}/ACTION.md`),'utf8')).data;
  if(!data||data.name!==name||!data.produces||typeof data.produces!=='object'||Array.isArray(data.produces)||Object.keys(data.produces).length!==1||Object.entries(data.produces).some(([key,value])=>!NAME.test(key)||typeof value!=='string'||!value.trim()))throw new Error('Неверное определение действия '+name);
  if(!['source','transform','act'].includes(data.kind)||!data.consumes||!['artifacts','params'].every(k=>Array.isArray(data.consumes[k])&&data.consumes[k].every(v=>typeof v==='string')&&new Set(data.consumes[k]).size===data.consumes[k].length))throw new Error('Неверный вход действия '+name);
+ literalParams(data);
  if(data.adapter==='environment-tool'&&data.kind!=='source')throw new Error('environment-tool допустим только для source');
  if(data.adapter==='environment-tool'&&data.consumes.params.some(p=>['taskStore','codeStore'].includes(p)))throw new Error('environment-tool не заменяет объявленное подключение');
  if(!data.contracts||Object.keys(data.contracts).length!==1||Object.keys(data.produces).some(k=>!Object.hasOwn(data.contracts,k)))throw new Error('Нужен контракт каждого выхода '+name);
@@ -138,4 +145,4 @@ function resultPorts(cwd,name,stack=[]){
  }
  visit(model.entry,null);return [...found];
 }
-module.exports={definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};
+module.exports={literalParams,definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};

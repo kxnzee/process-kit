@@ -8,6 +8,7 @@ adapter: none — шаг не обращается к сети, правит т�
 consumes:
   artifacts: []
   params: [text, inputText, режим, кому, styleFile]
+  literalParams: [inputText, режим, кому]
 produces:
   report-text: тот же текст после правки, без новых фактов
 requires:

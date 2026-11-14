@@ -6,6 +6,7 @@ adapter: none
 consumes:
   artifacts: [report-text]
   params: [to, subject]
+  literalParams: [to, subject]
 produces:
   mail-draft: черновик письма
 contracts:

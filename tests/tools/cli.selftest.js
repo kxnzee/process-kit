@@ -46,4 +46,22 @@ try{
   const commit=git(['-c','commit.gpgsign=false','commit','-m','Test installed hook']);assert.equal(commit.status,0,commit.stderr);
   assert.equal(fs.readFileSync(path.join(tmp,'previous-hook-called'),'utf8'),'previous-hook');
  });
+ check('public CLI accepts a literal subject resembling a foreign resource and preserves its value',()=>{
+  execFileSync('git',['symbolic-ref','HEAD','refs/heads/master'],{cwd:tmp,stdio:'ignore'});
+  const subject='processes/team-b-private/not-a-file.md';
+  write('literal-start.json',JSON.stringify({process:'example',mode:'local',inputText:'12 задач.',params:{to:'Test',subject}}));
+  const result=call(['run','start','literal-start.json']);assert.equal(result.status,0,result.stderr);
+  const started=JSON.parse(result.stdout);assert.equal(started.state.params.subject,subject);
+  write('literal-next.json',JSON.stringify({output:started.output}));
+  const next=call(['run','next','literal-next.json']);assert.equal(next.status,0,next.stderr);assert.equal(JSON.parse(next.stdout).operation,'begin');
+ });
+ check('public CLI rejects foreign diagnosis without creating an export',()=>{
+  // Only the definition is needed. Avoid native recursive copy in this Unicode fixture.
+  write('processes/team-b-private/PROCESS.md',fs.readFileSync(path.join(tmp,'processes/example/PROCESS.md'),'utf8').replace('name: example','name: team-b-private'));
+  const started=require('../../tools/lib/runtime/run-journal').start(tmp,{process:'team-b-private',mode:'local',definitionTest:true,inputText:'12 задач.',params:{to:'Test',subject:'Private'}});
+  const dir=path.join(tmp,'outputs',started.output),before=fs.readdirSync(dir).sort();
+  write('foreign-diagnose.json',JSON.stringify({output:started.output}));
+  const result=call(['run','diagnose','foreign-diagnose.json']);assert.notEqual(result.status,0);assert.equal(result.stdout,'');assert.match(result.stderr,/владени|недоступ/i);
+  assert.deepEqual(fs.readdirSync(dir).sort(),before);
+ });
 }finally{ctx.close();}

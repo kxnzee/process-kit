@@ -138,6 +138,12 @@ name: латиница в нижнем регистре, цифры и дефи�
 source использует чтение внешних систем; transform работает локально; act меняет
 внешнюю систему с отдельным подтверждением. Выбери класс по реальной работе сам.
 
+Для явно текстовых входов добавь необязательный consumes.literalParams — подмножество
+consumes.params. Иначе похожая на путь строка проверяется как возможный ресурс.
+Не помечай так файловые входы (*File, inputs, resultContract, data, records или text-файл
+runtime с inputText). При передаче текста в файловый параметр другого Action владение
+проверяется заново. Подробности — в полях примера Action; разметка не заменяет dependencies.
+
 Для JSON создай contracts/result.json. Поддерживаются только type (object, array,
 string, number, integer, boolean, null), required, properties, additionalProperties,
 items, minItems, minLength, minimum, enum, anyOf, description. Опиши вложенные поля

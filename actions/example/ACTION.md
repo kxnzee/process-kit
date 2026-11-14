@@ -6,6 +6,7 @@ adapter: none
 consumes:
   artifacts: []
   params: [text, rule]
+  literalParams: [text]
 produces:
   text-record: Переданный текст в JSON-объекте
 contracts:

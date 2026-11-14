@@ -3,8 +3,7 @@ const c=require('../fixture')(),{tmp,source,write,fs,path,assert,check}=c;
 const journal=require('../../tools/lib/runtime/run-journal');
 try{
  check('ARCH-009: delegation policy does not authorize unconditional re-execution after a worker error',()=>{
-  const skill=fs.readFileSync(path.join(source,'.gigacode/skills/pp-ai-run-process/SKILL.md'),'utf8');
-  const section=skill.slice(skill.indexOf('## Шаг в отдельном агенте'),skill.indexOf('## Шаг в отдельном агенте')+4500);
+  const section=fs.readFileSync(path.join(source,'.gigacode/skills/pp-ai-run-process/references/delegation-and-recovery.md'),'utf8');
   assert.doesNotMatch(section,/агент завершился ошибкой, шаг исполняется у\s*координатора/);
   for(const term of ['attemptId','reconcile','not-applied','recover'])assert.ok(section.includes(term),'Missing fallback invariant: '+term);
  });

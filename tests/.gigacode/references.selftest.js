@@ -7,6 +7,12 @@ function markdown(dir){
  if(!fs.existsSync(dir))return [];
  return fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?markdown(path.join(dir,entry.name)):entry.name.endsWith('.md')?[path.join(dir,entry.name)]:[]);
 }
+function skillReferences(root){
+ for(const row of catalog(root)){
+  const text=fs.readFileSync(path.join(root,row.file),'utf8');
+  for(const [,ref] of text.matchAll(/\[[^\]]+\]\((references\/[a-z0-9-]+\.md)\)/g))assert.ok(fs.statSync(path.resolve(root,path.dirname(row.file),ref)).isFile(),row.file+': '+ref);
+ }
+}
 // Only the two shared references, not a general Markdown parser or a runtime gate.
 function references(root){
  for(const name of names){
@@ -35,6 +41,11 @@ function references(root){
  assert.ok(links>0,'No shared reference links checked');
 }
 try{
+ check('conditional Skill references resolve relative to their owning Skill',()=>skillReferences(source));
+ check('a missing Run Process reference is detected before executing a dependent procedure',()=>{
+  const file=path.join(tmp,'.gigacode/skills/pp-ai-run-process/references/cli-spec.md'),body=fs.readFileSync(file);fs.unlinkSync(file);
+  try{assert.throws(()=>skillReferences(tmp),/ENOENT/);}finally{fs.writeFileSync(file,body);}
+ });
  check('shared references and their links resolve from every consumer on POSIX and Windows paths',()=>references(source));
  check('missing mandatory references fail the check',()=>{
   for(const name of names){

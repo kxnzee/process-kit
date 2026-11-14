@@ -16,7 +16,10 @@ function environment(mode){
 }
 function run(cwd,command,spec){
  if(!commands.includes(command))throw new Error('Неизвестная операция run');
- if(command==='diagnose')return require('../runtime/diagnostics').report(cwd,spec.output);
+ if(command==='diagnose'){
+  require('../entities/process-facts').assertDiagnosticAccess(cwd,spec.output);
+  return require('../runtime/diagnostics').report(cwd,spec.output);
+ }
  const access=state=>require('../entities/process-facts').assertAccess(cwd,state.identity.process,state.identity.params,state.identity.extraFiles);
  if(command==='start')require('../entities/process-facts').assertAccess(cwd,spec.process,{...spec.params,...spec.explicitParams},spec.files);
  else {

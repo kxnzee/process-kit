@@ -30,11 +30,11 @@ function visible(name,scope){
 function accessRules(cwd){
  const scope=scopeFor(cwd);
  function allowed(ref,from){
-  if(!NAME.test(ref||'')||!visible(ref,scope)||from&&!allowedReference(from,ref))throw new Error('Определение недоступно по уровню владения');
+  if(typeof ref!=='string'||!NAME.test(ref)||!visible(ref,scope)||from&&!allowedReference(from,ref))throw new Error('Определение недоступно по уровню владения');
  }
- function resources(value,from){
+ function resources(value,from,literals=new Set()){
   if(Array.isArray(value)){for(const item of value)resources(item,from);return;}
-  if(value&&typeof value==='object'){for(const item of Object.values(value))resources(item,from);return;}
+  if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value))if(!literals.has(key))resources(item,from);return;}
   if(typeof value!=='string')return;
   if(/^[{[]/.test(value.trimStart())){let parsed;try{parsed=JSON.parse(value);}catch{}if(parsed&&typeof parsed==='object'){resources(parsed,from);return;}}
   const resource=value.match(/^(processes|actions|adapters)\/([^/]+)(?:\/|$)/);
@@ -53,22 +53,44 @@ function assertActionAccess(cwd,name){
  const meta=require('../core/markdown').parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${name}/ACTION.md`),'utf8')).data||{};
  paths(meta.requiresFiles,name);
 }
+function assertDiagnosticAccess(cwd,output){
+ if(!require('../core/paths').validRunFolderName(output))throw new Error('Неверный output');
+ const {allowed}=accessRules(cwd),dir=inside(cwd,`outputs/${output}/.run`),roots=new Set(),names=new Set();
+ const parse=text=>{try{return JSON.parse(text);}catch{return null;}};
+ const read=file=>{try{return fs.readFileSync(inside(dir,file),'utf8');}catch{return '';}};
+ function state(value){
+  if(value?.identity?.process!==undefined){roots.add(value.identity.process);names.add(value.identity.process);}
+  if(value?.cursorProcess!==undefined)names.add(value.cursorProcess);
+ }
+ function trace(text){for(const line of String(text||'').split('\n')){
+  const event=parse(line);if(!event||typeof event!=='object')continue;
+  if(event.process!==undefined)names.add(event.process);
+  if(event.type==='started'&&event.process!==undefined)roots.add(event.process);
+ }}
+ state(parse(read('state.json')));
+ const transaction=parse(read('transaction.json'));
+ state(parse(transaction?.state));trace(transaction?.trace);trace(read('trace.jsonl'));
+ if(!roots.size)throw new Error('Невозможно определить владельца запуска для диагностики');
+ for(const name of names)allowed(name);
+}
 function assertAccess(cwd,name,params={},files=[]){
- const {allowed,resources,paths}=accessRules(cwd),{stepParams,childParams}=require('./process-dependencies');
+ const {allowed,resources,paths}=accessRules(cwd),{stepParams,childParams,action:metadata,literalParams}=require('./process-dependencies');
  const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
+ const checks=[],bindings=[],literals=new Set();
  function visit(ref,inherited,stack=[]){
   allowed(ref,stack.at(-1));
   if(stack.includes(ref)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
   const model=processModel(fs.readFileSync(inside(cwd,`processes/${ref}/PROCESS.md`),'utf8'));
   const declared=model.data.requires||{},values={...model.data.params,...inherited};
-  resources(values,ref);
+  checks.push({values,ref,strict:!!model.data.branchRule});
+  for(const step of model.steps)bindings.push(...Object.entries(step.params));
   const actions=new Set([...(Array.isArray(declared.actions)?declared.actions:[]),...model.steps.filter(s=>s.kind==='action').map(s=>s.ref)]);
   for(const action of actions){
    allowed(action,ref);
-   const meta=require('../core/markdown').parseFrontmatter(fs.readFileSync(inside(cwd,`actions/${action}/ACTION.md`),'utf8')).data||{};
+   const meta=metadata(cwd,action);for(const key of literalParams(meta))literals.add(key);
    paths(meta.requiresFiles,action);
    for(const step of model.steps.filter(s=>s.kind==='action'&&s.ref===action)){
-    const effective=stepParams(values,step,params,{},meta.defaults);resources(effective,ref);
+    const effective=stepParams(values,step,params,{},meta.defaults);checks.push({values:effective,ref,meta});
     for(const key of ['query','template','rule'])if(NAME.test(effective[key]||''))allowed(effective[key],ref);
    }
   }
@@ -79,7 +101,15 @@ function assertAccess(cwd,name,params={},files=[]){
   }
   for(const child of children)visit(child,values,[...stack,ref]);
  }
- visit(name,params);paths(files,name);
+ visit(name,params);
+ // Follow literal bindings as data. Every actual nonliteral use is still checked.
+ let changed=true;
+ while(changed){changed=false;for(const [key,value] of bindings)if(literals.has(key))for(const match of (JSON.stringify(value)||'').matchAll(/\{params\.([^}]+)\}/g))if(!literals.has(match[1])){literals.add(match[1]);changed=true;}}
+ for(const {values,ref,meta,strict} of checks){
+  const own=new Set(meta?literalParams(meta):[]),skip=new Set([...literals].filter(key=>!strict&&(!meta||!meta.consumes.params.includes(key)||own.has(key))));
+  resources(values,ref,skip);
+ }
+ paths(files,name);
 }
 function visibleFile(file,name,scope){
  if(!canonicalFile(file))return false;
@@ -99,4 +129,4 @@ function publicationFacts(cwd,name,scope,issue){
   return {status:valid?receipt.status:'stale',current:valid};
  }catch{issue('publication-unavailable',file);return {status:'unknown',current:false};}
 }
-module.exports={assertActionAccess,assertAccess,scopeFor,visible,visibleFile,canonicalFile,publicationFacts};
+module.exports={assertDiagnosticAccess,assertActionAccess,assertAccess,scopeFor,visible,visibleFile,canonicalFile,publicationFacts};

@@ -19,13 +19,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ matrix.node }}
+          package-manager-cache: false
       - name: Show runtime
         run: node --version
       - name: Validate and run all tests
-        run: node tools/kit.js test
+        run: node tools/kit.js test --level master

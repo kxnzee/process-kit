@@ -340,6 +340,7 @@ git config branch.my.pushRemote no_push
 
 ```bash
 node tools/kit.js test               # основные проверки архитектуры и контрактов
+node tools/kit.js test --level master # общий уровень в CI и detached HEAD
 node tools/kit.js check                # раскладка и структура файлов открытой ветки
 node tools/kit.js check --json         # тот же отчёт машинным форматом
 node tools/kit.js check --team sws     # рабочая ветка команды: команда не в имени ветки
@@ -363,7 +364,7 @@ node tools/kit.js check --process sdd-stories-report     # предпусков�
 проверки не годится. Полный прогон этого правила не выполняет.
 Самопроверки в `tests/` сгруппированы по папкам корня и проверяют маршруты
 и зависимости процессов, границы уровней, входы и выходы действий, вложенные процессы
-и сохранность артефактов. Запуск: `node tools/kit.js test` (Node.js 18+ и Git, включая Windows).
+и сохранность артефактов. Запуск: `node tools/kit.js test` (Node.js 22 или 24 и Git, включая Windows).
 Проверки используют временные Git-репозитории. На Windows для проверки прежних hooks
 используется shell из Git for Windows.
 

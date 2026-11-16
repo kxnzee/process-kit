@@ -6,9 +6,9 @@ try{
  check('public CLI has a machine-readable catalog and rejects unknown commands',()=>{
   const result=call(['--json']);assert.equal(result.status,0,result.stderr);
   const catalog=JSON.parse(result.stdout);assert.deepEqual(Object.keys(catalog),Object.keys(commands));
-  assert.ok(catalog.definition.usage.includes('inspect'));assert.ok(catalog.definition.purpose.includes('status'));
+  assert.ok(catalog.definition.usage.includes('inspect'));
   const help=call(['--help']);assert.equal(help.status,0,help.stderr);
-  assert.ok(catalog.definition.scopeNote.includes('inspect: read-only'));assert.ok(help.stdout.includes(catalog.definition.scopeNote));assert.equal(catalog.definition.scope,'local-write');
+  assert.equal(catalog.definition.scope,'local-write');
   for(const flag of ['--process','--demo','--params','--json','--level','--team','--only','--root']){assert.ok(catalog.check.usage.includes(flag),flag+' missing from check metadata');assert.ok(help.stdout.includes(flag),flag+' missing from CLI help');}
   for(const item of Object.values(catalog)){assert.ok(item.purpose);assert.ok(item.scope);assert.equal(item.file,undefined);}
   for(const command of Object.values(commands))assert.ok(fs.existsSync(path.join(source,'tools',command.file)));

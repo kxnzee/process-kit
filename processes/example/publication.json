@@ -6,13 +6,14 @@
     "actions/edit-text/ACTION.md": "97abc322949a21d258611d3c70ac1dd8502d0e1a75f5db152ef06da1b9941d21",
     "actions/edit-text/rules/before-after.md": "70f12568bb7f7f753b0906cf4dff05b8ac268cf41e22d0612485b20be28b8254",
     "actions/edit-text/runtime.js": "d6fdd3aec26f6dce452c5722e072a27918d1418f55f2163d3f852898e859761c",
-    "actions/prepare-mail-draft/ACTION.md": "3cdbc4c123ae576934a43384074101212ab4aea75cb6d87320fafa38f24cf51b",
+    "actions/prepare-mail-draft/ACTION.md": "c9ee4bd3aa6434d28fd8b3392248d5fdd59d9c543473942931a79eb0b475a3fa",
+    "actions/prepare-mail-draft/runtime.js": "c34a4202d9d73241420f8d4146b94c5f520c681a593a0ac4a668739b6fbcb0a6",
     "context/master/writing-style/CONTEXT.md": "a187c1e1e3a3645b639303b2e7cba7c11ce64824786d1766b1688f6f2a6198aa",
     "processes/example/PROCESS.md": "2116169729557cedaad906ea63ed90d5cac9e0db4b4c1ad4733933680538f0d3"
   },
-  "updated": "2026-11-13T16:00:17.877Z",
+  "updated": "2026-11-16T19:11:12.128Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-13_проверка-письмо"
+    "2026-11-16_mail-runtime-check"
   ]
 }

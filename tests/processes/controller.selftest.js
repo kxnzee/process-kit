@@ -4,7 +4,7 @@ const journal=require('../../tools/lib/runtime/run-journal'),{lifecycle}=require
 const read=f=>JSON.parse(fs.readFileSync(path.join(tmp,f),'utf8'));
 const state=output=>read(`outputs/${output}/.run/state.json`);
 const start=(extra={})=>journal.start(tmp,{process:'example',mode:'local',inputText:'12 задач.',params:{to:'User',subject:'Status'},...extra}).output;
-const save=(output,step='edit',extra={})=>journal.operation(tmp,'save',{output,step,attemptId:state(output).pending?.id,artifact:step==='edit'?'report-text':'mail-draft',extension:'md',content:'12 задач.',next:step==='edit'?'draft':'end',...extra});
+const save=(output,step='edit',extra={})=>journal.operation(tmp,'save',{output,step,attemptId:state(output).pending?.id,artifact:step==='edit'?'report-text':'mail-draft',extension:'md',content:step==='edit'?'12 задач.':require('../../actions/prepare-mail-draft/runtime').execute({params:state(output).pending.params,inputs:{'report-text':fs.readFileSync(path.join(tmp,'outputs',output,'.run',state(output).artifacts['report-text']),'utf8')}}),next:step==='edit'?'draft':'end',...extra});
 try{
  check('controller rejects skipped steps, wrong actions, missing results and stale attempts without a transition',()=>{
   const output=start(),before=state(output);
@@ -144,9 +144,7 @@ try{
   assert.throws(()=>lifecycle(tmp,'test',{process:spec.process,outputs:[output]}),/Не проверена ветка/);
   const mail=journal.start(tmp,{...spec,params:{...spec.params,wantsMail:true,recipients:'User'},definitionTest:true}).output;
   for(const step of ['fetch','read-code','assess','compose','prepare-mail-data','compose-mail']){const card=journal.operation(tmp,'next',{output:mail});if(card.operation==='choose')journal.operation(tmp,'choose',{...card.spec,target:card.targets[0]});journal.execute(tmp,{output:mail,step});}
-  const begun=journal.operation(tmp,'begin',{output:mail,step:'notify'}),saved=state(mail);
-  const content=fs.readFileSync(path.join(tmp,'outputs',mail,'.run',saved.artifacts['report-text']),'utf8');
-  journal.operation(tmp,'save',{...begun.save,artifact:'mail-draft',extension:'md',content,next:'end'});
+  journal.execute(tmp,{output:mail,step:'notify'});
   journal.operation(tmp,'finish',{output:mail,resultName:'mail.md'});
   assert.equal(lifecycle(tmp,'test',{process:spec.process,outputs:[output,mail]}).status,'tested');
   assert.equal(lifecycle(tmp,'publish',{process:spec.process}).status,'published');

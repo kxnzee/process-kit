@@ -8,6 +8,16 @@ const team={schemaVersion:2,team:{id:'a',name:'PRIVATE_TEAM',owners:[]},taskStor
 const call=args=>spawnSync(process.execPath,['tools/kit.js','processes',...args],{cwd:tmp,encoding:'utf8'});
 try{
  git('init');git('symbolic-ref','HEAD','refs/heads/master');
+ check('the working catalog hides educational and retired definitions while all keeps them discoverable',()=>{
+  processFile('catalog-retired');const file=path.join(tmp,'processes/catalog-retired/PROCESS.md');
+  fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('status: действует','status: устарел'));
+  try{
+   assert.ok(!catalog(tmp).processes.some(p=>p.name==='example'||p.name==='catalog-retired'));
+   const result=call(['--all']);assert.equal(result.status,0,result.stderr);const all=JSON.parse(result.stdout);
+   assert.equal(all.view,'all');assert.ok(all.processes.some(p=>p.name==='example'));assert.ok(all.processes.some(p=>p.name==='catalog-retired'));
+   assert.ok(!catalog(tmp,{level:'master'}).processes.some(p=>p.name==='example'));
+  }finally{fs.rmSync(path.dirname(file),{recursive:true,force:true});}
+ });
  check('catalog lists metadata without bodies, does not execute definitions, and changes with files',()=>{
   processFile('catalog-sentinel','branchRule: rules/throw.js\n');
   write('processes/catalog-sentinel/rules/throw.js','throw new Error("DEFINITION_EXECUTED");');
@@ -16,7 +26,7 @@ try{
   const before=fs.readFileSync(actionFile,'utf8');
   const result=catalog(tmp);assert.equal(result.complete,true);assert.equal(result.scope.level,'master');
   const row=result.processes.find(p=>p.name==='catalog-sentinel');assert.equal(row.title,'Title catalog-sentinel');assert.deepEqual(row.examples,['Request catalog-sentinel']);assert.equal(row.publication.status,'draft');
-  assert.ok(result.processes.find(p=>p.name==='example').educational);
+  assert.ok(!result.processes.some(p=>p.name==='example'));assert.ok(catalog(tmp,{all:true}).processes.find(p=>p.name==='example').educational);
   assert.ok(!JSON.stringify(result).includes('PRIVATE_BODY'));assert.equal(fs.readFileSync(actionFile,'utf8'),before);
   processFile('catalog-sentinel','examples: [One, Two]\n');assert.deepEqual(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').examples,['One','Two']);
   // Full discovery is not route validation or authority to start this metadata-only fixture.
@@ -27,7 +37,7 @@ try{
   fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(/\r?\n/g,'\r\n'));assert.deepEqual(catalog(tmp),before);
   write('processes/broken/PROCESS.md','---\nname: another\ndescription: PRIVATE_ERROR_DATA\n---\nPRIVATE_BODY');
   const result=call([]);assert.equal(result.status,0,result.stderr);const rows=JSON.parse(result.stdout);
-  assert.equal(rows.complete,false);assert.ok(rows.processes.some(p=>p.name==='example'));assert.ok(rows.issues.some(p=>p.code==='metadata-unavailable'));assert.ok(!result.stdout.includes('PRIVATE_ERROR_DATA'));
+  assert.equal(rows.complete,false);assert.ok(rows.processes.some(p=>p.name==='sdd-stories-report'));assert.ok(rows.issues.some(p=>p.code==='metadata-unavailable'));assert.ok(!result.stdout.includes('PRIVATE_ERROR_DATA'));
   fs.rmSync(path.join(tmp,'processes/broken'),{recursive:true});
   fs.renameSync(path.join(tmp,'processes'),path.join(tmp,'hidden-processes'));
   try{const failed=call([]);assert.notEqual(failed.status,0);assert.equal(failed.stdout,'');assert.ok(!failed.stderr.includes(tmp));}finally{fs.renameSync(path.join(tmp,'hidden-processes'),path.join(tmp,'processes'));}

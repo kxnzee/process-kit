@@ -17,9 +17,12 @@ try{
  check('test project copies exclude active personal and team configs but retain examples',()=>{
   const source=path.join(tmp,'copy-source'),target=path.join(tmp,'copy-target');
   for(const file of ['my/config.json','team/config.json','master/config.json','my/EXAMPLE.json']){const full=path.join(source,'config',file);fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,'{}');}
+  for(const file of ['tmp/nested/.git/HEAD','cache/data','skills/probe/SKILL.md','references/probe.md','hooks/pre-push']){const full=path.join(source,'.gigacode',file);fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,'fixture');}
   require('../fixture').copyProject(source,target);
   assert.ok(!fs.existsSync(path.join(target,'config/my/config.json')));assert.ok(!fs.existsSync(path.join(target,'config/team/config.json')));
   assert.ok(fs.existsSync(path.join(target,'config/master/config.json')));assert.ok(fs.existsSync(path.join(target,'config/my/EXAMPLE.json')));
+  for(const folder of ['tmp','cache'])assert.ok(!fs.existsSync(path.join(target,'.gigacode',folder)));
+  for(const file of ['skills/probe/SKILL.md','references/probe.md','hooks/pre-push'])assert.ok(fs.existsSync(path.join(target,'.gigacode',file)));
  });
  check('next and execute complete every deterministic demo step and preserve report facts',()=>{
   const run=j.start(tmp,{process:'sdd-stories-report',mode:'demo',params:{dataFile:'processes/sdd-stories-report/fixture.json'}});

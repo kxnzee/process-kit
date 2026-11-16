@@ -49,10 +49,21 @@ function summary(cwd,output,state,spec={}){
  const listed=[...new Set(Object.values(files))];
  atomic(inside(folder,'итог.md'),`# ${state.title}\nДата: ${humanDate(state.identity.date||state.updated)}\nЧем закончилось: ${demo&&status==='готово'?'пробный прогон на вымышленных данных, ничего не отправлялось':demo?'пробный прогон, ничего не отправлялось; '+status:status}\nЧто сделано: ${testing?'Проверочный прогон определения. ':''}${spec.summary||state.summary||'Завершено шагов: '+state.last_step+'.'}\nОткуда данные: ${demo?'тестовые данные выбранной фикстуры':state.identity.mode==='local'?(state.sourceDescription||'локальные файлы и артефакты процесса'):'внешние источники процесса'}\nЧто отправлено и кому: ${state.identity.mode==='live'?'см. подтверждённые результаты шагов':'ничего не отправлено'}\n${listed.length?'Файлы в этой папке:\n'+listed.map(name=>'- '+name).join('\n')+'\n':''}`);}
 function start(cwd,spec,environment={}){
+ if(spec.idempotencyKey!==undefined)return require('./start-requests').start(cwd,spec,environment,
+  request=>startNew(cwd,spec,environment,request),output=>{
+   operation(cwd,'recover',{output},environment);
+   const dir=inside(cwd,`outputs/${output}/.run`),state=json(inside(dir,'state.json')),identity=state.identity;
+   const input=path.relative(cwd,inside(dir,'inputs/input.md')),generatedInput=identity.params.input===input?input:null;
+   const resolved=require('../entities/entities').manifest(cwd,identity.process,identity.params,identity.mode,identity.overrides,{generatedInput});
+   return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),...(identity.startRequest?.requestFileHash?{startRequestFile:inside(dir,'start-request.json')}:{}),state,connections:resolved.connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(identity.files),note:'Повторный start вернул существующий запуск. Продолжайте через run next; новый запуск не создан.'};
+  });
+ return startNew(cwd,spec,environment);
+}
+function startNew(cwd,spec,environment={},request={}){
  const fingerprint=environment.fingerprint||((file,body)=>hash(body));
  if(spec.definitionTest!==undefined&&typeof spec.definitionTest!=='boolean')throw new Error('definitionTest должен быть boolean');
  for(const key of ['params','explicitParams'])if(spec[key]!==undefined&&(!spec[key]||typeof spec[key]!=='object'||Array.isArray(spec[key])))throw new Error(key+': нужен объект');
- const current=new Date();spec={...spec,date:spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
+ const current=new Date();spec={...spec,date:request.date??spec.date??`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`};
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
  if(!NAME.test(spec.process||'')||!['local','live','demo'].includes(spec.mode))throw new Error('Нужны process и mode');
  const draft=processModel(fs.readFileSync(inside(cwd,`processes/${spec.process}/PROCESS.md`),'utf8'));
@@ -62,7 +73,7 @@ function start(cwd,spec,environment={}){
  const model=validateDefinition(cwd,spec.process);if(model.data.status!=='действует')throw new Error('Процесс устарел');
  const slug=(spec.mode==='demo'?'проба-':'')+(spec.slug||spec.process);
  validateRunInput(cwd,spec.process,model,params);
- const proposed=runFolderUnique(cwd,`${spec.date}_${slug}`);if(!proposed)throw new Error('Неверное/занятое имя output');const output=path.basename(proposed),dir=inside(cwd,`outputs/${output}/.run`);
+ const proposed=request.output?inside(cwd,'outputs/'+request.output):runFolderUnique(cwd,`${spec.date}_${slug}`);if(!proposed)throw new Error('Неверное/занятое имя output');const output=path.basename(proposed),dir=inside(cwd,`outputs/${output}/.run`);
  const generatedInput=spec.inputText!==undefined?path.relative(cwd,inside(dir,'inputs/input.md')):null;
  if(generatedInput){params.input=generatedInput;if(Object.hasOwn(overrides,'input'))overrides.input=generatedInput;}
  const dependencyOptions={generatedInput};
@@ -72,10 +83,12 @@ function start(cwd,spec,environment={}){
  const resolved=require('../entities/entities').manifest(cwd,spec.process,params,spec.mode,overrides,dependencyOptions),connections=resolved.connections;
  if(connections&&!connections.ready)throw new Error(connections.missing.map(item=>item.reason).join('; '));
  const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&!(environment.files||[]).includes(file))throw new Error('Недопустимый файл снимка');snapshots[file]=fingerprint(file,fs.readFileSync(inside(cwd,file)));}
+ request.reserve?.(output,spec.date);
  fs.mkdirSync(inside(cwd,'outputs'),{recursive:true});fs.mkdirSync(path.dirname(dir));fs.mkdirSync(dir);
  if(spec.inputText!==undefined){if(typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');atomic(inside(dir,'inputs/input.md'),spec.inputText);params.input=path.relative(cwd,inside(dir,'inputs/input.md'));snapshots[params.input]=hash(spec.inputText);}
  const state={schemaVersion:2,revision:0,sourceDescription:spec.inputText!==undefined?'переданный текст пользователя':'локальные файлы и артефакты процесса',last_step:0,last_step_name:'',next_step:model.entry,status:'running',params,updated:now(),artifacts:{},artifactHashes:{},recordedArtifacts:{},published:{},pending:null,cursorProcess:spec.process,stack:[],scopeParams:structuredClone(params),title:String(spec.title||model.data.title||model.data.description||spec.process).replace(/[\r\n]/g,' '),identity:{runId:crypto.randomUUID(),environmentFiles:environment.files||[],definitionTest:spec.definitionTest===true,process:spec.process,mode:spec.mode,date:spec.date,extraFiles:spec.files||[],overrides,params:structuredClone(params),hashAlgorithm:'sha256',files:snapshots}};
- storage.stage(dir,state,[{ts:now(),type:'started',process:spec.process,mode:spec.mode}]);storage.restore(dir);project(cwd,output,state);storage.finish(dir);return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),state,connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(snapshots),note:'Используйте state.params как единственные эффективные параметры. Вы — исполнитель. Продолжайте через run next/execute до finish либо зафиксированного fail; preflight не завершает задачу.'};
+ if(request.identity){state.identity.startRequest=request.identity;fs.writeFileSync(inside(dir,'start-request.json'),request.body,{flag:'wx',mode:0o600});}
+ storage.stage(dir,state,[{ts:now(),type:'started',process:spec.process,mode:spec.mode}]);storage.restore(dir);project(cwd,output,state);storage.finish(dir);return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),...(request.identity?{startRequestFile:inside(dir,'start-request.json')}:{}),state,connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(snapshots),note:'Используйте state.params как единственные эффективные параметры. Вы — исполнитель. Продолжайте через run next/execute до finish либо зафиксированного fail; preflight не завершает задачу.'};
 }
 function project(cwd,output,state,spec={},recover=false){
  summary(cwd,output,state,spec);
@@ -104,6 +117,7 @@ function operationLocked(cwd,command,spec,environment={}){
   const verified=storage.verify(dir),state=json(inside(dir,'state.json'));
   if(state.schemaVersion===2&&!verified)throw new Error('Нарушена согласованность: отсутствует checkpoint');
   if(!['running','completed','failed'].includes(state.status))throw new Error('Недопустимый статус процесса');
+  if(state.identity.startRequest?.requestFileHash&&hash(fs.readFileSync(inside(dir,'start-request.json')))!==state.identity.startRequest.requestFileHash)throw new Error('Изменён сохранённый запрос start');
   const events=[];
   function event(unused,type,data={}){const row={ts:now(),type,...data};events.push(row);return row;}
   for(const [file,digest]of Object.entries(state.identity.files))if(fingerprint(file,fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
@@ -143,7 +157,7 @@ function operationLocked(cwd,command,spec,environment={}){
   }
   function effectRequest(){return trust.request(state,spec.output,'external-effect',{step:state.pending.step,action:model.steps.find(s=>s.name===state.pending.step).ref,attemptId:state.pending.id,approvalRequestId:state.pending.approval?.requestId||null,params:state.pending.params});}
   const stepStatus=state.status==='failed'?'failed':state.status==='completed'?'completed':state.pending?(action(cwd,model.steps.find(s=>s.name===state.pending.step).ref).kind==='act'?'blocked':'running'):model.steps.find(s=>s.name===state.next_step)?.decision==='user'?'blocked':'pending';
-  const responsePaths={stepStatus,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),resultFile:state.result?path.join(path.dirname(dir),state.result):null};
+  const responsePaths={stepStatus,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),resultFile:state.result?path.join(path.dirname(dir),state.result):null,...(state.identity.startRequest?.requestFileHash?{startRequestFile:inside(dir,'start-request.json')}:{} )};
   if(command==='next'||command==='recover'){
    if(command==='recover')project(cwd,spec.output,state,{},true);
    if(state.status!=='running')return {...responsePaths,status:state.status,operation:'done',output:spec.output,result:state.result||null,failure:state.failure||null};

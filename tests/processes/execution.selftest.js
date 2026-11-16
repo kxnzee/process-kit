@@ -32,7 +32,7 @@ try{
  journal.operation(cwd,'leave',{output});
  check('leave returns exactly to the parent continuation and restores params',()=>{assert.equal(state(output).cursorProcess,'my-parent');assert.equal(state(output).next_step,'after');assert.equal(state(output).params.режим,'проще');assert.equal(state(output).stack.length,0);assert.ok(state(output).artifacts['report-text']);});
  check('parent tail cannot be skipped after returning',()=>assert.throws(()=>journal.operation(cwd,'finish',{output,resultName:'текст.md'})));
- journal.operation(cwd,'begin',{output,step:'after'});journal.operation(cwd,'save',{attemptId:state(output).pending.id,output,step:'after',artifact:'mail-draft',extension:'md',content:'Черновик: 12 задач DEMO-42.',next:'end'});journal.operation(cwd,'finish',{output,resultName:'письмо.md'});
+ journal.execute(cwd,{output,step:'after'});journal.operation(cwd,'finish',{output,resultName:'письмо.md'});
  check('complete parent records both executed actions and draft outcome',()=>{assert.equal(state(output).last_step,2);assert.equal(state(output).status,'completed');assert.equal(JSON.parse(read('.history/runs.jsonl').trim()).outcome,'draft');});
  write('processes/my-twice/PROCESS.md',process('my-twice','### call\n- процесс: my-editor\n- артефакт: first\n- следующий: second\n### second\n- процесс: my-editor\n- параметры: `input: {first}`\n- артефакт: second\n- следующий: end'));
  const twice=journal.start(cwd,{...spec,process:'my-twice',slug:'два-вызова'}).output;
@@ -48,11 +48,10 @@ try{
   const o=journal.start(cwd,{process:'my-copy',mode:'local',definitionTest:true,date:'2026-11-05',params:{to:'User',subject:'Status'},inputText:'12 задач DEMO-42.'}).output;
   journal.operation(cwd,'begin',{output:o,step:'edit'});
   journal.operation(cwd,'save',{attemptId:state(o).pending.id,output:o,step:'edit',artifact:'report-text',extension:'md',content:'12 задач DEMO-42.',next:'draft'});
-  journal.operation(cwd,'begin',{output:o,step:'draft'});
-  journal.operation(cwd,'save',{attemptId:state(o).pending.id,output:o,step:'draft',artifact:'mail-draft',extension:'md',content:'12 задач DEMO-42.',next:'end'});
+  journal.execute(cwd,{output:o,step:'draft'});
   for(const resultName of ['CON.md','report:final.md'])assert.throws(()=>journal.operation(cwd,'finish',{output:o,resultName}),/имя файла/);
   journal.operation(cwd,'finish',{output:o,resultName:'текст.md'});
-  assert.equal(state(o).status,'completed');assert.equal(read(`outputs/${o}/текст.md`),'12 задач DEMO-42.');
+  assert.equal(state(o).status,'completed');assert.equal(read(`outputs/${o}/текст.md`),read(`outputs/${o}/.run/${state(o).artifacts['mail-draft']}`));
  });
  check('cross-process recursion is rejected before start',()=>{write('processes/my-loop/PROCESS.md',process('my-loop','### call\n- процесс: my-loop\n- следующий: end'));assert.throws(()=>journal.start(cwd,{...spec,process:'my-loop'}),/Цикл/);});
  check('changing an automatically found rule invalidates a snapshot',()=>{const o=journal.start(cwd,{process:'my-editor',mode:'local',date:'2026-11-03',slug:'правило',inputText:'text'}).output,f='actions/edit-text/rules/before-after.md',old=read(f);write(f,old+'\nchanged');assert.throws(()=>journal.operation(cwd,'begin',{output:o,step:'edit'}),/Изменён вход/);write(f,old);});

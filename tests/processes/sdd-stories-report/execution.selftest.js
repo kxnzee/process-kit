@@ -45,12 +45,11 @@ try {
     journal.operation(tmp,'begin',{output:run.output,step:'compose-mail'});
     const body=require('../../../processes/sdd-stories-report/renderers/mail').render(mail);
     journal.operation(tmp,'save',{attemptId:attempt(run.output),output:run.output,step:'compose-mail',artifact:'report-text',extension:'md',content:body,next:'notify'});
-    journal.operation(tmp,'begin',{output:run.output,step:'notify'});
-    journal.operation(tmp,'save',{attemptId:attempt(run.output),output:run.output,step:'notify',artifact:'mail-draft',extension:'md',content:body,next:'end'});
+    journal.execute(tmp,{output:run.output,step:'notify'});
     journal.operation(tmp,'finish',{output:run.output,resultName:'письмо.md'});
     const finished=JSON.parse(fs.readFileSync(statePath));
     assert.equal(finished.status,'completed');
-    assert.equal(fs.readFileSync(path.join(tmp,'outputs',run.output,'письмо.md'),'utf8'),body);
+    assert.ok(fs.readFileSync(path.join(tmp,'outputs',run.output,'письмо.md'),'utf8').endsWith(body));
     assert.ok(finished.artifacts['sdd-report']);
 
     assert.equal(sdd.assessSdd(tasks,readPort('code-evidence'),{label:'other',watchPath:'elsewhere',statusesAccepted:run.state.params.statusesAccepted}).counters.sddShare,'0,0');

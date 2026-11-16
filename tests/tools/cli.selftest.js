@@ -13,7 +13,8 @@ try{
   for(const item of Object.values(catalog)){assert.ok(item.purpose);assert.ok(item.scope);assert.equal(item.file,undefined);}
   for(const command of Object.values(commands))assert.ok(fs.existsSync(path.join(source,'tools',command.file)));
   assert.equal(call(['unknown']).status,2);assert.equal(call(['--help']).status,0);
-  const processes=call(['processes','--level','master']);assert.equal(processes.status,0,processes.stderr);assert.ok(JSON.parse(processes.stdout).processes.some(p=>p.name==='example'));
+  const processes=call(['processes','--level','master']);assert.equal(processes.status,0,processes.stderr);assert.ok(!JSON.parse(processes.stdout).processes.some(p=>p.name==='example'));
+  assert.ok(JSON.parse(call(['processes','--all']).stdout).processes.some(p=>p.name==='example'));
  });
  check('public commands resolve entities, inspect config and complete a local process',()=>{
   execFileSync('git',['init'],{cwd:tmp,stdio:'ignore'});
@@ -30,8 +31,8 @@ try{
   let number=0;
   const run=(command,spec)=>{const file=path.join(tmp,`spec-${number++}.json`);fs.writeFileSync(file,JSON.stringify(spec));const result=call(['run',command,file]);assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};
   const started=run('start',{process:'example',mode:'local',date:'2026-11-05',inputText:'12 задач.',params:{to:'User',subject:'Status'}}),output=started.output;
-  for(const [step,artifact,next]of [['edit','report-text','draft'],['draft','mail-draft','end']]){const begun=run('begin',{output,step});run('save',{attemptId:begun.pending.id,output,step,artifact,next,extension:'md',content:'12 задач.'});}
-  const state=run('finish',{output,resultName:'письмо.md'});assert.equal(state.status,'completed');assert.equal(fs.readFileSync(path.join(tmp,'outputs',output,'письмо.md'),'utf8'),'12 задач.');
+  const begun=run('begin',{output,step:'edit'});run('save',{...begun.save,content:'12 задач.'});run('execute',{output,step:'draft'});
+  const state=run('finish',{output,resultName:'письмо.md'});assert.equal(state.status,'completed');assert.ok(fs.readFileSync(path.join(tmp,'outputs',output,'письмо.md'),'utf8').endsWith('12 задач.'));
   const diagnostic=run('diagnose',{output});
   const file=diagnostic.reportFile;assert.ok(fs.existsSync(file));assert.ok(!fs.readFileSync(file,'utf8').includes('12 задач.'));
  });

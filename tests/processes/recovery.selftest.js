@@ -42,7 +42,8 @@ try{
   const output=start(),dir=path.join(tmp,'outputs',output,'.run');
   for(const [step,artifact,next]of [['edit','report-text','draft'],['draft','mail-draft','end']]){
    const begun=journal.operation(tmp,'begin',{output,step});
-   journal.operation(tmp,'save',{...begun.save,artifact,extension:'md',content:'12 задач.',next});
+   const content=step==='edit'?'12 задач.':require('../../actions/prepare-mail-draft/runtime').execute({params:begun.pending.params,inputs:{'report-text':'12 задач.'}});
+   journal.operation(tmp,'save',{...begun.save,artifact,extension:'md',content,next});
   }
   const history=path.join(tmp,'.history');fs.mkdirSync(history,{recursive:true});
   const stopped=spawnSync(process.execPath,['-e',"const fs=require('node:fs'),dir=process.argv[1];fs.mkdirSync(dir);fs.writeFileSync(dir+'/owner.json',JSON.stringify({pid:process.pid,host:require('node:os').hostname()}));",path.join(history,'.lock')],{encoding:'utf8'});assert.equal(stopped.status,0,stopped.stderr);

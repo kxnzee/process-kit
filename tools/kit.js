@@ -12,7 +12,7 @@ const commands={
  config:{file:'lib/config/config.js',usage:'--json | --process <name> [--params <file>]',purpose:'Проверить настройки и выбор подключений',scope:'read-only'},
  'setup-status':{file:'lib/config/setup-state.js',usage:'',purpose:'Безопасно прочитать факты о личной настройке',scope:'read-only'},
  check:{file:'lib/validation/validate.js',usage:'[--process <name> [--demo] [--params <file>]] [--level master|team|my] [--team <code>] [--only <rule>] [--root <folder>] [--json]',purpose:'Проверить структуру или готовность процесса',scope:'definition-code',scopeNote:'Проверка структуры читает файлы; проверка готовности может загрузить и выполнить код определения'},
- test:{file:'../tests/run.js',usage:'',purpose:'Запустить тесты разработки; не нужен для обычной задачи',scope:'temporary-files'},
+ test:{file:'../tests/run.js',usage:'[--level master|team|my] [--team <код>]',purpose:'Запустить тесты разработки; не нужен для обычной задачи',scope:'temporary-files'},
  'hooks-install':{file:'lib/git/install-hooks.js',usage:'',purpose:'Установить локальную защиту Git при инициализации',scope:'git-local-write'},
  'promote-plan':{file:'lib/git/promotion-plan.js',usage:'--target <origin/master|origin/team-code>',purpose:'Рассчитать план переноса без копирования и отправки',scope:'read-only'}
 };

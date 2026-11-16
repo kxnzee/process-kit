@@ -340,6 +340,7 @@ git config branch.my.pushRemote no_push
 
 ```bash
 node tools/kit.js test               # основные проверки архитектуры и контрактов
+node tools/kit.js test --level master # общий уровень в CI и detached HEAD
 node tools/kit.js check                # раскладка и структура файлов открытой ветки
 node tools/kit.js check --json         # тот же отчёт машинным форматом
 node tools/kit.js check --team sws     # рабочая ветка команды: команда не в имени ветки

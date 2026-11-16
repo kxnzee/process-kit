@@ -29,4 +29,4 @@ jobs:
       - name: Show runtime
         run: node --version
       - name: Validate and run all tests
-        run: node tools/kit.js test
+        run: node tools/kit.js test --level master

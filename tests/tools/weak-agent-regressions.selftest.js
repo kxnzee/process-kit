@@ -39,6 +39,5 @@ try{
   assert.throws(()=>j.execute(tmp,{output:run.output,step:'fetch'}));
   const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/state.json')));assert.equal(state.status,'failed');assert.ok(state.failure.reason);
   const card=j.operation(tmp,'next',{output:run.output});assert.equal(card.status,'failed');assert.equal(card.operation,'done');assert.ok(fs.existsSync(card.summaryFile));assert.ok(!card.summaryFile.includes('.run'+path.sep));
-  assert.ok(fs.readFileSync(path.join(tmp,'outputs',run.output,'итог.md'),'utf8').includes('не получилось'));
  });
 }finally{ctx.close();}

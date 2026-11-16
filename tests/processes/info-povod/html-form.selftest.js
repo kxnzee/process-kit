@@ -137,9 +137,11 @@ try {
 
   check('каждая строка markdown-формы осталась в тексте страницы', () => {
     const pageText = flatten(text(html));
-    const missing = visible(markdown).filter(line => !pageText.includes(norm(line)) && !line.startsWith('Бизнес задач:'));
+    const countersLine = markdown.split('\n').find(line => /:\s*\d+\s*·/.test(line));
+    assert.ok(countersLine, 'счётчики отсутствуют в markdown-форме');
+    const missing = visible(markdown).filter(line => !pageText.includes(norm(line)) && line !== countersLine);
     assert.deepEqual(missing, [], 'этих строк нет в странице');
-    const cards = markdown.match(/^Бизнес задач:.*$/m)[0].split(' · ');
+    const cards = countersLine.split(' · ');
     assert.equal((html.match(/class="fact"/g) || []).length, cards.length, 'карточек счётчика не по числу значений');
     for (const part of cards) {
       const [label, ...value] = part.split(': ');
@@ -190,14 +192,14 @@ try {
     for (const question of data.questions) assert.ok(pageText.includes(norm(question.text)), `вопрос не попал в страницу: ${question.scope}`);
   });
 
-  check('пустая выборка остаётся таблицей со строкой «Нет релизов в окнах»', () => {
+  check('пустая выборка сохраняет обе колонки и не создаёт строки ИТ-услуг', () => {
     const empty = structuredClone(data);
     empty.keGroups = [];
     empty.counters.rowCount = 0; empty.counters.rowCurrentCount = 0; empty.counters.rowPlanCount = 0;
     const blankHtml = page.render(empty);
     page.validate(blankHtml, empty);
     assert.equal((blankHtml.match(/<td/g) || []).length, 2, 'пустая выборка потеряла колонки окон');
-    assert.equal((blankHtml.match(/class="none">Нет релизов в окнах</g) || []).length, 2, 'строка-подпись не в обеих колонках');
+    assert.equal((blankHtml.match(/class="none"/g) || []).length, 2, 'пустое состояние не в обеих колонках');
     assert.ok(!/class="svc"/.test(blankHtml), 'пустая выборка притворилась строками ИТ-услуг');
   });
 

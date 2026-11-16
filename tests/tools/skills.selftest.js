@@ -18,6 +18,13 @@ try{
   for(const row of before){const file=path.join(tmp,row.file);fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(/\r?\n/g,'\r\n'));}
   const result=call([]);assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),before);assert.ok(!result.stdout.includes('PRIVATE_INSTRUCTION_BODY'));
  });
+ check('shared references do not become Skill catalog entries or instruction bodies',()=>{
+  const before=catalog(tmp);
+  write('.gigacode/references/SKILL.md','---\nname: reference-probe\ndescription: Reference fixture\n---\nPRIVATE_REFERENCE_BODY\n');
+  write('.gigacode/references/catalog-probe.md','PRIVATE_REFERENCE_BODY\n');
+  const result=call([]);assert.equal(result.status,0,result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout),before);
+ });
  check('broken skill metadata fails without a partial catalog or instruction text',()=>{
   write('.gigacode/skills/custom-skill/SKILL.md','---\nname: another-name\ndescription: Invalid\n---\nPRIVATE_INSTRUCTION_BODY\n');
   assert.throws(()=>catalog(tmp));

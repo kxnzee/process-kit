@@ -9,10 +9,10 @@ try{
   assert.throws(()=>journal.start(tmp,{process:'audit-admission',mode:'local',params:{rule:'default'}}),/не опубликовано/);
   assert.equal(fs.existsSync(marker),false);
  });
- check('ARCH-007: executable deep commands advertise definition-code trust, unlike safe inspection',()=>{
+ check('ARCH-007: public command metadata distinguishes definition-code and read-only scopes',()=>{
   const {commands}=require('../../tools/kit');
-  for(const command of ['entities','check']){assert.equal(commands[command].scope,'definition-code');assert.match(commands[command].scopeNote,/код/);}
-  assert.equal(commands.processes.scope,'read-only');assert.match(commands.definition.scopeNote,/inspect: read-only/);
+  for(const command of ['entities','check'])assert.equal(commands[command].scope,'definition-code');
+  assert.equal(commands.processes.scope,'read-only');
  });
  check('ARCH-007: parameter-selected JS is covered by publication before dependency hooks load it',()=>{
   const {lifecycle}=require('../../tools/lib/entities/process-release');

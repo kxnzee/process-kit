@@ -61,6 +61,7 @@ const SCRIPT = `
 `.trim();
 
 const esc = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const attr = value => esc(value).replace(/"/g, '&quot;');
 const inline = text => esc(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
 // Статус в сводной таблице печатается как «A — ниже цели»: букву оценки отдаём цветом,
 // текст остаётся текстом — класс выбирается по самой букве, а не по догадке о строке.
@@ -144,7 +145,10 @@ function letterHref(person) {
   // Тема без ФИО и без названия инструмента: письмо уходит адресату лично, а план шире одного
   // GigaCode — в нём обучение, навыки и метрики.
   const subject = encodeURIComponent('Точки роста по итогам оценки: что сделать');
-  return `mailto:${person.email || ''}?subject=${subject}&body=${encodeURIComponent(body)}`;
+  const email = String(person.email || '');
+  if (!email.isWellFormed()) throw new Error('Адрес письма: некорректная строка Unicode');
+  const recipient = encodeURIComponent(email).replace(/%40/g, '@');
+  return `mailto:${recipient}?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
 // Раздел собирает report.js: блок человека начинается абзацем «**N. ФИО** — …», следом идёт
@@ -166,7 +170,7 @@ function withLetters(section, people) {
     }
     if (block && /^<(ul|p)[ >]/.test(part.html)) {
       const letter = block.email
-        ? `<a class="mail" href="${letterHref(block)}">Письмо сотруднику</a>`
+        ? `<a class="mail" href="${attr(letterHref(block))}">Письмо сотруднику</a>`
         : `<span class="dim">письмо не создаём: ${esc(block.letterReason || 'адреса нет в почтовом справочнике')}</span>`;
       out.push({ html: `<p class="small">${letter}</p>`, items: 0 });
       block = null;

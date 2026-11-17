@@ -156,7 +156,7 @@ try {
     assert.equal(rowOf('9000204').letterReason, 'в почтовом справочнике два разных человека с этим ФИО', 'причина из карты адресов подменена общей');
     const html = page.render(data3);
     page.validate(html, data3);
-    const links = [...html.matchAll(/href="(mailto:[^"]*)"/g)].map(match => match[1]);
+    const links = [...html.matchAll(/href="(mailto:[^"]*)"/g)].map(match => match[1].replace(/&amp;/g, '&'));
     // Ссылки у двух адресов; у остальных либо два разных человека под одним ФИО, либо адреса нет.
     assert.equal(links.length, 2, 'ссылок на письма больше, чем подтверждённых адресов');
     assert.ok(links.some(link => link.startsWith('mailto:ploskiy@example.com?')), 'адрес из плоской карты не попал в страницу');
@@ -176,6 +176,72 @@ try {
     assert.equal(real.meta.demo, false);
     assert.ok(!form.render(real).includes('ДАННЫЕ ДЕМО'), 'строгий прогон назван демонстрационным');
     assert.ok(data.notes.some(note => /ДАННЫЕ ДЕМО/.test(note)), 'демонстрационный прогон потерял пометку');
+  });
+
+  check('адрес справочника и прямой вход рендера не могут внедрить HTML или параметры письма', () => {
+    const named = readTable([line({ ...WEAK, name: 'Synthetic Person' })]);
+    const payload = 'x"><svg/onload=alert(1)>@example.com';
+    for (const entry of [payload, { email: payload }]) {
+      const result = rules.evaluate({ scores: named, people: { 'Synthetic Person': entry } }, GOAL);
+      assert.equal(result.people[0].email, null);
+      assert.doesNotMatch(page.render(result), /<svg|onload=/);
+    }
+    const direct = assess(named);
+    for (const email of [payload, 'x?bcc=other@example.com', 'x&bcc=other@example.com', 'x,y@example.com', 'x#fragment@example.com', 'x%0D%0ABcc:other@example.com', "o'brien+tag@example.com"]) {
+      direct.people[0].email = email;
+      const html = page.render(direct);
+      assert.doesNotMatch(html, /<svg|<a[^>]*\sonload=/);
+      const href = html.match(/class="mail" href="([^"]*)"/)[1].replace(/&amp;/g, '&');
+      const url = new URL(href);
+      assert.equal(url.protocol, 'mailto:');
+      assert.equal(decodeURIComponent(url.pathname), email);
+      assert.deepEqual([...url.searchParams.keys()], ['subject', 'body']);
+      assert.equal(url.hash, '');
+    }
+    const valid = rules.evaluate({ scores: named, people: { 'Synthetic Person': "o'brien+tag@example.com" } }, GOAL);
+    assert.equal(valid.people[0].email, "o'brien+tag@example.com");
+    for (const email of ['\ud800@example.com', '\udfff@example.com']) {
+      const result = rules.evaluate({ scores: named, people: { 'Synthetic Person': email } }, GOAL);
+      assert.equal(result.people[0].email, null);
+      assert.doesNotThrow(() => page.render(result));
+      direct.people[0].email = email;
+      assert.throws(() => page.render(direct), /Адрес письма: некорректная строка Unicode/);
+    }
+  });
+
+  check('пустые статусы курсов и DONE остаются неизвестными без балльных рекомендаций', () => {
+    const blank = line(WEAK);
+    HEADERS.forEach((header, index) => {
+      if (COURSES.includes(header) || /^\d+\..* DONE$/.test(header)) blank[index] = '-';
+    });
+    const input = readTable([blank]);
+    assert.equal(input.gaps.filter(gap => COURSES.includes(gap.field) || /^\d+\..* DONE$/.test(gap.field)).length, 11);
+    const result = assess(input);
+    const row = result.people[0];
+    assert.ok(row.gaps.some(gap => /курс/i.test(gap)));
+    assert.ok(row.gaps.some(gap => /навык/i.test(gap)));
+    assert.ok(!row.levers.some(lever => ['курсы', 'навыки'].includes(lever.kind)));
+    assert.ok(row.levers.some(lever => lever.kind === 'частота'));
+    validateValue(loadContract(cwd, `processes/${PROCESS}/contracts/report-data.json`), result);
+    assert.ok(form.render(result).includes('Не подтверждено в выгрузке'));
+    // Один пропуск тоже не даёт считать неизвестную базу подтверждённым нулём.
+    for (const header of [COURSES[0], '1. Prompting DONE']) {
+      const partial = line(WEAK); partial[HEADERS.indexOf(header)] = '';
+      const person = assess(readTable([partial])).people[0];
+      assert.ok(person.gaps.length);
+      assert.ok(!person.levers.some(lever => lever.kind === (COURSES.includes(header) ? 'курсы' : 'навыки')));
+    }
+  });
+
+  check('достижение цели и остаток согласованы при расхождении итога и пересчёта', () => {
+    for (const total of [1, 5.9]) {
+      const result = assess(readTable([line({ ...WEAK, total })]));
+      const row = result.people[0];
+      assert.equal(row.reachesGoal, row.total + row.potential >= 6);
+      assert.equal(row.reachesGoal, row.leftToGoal === 0);
+      if (!row.reachesGoal) assert.ok(form.render(result).includes('остаётся'));
+      page.validate(page.render(result), result);
+    }
   });
 
   check('шкалы слайдов дают максимум 3 + 3 + 4 сильному сотруднику', () => {

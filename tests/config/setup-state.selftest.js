@@ -86,17 +86,24 @@ try{
   const result=inspect(tmp);assert.equal(result.personal.state,'invalid');assert.ok(!JSON.stringify(result).includes('PRIVATE_'));assert.ok(!JSON.stringify(result).includes('private.invalid'));
  });
  fs.unlinkSync(myFile);write('private-target.json','PRIVATE_TARGET');
- let linked=false;
- try{fs.symlinkSync(path.join(tmp,'private-target.json'),myFile);linked=true;}
+ let directoryLink=false;
+ const myDir=path.dirname(myFile),realDir=path.join(tmp,'config/my-unlinked');
+ try{fs.symlinkSync(path.join(tmp,'private-target.json'),myFile);}
  catch(error){
   if(process.platform!=='win32'||!['EPERM','EACCES','ENOTSUP'].includes(error.code))throw error;
-  console.log('↷ linked config: Windows does not permit file symlinks; other config checks remain mandatory');
+  // Directory junctions require no file-symlink privilege and exercise the same path guard.
+  fs.renameSync(myDir,realDir);
+  try{fs.copyFileSync(path.join(tmp,'private-target.json'),path.join(realDir,'config.json'));fs.symlinkSync(realDir,myDir,'junction');directoryLink=true;}
+  catch(linkError){fs.renameSync(realDir,myDir);throw linkError;}
  }
- if(linked)try{
-  check('linked personal config is rejected without reading its target',()=>{
+ try{
+  check('linked personal config or parent directory is rejected without reading its target',()=>{
    const result=inspect(tmp);assert.equal(result.personal.state,'invalid');assert.ok(!JSON.stringify(result).includes('PRIVATE_TARGET'));
   });
- }finally{fs.unlinkSync(myFile);}
+ }finally{
+  if(directoryLink){fs.unlinkSync(myDir);fs.renameSync(realDir,myDir);fs.unlinkSync(myFile);}
+  else fs.unlinkSync(myFile);
+ }
  ready();
  check('existing personal branch or config on another branch requires opening it, never recreation',()=>{
   git('switch','master');let result=inspect(tmp);assert.equal(result.personal.state,'outside-personal');

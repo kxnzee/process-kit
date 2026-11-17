@@ -92,12 +92,13 @@ function trainingBlock(person, limits) {
   const outside = name => (name === 'SDD' && norm(person.training.audience.sdd) === '0')
     || (name === 'Контекст AI-агентов' && norm(person.training.audience.context) === '0');
   const done = courses.filter(course => onTime(course.status) || outside(course.name));
-  const missingList = courses.filter(course => !onTime(course.status) && !outside(course.name));
+  const unknown = courses.filter(course => !outside(course.name) && (!norm(course.status) || norm(course.status) === '-'));
+  const missingList = courses.filter(course => !unknown.includes(course) && !onTime(course.status) && !outside(course.name));
   const missing = missingList.map(course => course.name);
-  const grade = courses.length ? COURSE_GRADE[Math.min(courses.length, done.length)] : undefined;
+  const grade = courses.length && !unknown.length ? COURSE_GRADE[Math.min(courses.length, done.length)] : undefined;
   return {
     ...blockOf('Обучение и применение', [
-      { label: `курсов завершено в срок: ${done.length} из ${courses.length}`, value: grade, file: person.training.balls.courses },
+      { label: unknown.length ? `курсы: не заполнен статус ${listOf(unknown.map(course => titleOf(course.name)))}` : `курсов завершено в срок: ${done.length} из ${courses.length}`, value: grade, file: person.training.balls.courses },
       { label: `частота использования: ${person.usage.frequency || 'не заполнена'}`, value: pick(person.usage.frequency, FREQUENCY), file: person.usage.frequency === null ? undefined : person.training.balls.frequency },
       { label: `режим работы: ${person.usage.mode || 'не заполнен'}`, value: pick(person.usage.mode, MODE), file: person.usage.mode === null ? undefined : person.training.balls.mode }
     ], person.training.balls.total, { max: MAX.training, goal: limits.training }),
@@ -106,22 +107,23 @@ function trainingBlock(person, limits) {
     // требуют разных действий, а колонка балла этого не различает.
     missingDetail: missingList.map(course => ({ name: titleOf(course.name), short: course.name, status: course.status })),
     doneDetail: done.filter(course => !onTime(course.status)).map(course => ({ name: titleOf(course.name), reason: 'вне целевой аудитории — балл засчитан максимальным' })),
-    doneCourses: done.length, courseCount: courses.length
+    doneCourses: done.length, courseCount: courses.length, coursesKnown: grade !== undefined
   };
 }
 
 function skillsBlock(person, limits) {
-  const list = person.skills.list || [], done = person.skills.doneCount || 0;
-  const todo = list.filter(item => item.done !== 1).map(item => item.name);
+  const list = person.skills.list || [], done = list.filter(item => item.done === 1).length;
+  const unknown = list.filter(item => item.done !== 0 && item.done !== 1);
+  const todo = list.filter(item => item.done === 0).map(item => item.name);
   const doneNames = list.filter(item => item.done === 1).map(item => item.name);
-  const grade = list.length ? SKILL_GRADE[Math.min(SKILL_GRADE.length - 1, done)] : undefined;
+  const grade = list.length && !unknown.length ? SKILL_GRADE[Math.min(SKILL_GRADE.length - 1, done)] : undefined;
   return {
     ...blockOf('Навыки', [
       { label: `планка по навыкам: ${person.skills.planReached || 'не заполнена'}`, value: pick(person.skills.planReached, PLAN), file: person.skills.balls.plan },
-      { label: `навыков достигли планового уровня: ${done} из ${list.length}`, value: grade, file: person.skills.balls.count },
+      { label: unknown.length ? `навыки: не заполнен DONE ${listOf(unknown.map(item => item.name))}` : `навыков достигли планового уровня: ${done} из ${list.length}`, value: grade, file: person.skills.balls.count },
       { label: `когорта потребления токенов: ${person.skills.cohort || 'в файле не заполнена'}`, value: person.skills.cohort === null ? undefined : pick(person.skills.cohort, COHORT), file: person.skills.balls.cohort }
     ], person.skills.balls.total, { max: MAX.skills, goal: limits.skills }),
-    todoSkills: todo, doneSkills: done, doneNames, skillCount: list.length, tokens: num(person.skills.tokens),
+    todoSkills: todo, doneSkills: done, doneNames, skillCount: list.length, skillsKnown: grade !== undefined, tokens: num(person.skills.tokens),
     planReached: person.skills.planReached, cohort: person.skills.cohort
   };
 }
@@ -150,13 +152,13 @@ function productivityBlock(person, limits) {
 // У рычага три формулировки: короткая — в колонку сводной таблицы, полная — то, что можно
 // отправить человеку (без баллов и ссылок на шкалы), и шаги — чем измеряется ступень и сколько
 // она даёт баллов: шаги печатаются отдельно, под списком рекомендаций.
-function leversFor(person, blocks, goal) {
+function leversFor(person, blocks) {
   const levers = [];
   const push = (kind, brief, text, gain, steps, items) => {
     if (gain > 0) levers.push({ kind, brief, text, gain: round(gain), steps: steps || [], items: items || [] });
   };
   const training = blocks.training;
-  if (training.missingDetail.length) {
+  if (training.coursesKnown && training.missingDetail.length) {
     const top = COURSE_GRADE[Math.min(COURSE_GRADE.length - 1, training.courseCount)];
     const here = COURSE_GRADE[Math.min(COURSE_GRADE.length - 1, training.doneCourses)];
     const names = training.missingDetail.map(course => `«${course.name}»${course.status ? ` — в файле «${course.status}»` : ''}`).join('; ');
@@ -190,7 +192,7 @@ function leversFor(person, blocks, goal) {
       [`режим «${norm(person.usage.mode)}»`]);
   }
   const skills = blocks.skills;
-  const grade = skills.skillCount ? SKILL_GRADE[Math.min(SKILL_GRADE.length - 1, skills.doneSkills)] : undefined;
+  const grade = skills.skillsKnown ? SKILL_GRADE[Math.min(SKILL_GRADE.length - 1, skills.doneSkills)] : undefined;
   if (grade !== undefined && grade < 1 && skills.todoSkills.length) {
     const target = Math.min(SKILL_GRADE.length - 1, skills.doneSkills + Math.min(2, skills.todoSkills.length));
     push('навыки', `дотянуть ${skillWord(skills.todoSkills.length)} до планки`,
@@ -243,8 +245,7 @@ function leversFor(person, blocks, goal) {
   }
   const ordered = levers.sort((a, b) => b.gain - a.gain);
   const potential = round(ordered.reduce((sum, lever) => sum + lever.gain, 0));
-  const reached = round(Math.min(goal, round(blocks.training.total + blocks.skills.total + blocks.productivity.total) + potential));
-  return { ordered, potential, reachesGoal: reached >= goal };
+  return { ordered, potential };
 }
 
 function assess(person, limits, goal, warn) {
@@ -260,7 +261,7 @@ function assess(person, limits, goal, warn) {
       : fileTotal >= goal ? 'B'
         : fileTotal >= round(goal * 0.75) ? 'C'
           : fileTotal >= warn ? 'D' : 'E';
-  const levers = status === 'ниже цели' ? leversFor(person, blocks, goal) : { ordered: [], potential: 0, reachesGoal: true };
+  const levers = status === 'ниже цели' ? leversFor(person, blocks) : { ordered: [], potential: 0 };
   const strong = Object.values(blocks).filter(block => block.goal > 0).sort((a, b) => (b.total - b.goal) - (a.total - a.goal))[0];
   const after = fileTotal === null ? null : round(fileTotal + levers.potential);
   const left = after === null ? null : round(Math.max(0, goal - after));
@@ -279,7 +280,7 @@ function assess(person, limits, goal, warn) {
     team: person.teamTitle || person.team, role: person.role || person.expertise,
     training: blocks.training.total, skills: blocks.skills.total, productivity: blocks.productivity.total,
     total: fileTotal, recomputed, status, grade, recommendation,
-    potential: levers.potential, reachesGoal: levers.reachesGoal, leftToGoal: left,
+    potential: levers.potential, reachesGoal: left === 0, leftToGoal: left,
     gaps: [...blocks.training.unknown, ...blocks.skills.unknown, ...blocks.productivity.unknown],
     fileBlocks: { training: blocks.training.file, skills: blocks.skills.file, productivity: blocks.productivity.file, total: fileTotal },
     fileRecommendationFlags: flags,
@@ -342,7 +343,7 @@ function evaluate(inputs, parameters) {
   // снял 2026-11-11 — номеров в карте больше нет и требовать их нельзя.
   const addressBook = inputs.people && typeof inputs.people === 'object' && !Array.isArray(inputs.people) ? inputs.people : {};
   const tidy = value => String(value === undefined || value === null ? '' : value).replace(/\s+/g, ' ').trim();
-  const isMail = value => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value);
+  const isMail = value => value.isWellFormed() && /^[^@\s<>"\u0000-\u001f\u007f]+@[^@\s<>"\u0000-\u001f\u007f]+\.[^@\s<>"\u0000-\u001f\u007f]+$/.test(value);
   const NO_BOOK = 'нет в карте адресов';
   const NO_MAIL = 'в карте адресов нет адреса';
   const TWIN_NAMES = 'ФИО встречается в списке дважды';

@@ -38,6 +38,7 @@ const text = value => { const raw = String(value === undefined || value === null
 const number = value => { const raw = text(value); if (raw === null) return null; const parsed = Number(raw.replace(/[ ]/g, '').replace(',', '.')); return Number.isFinite(parsed) ? parsed : null; };
 const colIndex = letters => [...letters].reduce((sum, ch) => sum * 26 + ch.charCodeAt(0) - 64, 0);
 const unescape = value => value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, code) => String.fromCharCode(+code)).replace(/&amp;/g, '&');
+const stringText = xml => [...xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)].map(part => unescape(part[1])).join('');
 
 function entries(buf) {
   const eocd = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
@@ -61,16 +62,19 @@ function fromXlsx(cwd, file) {
   for (const entry of entries(fs.readFileSync(inside(cwd, file)))) map[entry.name] = entry.data;
   const strings = [];
   for (const item of (map['xl/sharedStrings.xml'] || '').matchAll(/<si>([\s\S]*?)<\/si>/g))
-    strings.push([...item[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(part => unescape(part[1])).join(''));
+    strings.push(stringText(item[1]));
   const sheet = Object.keys(map).filter(name => /^xl\/worksheets\/[^/]+\.xml$/.test(name)).sort()[0];
   if (!sheet) throw new Error('В файле нет ни одного листа');
   const title = (map['xl/workbook.xml'] || '').match(/<sheet[^>]*name="([^"]*)"/);
   const rows = [];
   for (const row of map[sheet].matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
     const line = {};
-    for (const cell of row[1].matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
-      const stored = ((cell[3] || '').match(/<v>([\s\S]*?)<\/v>/) || [])[1];
-      line[cell[1]] = stored === undefined ? '' : /t="s"/.test(cell[2]) ? (strings[+stored] || '') : stored;
+    for (const cell of row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+      const address = cell[1].match(/\br="([A-Z]+)\d+"/);
+      if (!address) continue;
+      const type = (cell[1].match(/\bt="([^"]*)"/) || [])[1], body = cell[2] || '';
+      const stored = (body.match(/<v>([\s\S]*?)<\/v>/) || [])[1];
+      line[address[1]] = type === 'inlineStr' ? stringText(body) : stored === undefined ? '' : type === 's' ? (strings[+stored] || '') : unescape(stored);
     }
     rows.push(line);
   }

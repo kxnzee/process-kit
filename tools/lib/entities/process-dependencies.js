@@ -58,6 +58,16 @@ function childParams(cwd,parent,step,params,artifacts={},overrides={}){
  const scope={...params,...overrides};
  return {...params,...child.data.params,...Object.fromEntries(Object.entries(step.params).map(([key,value])=>[key,bind(value,scope,artifacts)])),...overrides};
 }
+// Freeze the shipped implementation, including transitive helpers, without loading it.
+// A conservative inventory avoids maintaining a second, incomplete import graph.
+function runtimeFiles(cwd){
+ const files=['tools/kit.js'];
+ function visit(folder){for(const entry of fs.readdirSync(inside(cwd,folder),{withFileTypes:true})){
+  const file=folder+'/'+entry.name;inside(cwd,file);
+  if(entry.isDirectory())visit(file);else files.push(file);
+ }}
+ visit('tools/lib');return files.sort();
+}
 // Static owner inventory: safe to compare before loading any definition hooks.
 function definitionFiles(cwd,name,params={},overrides=params){
  const files=new Set(),maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
@@ -128,7 +138,7 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
   if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file))throw new Error('Неверный дополнительный файл');include(file);
  }
  if(params.dataFile){if(mode!=='demo')throw new Error('dataFile только для demo');include(params.dataFile);}
- for(const file of ['tools/kit.js','tools/lib/runtime/run-journal.js','tools/lib/runtime/run-storage.js','tools/lib/runtime/trust.js','tools/lib/entities/process-definition.js','tools/lib/entities/process-release.js','tools/lib/entities/process-dependencies.js','tools/lib/contracts/value-contract.js','tools/lib/contracts/artifact-contract.js','tools/lib/core/safe-path.js','tools/lib/entities/process-model.js','tools/lib/core/markdown.js','tools/lib/runtime/history.js','tools/lib/core/paths.js','tools/lib/actions/action-runtime.js','tools/lib/config/config.js','tools/lib/config/config-contract.js','tools/lib/entities/context.js','tools/lib/entities/entities.js'])include(file);
+ for(const file of runtimeFiles(cwd))include(file);
  return [...files].sort();
 }
 // Possible final ports; callers without an explicit alias can rely only on a single common port.
@@ -145,4 +155,4 @@ function resultPorts(cwd,name,stack=[]){
  }
  visit(model.entry,null);return [...found];
 }
-module.exports={literalParams,definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};
+module.exports={literalParams,runtimeFiles,definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};

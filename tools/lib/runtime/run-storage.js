@@ -108,13 +108,16 @@ function verify(dir){
  if(expected.state!==hash(read(inside(dir,'state.json')))||expected.trace!==hash(read(inside(dir,'trace.jsonl')))||expected.revision!==state.revision)throw new Error('Нарушена согласованность состояния и журнала');
  return true;
 }
+function transaction(state,events,spec={},beforeState='',beforeTrace=''){
+ return {beforeState:hash(beforeState),beforeTrace:hash(beforeTrace),state:encode(state),trace:beforeTrace+events.map(e=>JSON.stringify(e)+'\n').join(''),spec:{summary:spec.summary,reason:spec.reason}};
+}
 function stage(dir,state,events,spec={}){
  if(fs.existsSync(inside(dir,'transaction.json')))throw new Error('Незавершённая запись: используйте run recover');
  const beforeState=read(inside(dir,'state.json')),beforeTrace=read(inside(dir,'trace.jsonl'));
  state.revision=(state.revision||0)+1;
- const transaction={beforeState:hash(beforeState),beforeTrace:hash(beforeTrace),state:encode(state),trace:beforeTrace+events.map(e=>JSON.stringify(e)+'\n').join(''),spec:{summary:spec.summary,reason:spec.reason}};
- atomic(inside(dir,'transaction.json'),transaction);
- return transaction;
+ const prepared=transaction(state,events,spec,beforeState,beforeTrace);
+ atomic(inside(dir,'transaction.json'),prepared);
+ return prepared;
 }
 function restore(dir){
  const file=inside(dir,'transaction.json');if(!fs.existsSync(file))return null;
@@ -128,4 +131,4 @@ function restore(dir){
  return {state,spec:tx.spec};
 }
 function finish(dir){fs.unlinkSync(inside(dir,'transaction.json'));}
-module.exports={atomic,hash,lock,verify,stage,restore,finish};
+module.exports={atomic,hash,lock,verify,transaction,stage,restore,finish};

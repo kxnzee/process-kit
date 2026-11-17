@@ -2,6 +2,31 @@
 const c=require('../fixture')(),{tmp,write,fs,path,assert,check}=c;
 const journal=require('../../tools/lib/runtime/run-journal');
 try{
+ check('runtime admission and shared Action helpers are frozen before any continuation',()=>{
+  const started=journal.start(tmp,{process:'example',mode:'local',definitionTest:true,inputText:'12 задач.',params:{to:'Test',subject:'Audit'}});
+  const stateFile=path.join(tmp,'outputs',started.output,'.run/state.json'),before=fs.readFileSync(stateFile);
+  for(const file of ['entities/process-facts.js','runtime/start-requests.js','actions/action-support.js','actions/query-file.js','actions/query-data.js','actions/code-data.js','actions/page-url.js']){
+   const relative='tools/lib/'+file,full=path.join(tmp,relative),original=fs.readFileSync(full);
+   assert.ok(started.files.includes(relative),relative+' is missing from the snapshot');
+   try{
+    fs.appendFileSync(full,"\nthrow Error('CHANGED_CORE_LOADED');\n");
+    for(const command of ['next','begin'])assert.throws(()=>journal.operation(tmp,command,{output:started.output,step:'edit'}),/Изменён вход/);
+    assert.deepEqual(fs.readFileSync(stateFile),before);
+   }finally{fs.writeFileSync(full,original);}
+  }
+  assert.equal(journal.operation(tmp,'next',{output:started.output}).operation,'begin');
+ });
+ check('new implementation helpers are detected before definition dependency hooks load them',()=>{
+  write('actions/core-probe/ACTION.md','---\nname: core-probe\ndescription: core inventory\nkind: transform\nadapter: none\nconsumes:\n  artifacts: []\n  params: []\nproduces:\n  result: Text\ncontracts:\n  result: text\nruntime: runtime.js\n---\n# Probe\n');
+  write('actions/core-probe/runtime.js',"const fs=require('node:fs'),path=require('node:path');exports.dependencies=ctx=>{const file=path.join(ctx.cwd,'tools/lib/actions/optional.js');if(fs.existsSync(file))require(file);return [];};");
+  write('processes/core-probe/PROCESS.md','---\nname: core-probe\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: core inventory\nexample: test\nentry: work\n---\n## Шаги\n### work\n- действие: core-probe\n- артефакт: result\n- следующий: end\n');
+  const {output}=journal.start(tmp,{process:'core-probe',mode:'local',definitionTest:true});
+  write('tools/lib/actions/optional.js',"require('node:fs').writeFileSync(require('node:path').join(__dirname,'../../../CORE_HELPER_LOADED'),'loaded');");
+  try{
+   assert.throws(()=>journal.operation(tmp,'next',{output}),/Изменён состав зависимостей/);
+   assert.equal(fs.existsSync(path.join(tmp,'CORE_HELPER_LOADED')),false);
+  }finally{fs.unlinkSync(path.join(tmp,'tools/lib/actions/optional.js'));}
+ });
  check('ARCH-002: caller-provided params.input remains a frozen file input without start.inputText',()=>{
   const file='processes/example/data/explicit-input.md';
   for(const params of [{input:file},{input:file,text:file},{input:file,text:file,generatedInput:file}]){

@@ -1,10 +1,12 @@
 'use strict';
 // Export a limited, allowlisted view of a run. Never copy input, parameters or raw errors.
-const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
-const {inside}=require('../core/safe-path'),{validRunFolderName}=require('../core/paths');
+const fs=require('node:fs');
+const {inside}=require('../core/safe-path'),{validRunFolderName,gitRevision}=require('../core/paths');
 const NAME=/^[a-z0-9][a-z0-9-]*$/;
 function identifier(value){return typeof value==='string'&&NAME.test(value)&&value.length<=100?value:'не определено';}
 function timestamp(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)?value:'не определено';}
+function revision(value){return typeof value==='string'&&/^[a-f0-9]{40,64}$/i.test(value)?value:'не определён';}
+function dirty(value){return value===true?'есть':value===false?'нет':'не определены';}
 function category(reason){
  if(typeof reason!=='string')return 'нет сохранённой причины';
  const rules=[
@@ -25,13 +27,13 @@ function report(cwd,output){
   const data=fs.readFileSync(inside(dir,'trace.jsonl'),'utf8');
   for(const line of data.split('\n').filter(Boolean)){try{const item=JSON.parse(line);if(item&&typeof item==='object')events.push(item);}catch{traceIssue='есть повреждённые записи';}}
  }catch{traceIssue='история событий отсутствует или недоступна';}
- let revision='не определена';try{const v=execFileSync('git',['rev-parse','--verify','HEAD'],{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();if(/^[a-f0-9]{40,64}$/i.test(v))revision=v;}catch{}
+ const current=gitRevision(cwd),original=state.identity?.sourceRevision;
  const processName=identifier(state.identity?.process),snapshot=state.identity?.files?.[`processes/${processName}/PROCESS.md`];
  const processHash=typeof snapshot==='string'&&/^[a-f0-9]{64}$/.test(snapshot)?snapshot:'не определён';
  const status=['running','failed','completed'].includes(state.status)?state.status:'не определён';
  const mode=['live','local','demo'].includes(state.identity?.mode)?state.identity.mode:'не определён';
  const allowed=new Set(['started','step_started','step_completed','branch_decision','process_entered','process_left','finished','step_retry_authorized']);
- const lines=['# Диагностика запуска','',`Создано: ${new Date().toISOString()}`,`Процесс: ${processName}`,`Отпечаток описания процесса при запуске: ${processHash}`,`Режим: ${mode}`,`Статус: ${status}`,`Текущий процесс: ${identifier(state.cursorProcess)}`,`Текущий шаг: ${identifier(state.pending?.step||state.next_step)}`,`Последний завершённый шаг: ${identifier(state.last_step_name)}`,`Категория сбоя: ${category(state.failure?.reason)}`,`Обновлено: ${timestamp(state.updated)}`,`Версия Node.js: ${process.version}`,`Коммит текущей рабочей копии: ${revision}`,'Коммит не подтверждает отсутствие локальных изменений и может отличаться от версии во время запуска.',...(stateIssue?[`Состояние: ${stateIssue}`]:[]),...(traceIssue?[`История: ${traceIssue}`]:[]),...(consistency?[`Целостность: ${consistency}`]:[]),'','## События'];
+ const lines=['# Диагностика запуска','',`Создано: ${new Date().toISOString()}`,`Процесс: ${processName}`,`Отпечаток описания процесса при запуске: ${processHash}`,`Режим: ${mode}`,`Статус: ${status}`,`Текущий процесс: ${identifier(state.cursorProcess)}`,`Текущий шаг: ${identifier(state.pending?.step||state.next_step)}`,`Последний завершённый шаг: ${identifier(state.last_step_name)}`,`Категория сбоя: ${category(state.failure?.reason)}`,`Обновлено: ${timestamp(state.updated)}`,`Версия Node.js: ${process.version}`,`Коммит при старте: ${revision(original?.commit)}`,`Локальные изменения при старте: ${dirty(original?.dirty)}`,`Коммит текущей рабочей копии: ${revision(current.commit)}`,`Текущие локальные изменения: ${dirty(current.dirty)}`,'Для старых запусков исходная ревизия могла не сохраняться. Git-факты не заменяют файловый Snapshot.',...(stateIssue?[`Состояние: ${stateIssue}`]:[]),...(traceIssue?[`История: ${traceIssue}`]:[]),...(consistency?[`Целостность: ${consistency}`]:[]),'','## События'];
  const safeEvents=events.filter(e=>allowed.has(e.type));
  if(!safeEvents.length)lines.push('Подходящих записей нет.');
  for(const e of safeEvents)lines.push(`- ${timestamp(e.ts)} | ${e.type} | процесс: ${identifier(e.process)} | шаг: ${identifier(e.step)}`);

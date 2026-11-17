@@ -83,12 +83,16 @@ function startNew(cwd,spec,environment={},request={}){
  const resolved=require('../entities/entities').manifest(cwd,spec.process,params,spec.mode,overrides,dependencyOptions),connections=resolved.connections;
  if(connections&&!connections.ready)throw new Error(connections.missing.map(item=>item.reason).join('; '));
  const snapshots={};for(const file of files){if(!/^(processes|actions|context|adapters|config|docs|tools)\//.test(file)&&!(environment.files||[]).includes(file))throw new Error('Недопустимый файл снимка');snapshots[file]=fingerprint(file,fs.readFileSync(inside(cwd,file)));}
- request.reserve?.(output,spec.date);
- fs.mkdirSync(inside(cwd,'outputs'),{recursive:true});fs.mkdirSync(path.dirname(dir));fs.mkdirSync(dir);
- if(spec.inputText!==undefined){if(typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');atomic(inside(dir,'inputs/input.md'),spec.inputText);params.input=path.relative(cwd,inside(dir,'inputs/input.md'));snapshots[params.input]=hash(spec.inputText);}
+ if(generatedInput)snapshots[generatedInput]=hash(spec.inputText);
  const state={schemaVersion:2,revision:0,sourceDescription:spec.inputText!==undefined?'переданный текст пользователя':'локальные файлы и артефакты процесса',last_step:0,last_step_name:'',next_step:model.entry,status:'running',params,updated:now(),artifacts:{},artifactHashes:{},recordedArtifacts:{},published:{},pending:null,cursorProcess:spec.process,stack:[],scopeParams:structuredClone(params),title:String(spec.title||model.data.title||model.data.description||spec.process).replace(/[\r\n]/g,' '),identity:{runId:crypto.randomUUID(),environmentFiles:environment.files||[],definitionTest:spec.definitionTest===true,process:spec.process,mode:spec.mode,date:spec.date,extraFiles:spec.files||[],overrides,params:structuredClone(params),hashAlgorithm:'sha256',files:snapshots}};
- if(request.identity){state.identity.startRequest=request.identity;fs.writeFileSync(inside(dir,'start-request.json'),request.body,{flag:'wx',mode:0o600});}
- storage.stage(dir,state,[{ts:now(),type:'started',process:spec.process,mode:spec.mode}]);storage.restore(dir);project(cwd,output,state);storage.finish(dir);return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),...(request.identity?{startRequestFile:inside(dir,'start-request.json')}:{}),state,connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(snapshots),note:'Используйте state.params как единственные эффективные параметры. Вы — исполнитель. Продолжайте через run next/execute до finish либо зафиксированного fail; preflight не завершает задачу.'};
+ state.identity.sourceRevision=require('../core/paths').gitRevision(cwd);
+ if(request.identity)state.identity.startRequest=request.identity;
+ const events=[{ts:now(),type:'started',process:spec.process,mode:spec.mode}];
+ request.reserve?.(output,spec.date,{state,events});
+ fs.mkdirSync(inside(cwd,'outputs'),{recursive:true});fs.mkdirSync(path.dirname(dir));fs.mkdirSync(dir);
+ if(generatedInput){fs.mkdirSync(inside(dir,'inputs'));fs.writeFileSync(inside(dir,'inputs/input.md'),spec.inputText,{flag:'wx',mode:0o600});}
+ if(request.identity)fs.writeFileSync(inside(dir,'start-request.json'),request.body,{flag:'wx',mode:0o600});
+ storage.stage(dir,state,events);storage.restore(dir);project(cwd,output,state);storage.finish(dir);return {output,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),...(request.identity?{startRequestFile:inside(dir,'start-request.json')}:{}),state,connections,entities:resolved.entities,readFiles:resolved.readFiles,files:Object.keys(snapshots),note:'Используйте state.params как единственные эффективные параметры. Вы — исполнитель. Продолжайте через run next/execute до finish либо зафиксированного fail; preflight не завершает задачу.'};
 }
 function project(cwd,output,state,spec={},recover=false){
  summary(cwd,output,state,spec);
@@ -121,12 +125,13 @@ function operationLocked(cwd,command,spec,environment={}){
   const events=[];
   function event(unused,type,data={}){const row={ts:now(),type,...data};events.push(row);return row;}
   for(const [file,digest]of Object.entries(state.identity.files))if(fingerprint(file,fs.readFileSync(inside(cwd,file)))!==digest)throw new Error('Изменён вход: '+file);
-  for(const file of require('../entities/process-dependencies').definitionFiles(cwd,state.identity.process,state.identity.params,state.identity.overrides))if(!Object.hasOwn(state.identity.files,file))throw new Error('Изменён состав зависимостей; нужен новый запуск');
+  const dependencyModule=require('../entities/process-dependencies');
+  for(const file of [...dependencyModule.runtimeFiles(cwd),...dependencyModule.definitionFiles(cwd,state.identity.process,state.identity.params,state.identity.overrides)])if(!Object.hasOwn(state.identity.files,file))throw new Error('Изменён состав зависимостей; нужен новый запуск');
   const ownInput=path.relative(cwd,inside(dir,'inputs/input.md'));
   const generatedInput=state.identity.params.input===ownInput?ownInput:null;
   const inventory=dependencies(cwd,state.identity.process,state.identity.params,state.identity.mode,state.identity.extraFiles||[],state.identity.overrides,{generatedInput});
-  const expected=Object.keys(state.identity.files).filter(file=>file!==generatedInput&&!(state.identity.environmentFiles||[]).includes(file)).sort();
-  if(JSON.stringify(inventory.sort())!==JSON.stringify(expected))throw new Error('Изменён состав зависимостей; нужен новый запуск');
+  const expected=Object.keys(state.identity.files).filter(file=>file!==generatedInput).sort();
+  if(JSON.stringify([...new Set([...inventory,...(state.identity.environmentFiles||[])])].sort())!==JSON.stringify(expected))throw new Error('Изменён состав зависимостей; нужен новый запуск');
   state.stack ||= [];state.cursorProcess ||= state.identity.process;
   for(const [file,digest]of Object.entries(state.recordedArtifacts||{}))if(hash(fs.readFileSync(inside(dir,file)))!==digest)throw new Error('Изменён сохранённый шаг: '+file);
   if(JSON.stringify(state.params)!==JSON.stringify(state.scopeParams||state.identity.params))throw new Error('Изменены параметры');
@@ -247,7 +252,7 @@ function operationLocked(cwd,command,spec,environment={}){
    if(spec.next!=='end'&&!model.steps.some(s=>s.name===spec.next))throw new Error('Неверный следующий узел');
    const file=String(state.pending.index).padStart(2,'0')+'-'+spec.step+'.'+spec.extension,full=inside(dir,file);
    if(fs.existsSync(full)){if(hash(fs.readFileSync(full))!==hash(content))throw new Error('Незавершённая фиксация содержит другой результат');}else fs.writeFileSync(full,content,{flag:'wx',mode:0o600});
-   if(!rows(dir).some(e=>e.type==='step_completed'&&e.id===state.pending.id))event(dir,'step_completed',{...state.pending,...(effect?{effect}:{}),artifact:spec.artifact,file,hash:hash(content)});
+   if(!rows(dir).some(e=>e.type==='step_completed'&&e.id===state.pending.id))event(dir,'step_completed',{id:state.pending.id,step:state.pending.step,process:state.pending.process,index:state.pending.index,...(state.pending.approval?{approval:state.pending.approval}:{}),...(effect?{effect}:{}),artifact:spec.artifact,file,hash:hash(content)});
    state.recordedArtifacts ||= {};state.recordedArtifacts[file]=hash(content);state.artifacts[spec.artifact]=file;state.artifactHashes[spec.artifact]=hash(content);state.last_step=state.pending.index;state.last_step_name=spec.step;state.last_artifact=spec.artifact;state.next_step=spec.next;state.pending=null;
   }else if(command==='finish'||command==='fail'){
    if(command==='finish'){

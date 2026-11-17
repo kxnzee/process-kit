@@ -10,6 +10,15 @@ function interrupt(file,fn){
  try{assert.throws(fn,/INJECTED_INTERRUPTION/);assert.ok(injected);}finally{fs.renameSync=rename;}
 }
 try{
+ check('completion records preserve attempt facts without copying large action parameters into the trace',()=>{
+  const subject='PRIVATE_LARGE_SUBJECT_'+'x'.repeat(65536),run=journal.start(tmp,{process:'example',mode:'local',inputText:'12 задач.',params:{to:'User',subject}});
+  const begun=journal.operation(tmp,'begin',{output:run.output,step:'edit'});
+  assert.equal(begun.pending.params.subject,subject);
+  journal.operation(tmp,'save',{...begun.save,content:'12 задач.'});
+  const trace=fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/trace.jsonl'),'utf8'),completed=trace.trim().split('\n').map(JSON.parse).find(e=>e.type==='step_completed');
+  assert.equal(completed.id,begun.pending.id);assert.equal(completed.process,'example');assert.equal(completed.step,'edit');assert.equal(completed.index,1);assert.equal(completed.artifact,'report-text');assert.equal(completed.params,undefined);
+  assert.ok(!trace.includes('PRIVATE_LARGE_SUBJECT'));assert.equal(state(run.output).params.subject,subject);
+ });
  check('recover completes interrupted trace/state/checkpoint commits once and detects manual edits',()=>{
   for(const target of ['trace.jsonl','state.json','checkpoint.json']){
    const output=start(),dir=path.join(tmp,'outputs',output,'.run');

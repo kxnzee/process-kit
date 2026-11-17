@@ -12,6 +12,15 @@ function root(cwd = process.cwd()) {
   return out.trim();
 }
 
+// Facts only: never persist status paths, remotes, diffs or command errors.
+function gitRevision(cwd) {
+  const options = {cwd, encoding:'utf8', stdio:['ignore','pipe','ignore'], env:{...process.env,GIT_OPTIONAL_LOCKS:'0'}};
+  let commit=null,dirty=null;
+  try { const value=execFileSync('git',['rev-parse','--verify','HEAD'],options).trim();if(/^[a-f0-9]{40,64}$/i.test(value))commit=value; } catch {}
+  try { dirty=execFileSync('git',['status','--porcelain','--untracked-files=normal'],options).length>0; } catch {}
+  return {commit,dirty};
+}
+
 const OUTPUTS_DIR = 'outputs';
 // Имя папки запуска: <ГГГГ-ММ-ДД>_<1–4 слова строчными через дефис>, без пробелов.
 // Это единственный шаблон в коде: его читают генератор имени и проверка раскладки.
@@ -52,6 +61,7 @@ function runFolderUnique(base, name) {
 
 module.exports = {
   root,
+  gitRevision,
   runFolderParts,
   validRunFolderName,
   validResultName,

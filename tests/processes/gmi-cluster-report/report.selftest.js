@@ -244,6 +244,31 @@ try {
     }
   });
 
+  check('только явный статус завершения в срок даёт балл курсов', () => {
+    for (const status of ['Завершен не в срок', 'Завершён не в срок', 'Завершен с опозданием', 'Не завершен вовремя', 'Не завершен в срок']) {
+      const input = readTable([line({ ...WEAK, courses: COURSES.map(() => status) })]);
+      const row = assess(input).people[0];
+      assert.equal(row.training, 1, status);
+      const advice = row.levers.find(lever => lever.kind === 'курсы');
+      assert.ok(advice, status);assert.equal(advice.gain, 1, status);
+    }
+    for (const status of ['Завершен в срок', 'Завершён в срок', ' ЗАВЕРШЁН  В\tСРОК ']) {
+      const row = assess(readTable([line({ ...WEAK, courses: COURSES.map(() => status) })])).people[0];
+      assert.equal(row.training, 2, status);
+      assert.ok(!row.levers.some(lever => lever.kind === 'курсы'), status);
+    }
+  });
+
+  check('курсы вне целевой аудитории засчитываются при просроченном статусе', () => {
+    const cells = line({ ...WEAK, courses: COURSES.map(() => 'Завершен не в срок') });
+    cells[HEADERS.indexOf('ЦА Обучение контекст')] = '0';
+    cells[HEADERS.indexOf('ЦА Обучение SDD')] = '0';
+    const row = assess(readTable([cells])).people[0];
+    assert.equal(row.training, 1.3);
+    const advice = row.levers.find(lever => lever.kind === 'курсы');
+    assert.equal(advice.gain, 0.7);assert.equal(advice.items.length, 3);
+  });
+
   check('шкалы слайдов дают максимум 3 + 3 + 4 сильному сотруднику', () => {
     const row = data.people.find(person => person.id === STRONG.id);
     assert.deepEqual([row.training, row.skills, row.productivity, row.total], [3, 3, 4, 10]);

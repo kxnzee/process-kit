@@ -206,7 +206,7 @@ params:
 Вход — файл таблицы. Действие чтения принимает пути только из рабочих папок процесса, поэтому
 выгрузку кладут в `processes/gmi-cluster-report/data/` и передают процессу:
 `node tools/kit.js check --process gmi-cluster-report --params <json>`, где в `<json>` —
-`scoreFile` и `runDate`. Форма входа: xlsx первого листа либо JSON вида
+`scoreFile` и `runDate`. Форма входа: xlsx первого листа в порядке вкладок книги либо JSON вида
 `{"headers": […], "rows": [[…]]}` с теми же заголовками столбцов.
 
 Аргументами запуска передают то, что меняется: `scoreFile`, `runDate`, `demo`, `nameFile`,

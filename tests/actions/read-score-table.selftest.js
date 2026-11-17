@@ -18,8 +18,7 @@ function zip(entries,compressed){
 }
 const escape=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function column(index){let name='';for(index++;index;index=Math.floor((index-1)/26))name=String.fromCharCode(65+(index-1)%26)+name;return name;}
-function xlsx(table,inline,compressed){
- const strings=[];
+function worksheet(table,inline,strings=[]){
  const rows=[table.headers,...table.rows].map((row,i)=>`<row r="${i+1}">${row.map((value,j)=>{
   const ref=column(j)+(i+1);
   if(value===null||value==='')return `<c r="${ref}"/>`;
@@ -27,15 +26,19 @@ function xlsx(table,inline,compressed){
   if(inline){const text=String(value),half=Math.floor(text.length/2);return `<c t="inlineStr" r="${ref}"><is><r><t xml:space="preserve">${escape(text.slice(0,half))}</t></r><r><t xml:space="preserve">${escape(text.slice(half))}</t></r></is></c>`;}
   strings.push(String(value));return `<c r="${ref}" t="s"><v>${strings.length-1}</v></c>`;
  }).join('')}</row>`).join('');
+ return `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows}</sheetData></worksheet>`;
+}
+function xlsx(table,inline,compressed,edit=entries=>entries){
+ const strings=[],sheet=worksheet(table,inline,strings);
  const entries=[
   ['[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+(!inline?'<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>':'')+'</Types>'],
   ['_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
   ['xl/workbook.xml','<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Scores" sheetId="1" r:id="rId1"/></sheets></workbook>'],
   ['xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+(!inline?'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>':'')+'</Relationships>'],
-  ['xl/worksheets/sheet1.xml',`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows}</sheetData></worksheet>`]
+  ['xl/worksheets/sheet1.xml',sheet]
  ];
  if(!inline)entries.push(['xl/sharedStrings.xml',`<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strings.length}" uniqueCount="${strings.length}">${strings.map(text=>`<si><t>${escape(text)}</t></si>`).join('')}</sst>`]);
- return zip(entries,compressed);
+ return zip(edit(entries),compressed);
 }
 try{
  const table={headers:['Номер сотрудника','Код Команды','Основная роль','Обучение и применение БАЛЛ','Навыки и токены БАЛЛ','Продуктивность и Story БАЛЛ','Общий итог','ФИО сотрудника'],rows:[['00123','T','Dev & <review>',1.5,1,0.5,3,'Иванов И. И.'],['00124','T','Dev',null,0,0,0,'']]};
@@ -47,5 +50,31 @@ try{
   const actual=read.execute({...context,params:{scoreFile:'table.xlsx'}});
   assert.equal(actual.source.format,'xlsx');assert.equal(actual.source.sheet,'Scores');assert.equal(actual.source.columnCount,table.headers.length);
   assert.deepEqual(actual.employees,expected.employees);assert.deepEqual(actual.gaps,expected.gaps);assert.equal(actual.names.matched,1);
+ });
+ const actualTable=structuredClone(table);actualTable.rows[0][0]='ACTUAL';
+ for(const target of ['worksheets/sheet2.xml','/xl/worksheets/sheet2.xml'])check(`XLSX workbook order selects the related first sheet: ${target}`,()=>{
+  const bytes=xlsx(table,true,true,entries=>{
+   const parts=new Map(entries);
+   parts.set('xl/worksheets/sheet2.xml',worksheet(actualTable,true));
+   parts.set('xl/workbook.xml',`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet r:id='rIdActual' sheetId='2' name='Actual &amp; current'/><sheet name='Old' sheetId='1' r:id='rId1'/></sheets></workbook>`);
+   parts.set('xl/_rels/workbook.xml.rels',`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet' Target='worksheets/sheet1.xml'/><Relationship Target='${target}' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet' Id='rIdActual'/></Relationships>`);
+   parts.set('[Content_Types].xml',parts.get('[Content_Types].xml').replace('</Types>','<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'));
+   return [...parts];
+  });
+  fs.writeFileSync(path.join(tmp,'table.xlsx'),bytes);
+  const actual=read.execute({...context,params:{scoreFile:'table.xlsx'}});
+  assert.equal(actual.source.sheet,'Actual & current');assert.equal(actual.employees[0].id,'ACTUAL');
+ });
+ check('XLSX with an invalid first-sheet relationship fails instead of selecting another sheet',()=>{
+  for(const change of [
+   parts=>parts.delete('xl/workbook.xml'),
+   parts=>parts.set('xl/workbook.xml',parts.get('xl/workbook.xml').replace('rId1','missing')),
+   parts=>parts.delete('xl/worksheets/sheet1.xml'),
+   parts=>parts.set('xl/_rels/workbook.xml.rels',parts.get('xl/_rels/workbook.xml.rels').replace('Target="worksheets/sheet1.xml"','TargetMode="External" Target="https://example.invalid/table.xml"')),
+   parts=>parts.set('xl/_rels/workbook.xml.rels',parts.get('xl/_rels/workbook.xml.rels').replace('/relationships/worksheet','/relationships/chartsheet'))
+  ]){
+   fs.writeFileSync(path.join(tmp,'table.xlsx'),xlsx(table,true,true,entries=>{const parts=new Map(entries);change(parts);return [...parts];}));
+   assert.throws(()=>read.execute({...context,params:{scoreFile:'table.xlsx'}}),/лист|книг|связ/i);
+  }
  });
 }finally{ctx.close();}

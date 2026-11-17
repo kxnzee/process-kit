@@ -2,7 +2,7 @@
 // Чтение сводной таблицы оценок: xlsx разбирается своим кодом (архив + общий словарь строк),
 // JSON-таблица читается той же формой. Шаг ничего не пересчитывает и не дополняет: пустая
 // ячейка и «-» остаются null и попадают в gaps, а не в ноль.
-const fs = require('node:fs'), zlib = require('node:zlib'), { isDeepStrictEqual } = require('node:util');
+const fs = require('node:fs'), zlib = require('node:zlib'), { posix } = require('node:path'), { isDeepStrictEqual } = require('node:util');
 const { inside } = require('../../tools/lib/core/safe-path'), s = require('../../tools/lib/actions/action-support');
 
 const COL = {
@@ -39,6 +39,22 @@ const number = value => { const raw = text(value); if (raw === null) return null
 const colIndex = letters => [...letters].reduce((sum, ch) => sum * 26 + ch.charCodeAt(0) - 64, 0);
 const unescape = value => value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, code) => String.fromCharCode(+code)).replace(/&amp;/g, '&');
 const stringText = xml => [...xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)].map(part => unescape(part[1])).join('');
+const attributes = xml => Object.fromEntries([...xml.matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(match => [match[1], unescape(match[2] ?? match[3])]));
+
+function firstWorksheet(parts) {
+  const first = (parts['xl/workbook.xml'] || '').match(/<(?:[\w.-]+:)?sheet\b([^>]*)>/);
+  if (!first) throw new Error('В книге XLSX нет ни одного объявленного листа');
+  const sheet = attributes(first[1]);
+  const relations = [...(parts['xl/_rels/workbook.xml.rels'] || '').matchAll(/<(?:[\w.-]+:)?Relationship\b([^>]*)>/g)].map(match => attributes(match[1]));
+  const relation = sheet['r:id'] && relations.find(item => item.Id === sheet['r:id']);
+  if (!relation) throw new Error('Не найдена связь первого листа книги XLSX');
+  if (relation.TargetMode === 'External' || !/\/worksheet$/.test(relation.Type || '')) throw new Error('Первый лист книги XLSX должен быть локальным листом таблицы');
+  const target = relation.Target;
+  if (!target || /[\\?#]/.test(target)) throw new Error('Неверная связь первого листа книги XLSX');
+  const file = posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join('xl', target));
+  if (!file.startsWith('xl/') || !Object.hasOwn(parts, file)) throw new Error('В архиве XLSX нет файла первого листа книги');
+  return { file, title: sheet.name || file };
+}
 
 function entries(buf) {
   const eocd = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
@@ -63,9 +79,7 @@ function fromXlsx(cwd, file) {
   const strings = [];
   for (const item of (map['xl/sharedStrings.xml'] || '').matchAll(/<si>([\s\S]*?)<\/si>/g))
     strings.push(stringText(item[1]));
-  const sheet = Object.keys(map).filter(name => /^xl\/worksheets\/[^/]+\.xml$/.test(name)).sort()[0];
-  if (!sheet) throw new Error('В файле нет ни одного листа');
-  const title = (map['xl/workbook.xml'] || '').match(/<sheet[^>]*name="([^"]*)"/);
+  const { file: sheet, title } = firstWorksheet(map);
   const rows = [];
   for (const row of map[sheet].matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
     const line = {};
@@ -81,7 +95,7 @@ function fromXlsx(cwd, file) {
   if (rows.length < 2) throw new Error('В листе нет строк данных: есть только заголовки или пусто');
   const letters = Object.keys(rows[0]).sort((a, b) => colIndex(a) - colIndex(b));
   const pick = line => letters.map(letter => line[letter] === undefined ? '' : line[letter]);
-  return { format: 'xlsx', sheet: title ? title[1] : sheet, headers: pick(rows[0]), rows: rows.slice(1).map(pick) };
+  return { format: 'xlsx', sheet: title, headers: pick(rows[0]), rows: rows.slice(1).map(pick) };
 }
 
 function fromJson(cwd, file) {

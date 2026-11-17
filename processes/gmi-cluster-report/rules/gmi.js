@@ -61,7 +61,7 @@ const fixed = (value, digits = 1) => (value === null || value === undefined ? '�
 // а не обнуляется молча (ноль в методике имеет собственное значение).
 const pick = (value, table) => { const key = norm(value); return key ? (table.find(([label]) => key.includes(label)) || [null, undefined])[1] : undefined; };
 const bandBall = value => (Object.prototype.hasOwnProperty.call(BAND, norm(value)) ? BAND[norm(value)] : undefined);
-const onTime = status => /в\s*срок/i.test(String(status || '')) && !/не\s*заверш|не\s*начат/i.test(String(status || ''));
+const onTime = status => norm(status).replace(/\s+/g, ' ') === 'завершен в срок';
 // Дельта до следующей ступени той же шкалы: обещать сразу максимум в рекомендациях нельзя.
 function nextStep(table, value) {
   const sorted = [...table].sort((a, b) => a[1] - b[1]);

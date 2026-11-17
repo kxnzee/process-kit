@@ -13,6 +13,8 @@ function atomic(file,value){
 function lock(dir,recover=false,name='.journal.lock'){
  const file=inside(dir,name),owner={pid:process.pid,host:os.hostname(),id:crypto.randomUUID()};
  const candidateFor=owner=>inside(dir,`${name}.${owner.pid}.${owner.id}.candidate`);
+ // NTFS file IDs can exceed Number precision; distinct files must stay distinct.
+ const statFile=(target,options={})=>fs.statSync(target,{...options,bigint:true});
  const same=(a,b)=>a&&b&&a.dev===b.dev&&a.ino===b.ino;
  const sameOwner=(a,b)=>a?.pid===b?.pid&&a?.host===b?.host&&a?.id===b?.id;
  function readOwner(entry){
@@ -39,12 +41,12 @@ function lock(dir,recover=false,name='.journal.lock'){
   const releaseGuard=lock(dir,true,name==='.journal.lock'?'.recovery.lock':name+'.recovery');
   try{
    let acquired=false;
-   const entry=fs.statSync(file,{throwIfNoEntry:false});
+   const entry=statFile(file,{throwIfNoEntry:false});
    if(entry){
     let previous;
     try{previous=readOwner(entry);}
     catch(error){
-     const current=fs.statSync(file,{throwIfNoEntry:false});
+     const current=statFile(file,{throwIfNoEntry:false});
      // A file may disappear/reappear between stat and read, including inode reuse.
      // Never infer ownership from stat: one exclusive claim either succeeds or is busy.
      // Missing owner.json in the same legacy directory remains an unknown owner.
@@ -55,7 +57,7 @@ function lock(dir,recover=false,name='.journal.lock'){
       if(!claim())throw new Error('Журнал занят работающим процессом');
       acquired=true;
      }else{
-      const fact=stat=>stat?{dev:stat.dev,ino:stat.ino,nlink:stat.nlink,mode:stat.mode,birthtimeMs:stat.birthtimeMs,mtimeMs:stat.mtimeMs}:null;
+      const fact=stat=>stat?{dev:String(stat.dev),ino:String(stat.ino),nlink:Number(stat.nlink),mode:Number(stat.mode),birthtimeMs:Number(stat.birthtimeMs),mtimeMs:Number(stat.mtimeMs)}:null;
       throw Object.assign(new Error('Владелец lock неизвестен: требуется проверка разработчиком ('+name+': '+(error.code||error.name)+')'),{cause:error,observation:{before:fact(entry),after:fact(current)}});
      }
     }
@@ -64,7 +66,7 @@ function lock(dir,recover=false,name='.journal.lock'){
      try{process.kill(previous.pid,0);throw new Error('Журнал занят работающим процессом');}catch(error){if(error.code!=='ESRCH')throw error;}
      if(entry.isDirectory()){
       // Legacy locks remain recoverable only after their local owner is proven dead.
-      const latest=fs.statSync(file,{throwIfNoEntry:false});
+      const latest=statFile(file,{throwIfNoEntry:false});
       if(!same(latest,entry)||!sameOwner(readOwner(latest),previous))throw new Error('Журнал занят работающим процессом');
       const stale=file+'.'+crypto.randomUUID()+'.stale';fs.renameSync(file,stale);fs.rmSync(stale,{recursive:true,force:true});
      }else{
@@ -77,12 +79,12 @@ function lock(dir,recover=false,name='.journal.lock'){
        acquired=true;
       }
       if(!acquired)try{
-       const anchored=fs.statSync(anchor),captured=JSON.parse(fs.readFileSync(anchor,'utf8'));
+       const anchored=statFile(anchor),captured=JSON.parse(fs.readFileSync(anchor,'utf8'));
        if(!same(anchored,entry)||!sameOwner(captured,previous))throw new Error('Журнал занят работающим процессом');
        fs.unlinkSync(file);
        if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
         const candidate=candidateFor(previous);
-        if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
+        if(same(statFile(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
        }
       }finally{fs.unlinkSync(anchor);}
      }
@@ -93,11 +95,11 @@ function lock(dir,recover=false,name='.journal.lock'){
   }finally{releaseGuard();}
  }
  return ()=>{
-  const entry=fs.statSync(file),current=readOwner(entry);
+  const entry=statFile(file),current=readOwner(entry);
   if(current.id!==owner.id)throw new Error('Изменился владелец блокировки');
   fs.unlinkSync(file);
   const candidate=candidateFor(owner);
-  if(same(fs.statSync(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
+  if(same(statFile(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
  };
 }
 

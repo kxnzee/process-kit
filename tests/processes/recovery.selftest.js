@@ -110,7 +110,30 @@ try{
   }
   assert.deepEqual(fs.readdirSync(dir),[]);
  });
- check('recovery preserves an unrelated candidate and unsupported hard links fail closed',()=>{
+  check('recovery and release preserve unrelated candidates when numeric inode values collide',()=>{
+   const storage=require('../../tools/lib/runtime/run-storage'),dir=path.join(tmp,'candidate-precision');fs.mkdirSync(dir);
+   const moduleFile=path.join(tmp,'tools/lib/runtime/run-storage.js'),file=path.join(dir,'.journal.lock');
+   const dead=spawnSync(process.execPath,['-e',"require(process.argv[1]).lock(process.argv[2]);",moduleFile,dir],{encoding:'utf8'});assert.equal(dead.status,0,dead.stderr);
+   const previous=JSON.parse(fs.readFileSync(file,'utf8')),candidate=path.join(dir,`.journal.lock.${previous.pid}.${previous.id}.candidate`);
+   fs.unlinkSync(candidate);fs.writeFileSync(candidate,'unrelated previous candidate');
+   assert.notEqual(fs.statSync(file,{bigint:true}).ino,fs.statSync(candidate,{bigint:true}).ino);
+   const stat=fs.statSync;
+   try{
+    // Force the Number precision collision independently of filesystem allocation.
+    fs.statSync=function(target,options){const entry=stat.apply(this,arguments);if(entry?.isFile()&&path.dirname(target)===dir&&!options?.bigint)entry.ino=Number(2n**53n);return entry;};
+    assert.equal(fs.statSync(file).ino,fs.statSync(candidate).ino);
+    const release=storage.lock(dir,true);
+    assert.equal(fs.readFileSync(candidate,'utf8'),'unrelated previous candidate');
+    const current=JSON.parse(fs.readFileSync(file,'utf8')),currentCandidate=path.join(dir,`.journal.lock.${current.pid}.${current.id}.candidate`);
+    fs.unlinkSync(currentCandidate);fs.writeFileSync(currentCandidate,'unrelated current candidate');
+    assert.notEqual(fs.statSync(file,{bigint:true}).ino,fs.statSync(currentCandidate,{bigint:true}).ino);
+    release();assert.equal(fs.existsSync(file),false);
+    assert.equal(fs.readFileSync(currentCandidate,'utf8'),'unrelated current candidate');
+    fs.unlinkSync(candidate);fs.unlinkSync(currentCandidate);
+   }finally{fs.statSync=stat;}
+   assert.deepEqual(fs.readdirSync(dir),[]);
+  });
+  check('recovery preserves an unrelated candidate and unsupported hard links fail closed',()=>{
   const storage=require('../../tools/lib/runtime/run-storage'),dir=path.join(tmp,'candidate-identity');fs.mkdirSync(dir);
   const moduleFile=path.join(tmp,'tools/lib/runtime/run-storage.js'),file=path.join(dir,'.journal.lock');
   const dead=spawnSync(process.execPath,['-e',"require(process.argv[1]).lock(process.argv[2]);",moduleFile,dir],{encoding:'utf8'});assert.equal(dead.status,0,dead.stderr);

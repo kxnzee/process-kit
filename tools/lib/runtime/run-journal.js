@@ -5,7 +5,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const {runFolderUnique,validRunFolderName}=require('../core/paths');
 const {processModel,NAME}=require('../entities/process-model');
 const {inside}=require('../core/safe-path');
-const {dependencies,action,stepParams,childParams}=require('../entities/process-dependencies');
+const {dependencies,action,stepParams,childParams,declaredParams}=require('../entities/process-dependencies');
 const {validateArtifact}=require('../contracts/artifact-contract');
 const {updateHistory}=require('./history');
 const storage=require('./run-storage'),trust=require('./trust');
@@ -44,6 +44,18 @@ function facts(artifacts){
  }
  return result;
 }
+// Компактный ответ CLI: снимок целостности (identity, хеши) и дубли параметров не печатаются —
+// целостность журнал сверяет по .run/state.json, а не по stdout. Полный ответ — run с --full.
+function brief(command,response){
+ if(!response||typeof response!=='object')return response;
+ if(command==='start'){const {output,outputDir,summaryFile,startRequestFile,reused,state,connections,entities,readFiles,note}=response;
+  return {output,outputDir,summaryFile,startRequestFile,reused,state:{status:state?.status,next_step:state?.next_step,params:state?.params},connections,entities,readFiles,note};}
+ if(!Object.hasOwn(response,'identity'))return response;
+ const {identity,artifactHashes,recordedArtifacts,scopeParams,sourceDescription,title,updated,pending,stack,...rest}=response;
+ return {...rest,pending:pending?{id:pending.id,step:pending.step,index:pending.index,params:pending.params}:pending,
+  stack:(stack||[]).map(frame=>({process:frame.process,call:frame.call,next:frame.next,alias:frame.alias||null})),
+  note:'Полное состояние: .run/state.json этого прогона; ответ целиком — run с --full.'};
+}
 function summary(cwd,output,state,spec={}){
  const folder=inside(cwd,'outputs/'+output),demo=state.identity.mode==='demo',testing=state.identity.definitionTest,status=state.status==='completed'?'готово':state.status==='failed'?'не получилось: '+(spec.reason||state.failure?.reason||'шаг остановлен'):'выполняется',files=humanFiles(state);
  const listed=[...new Set(Object.values(files))];
@@ -67,12 +79,12 @@ function startNew(cwd,spec,environment={},request={}){
  if(spec.inputText!==undefined&&typeof spec.inputText!=='string')throw new Error('inputText должен быть текстом');
  if(!NAME.test(spec.process||'')||!['local','live','demo'].includes(spec.mode))throw new Error('Нужны process и mode');
  const draft=processModel(fs.readFileSync(inside(cwd,`processes/${spec.process}/PROCESS.md`),'utf8'));
- const params=effectiveParams(cwd,spec,draft.data.params||{});
+ const params=effectiveParams(cwd,spec,declaredParams(cwd,spec.process,draft));
  const overrides=Object.fromEntries(Object.keys({...spec.params,...spec.explicitParams}).map(key=>[key,params[key]]));
  if(!spec.definitionTest)require('../entities/process-release').admitPublished(cwd,spec.process,params,overrides);
  const model=validateDefinition(cwd,spec.process);if(model.data.status!=='действует')throw new Error('Процесс устарел');
  const slug=(spec.mode==='demo'?'проба-':'')+(spec.slug||spec.process);
- validateRunInput(cwd,spec.process,model,params);
+ validateRunInput(cwd,spec.process,model,params,{mode:spec.mode});
  const proposed=request.output?inside(cwd,'outputs/'+request.output):runFolderUnique(cwd,`${spec.date}_${slug}`);if(!proposed)throw new Error('Неверное/занятое имя output');const output=path.basename(proposed),dir=inside(cwd,`outputs/${output}/.run`);
  const generatedInput=spec.inputText!==undefined?path.relative(cwd,inside(dir,'inputs/input.md')):null;
  if(generatedInput){params.input=generatedInput;if(Object.hasOwn(overrides,'input'))overrides.input=generatedInput;}
@@ -320,4 +332,4 @@ function executeLocked(cwd,spec,environment){
   return operation(cwd,'save',{output:spec.output,step:step.name,attemptId:state.pending.id,artifact:step.artifact,extension,content:value,next:step.next},environment);
  }catch(error){if(attemptId&&json(inside(dir,'state.json')).pending?.id===attemptId)failStep(cwd,spec.output,error.message,environment,operationLocked);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
 }
-module.exports={start,operation,execute,failStep,effectiveParams};
+module.exports={brief,start,operation,execute,failStep,effectiveParams};

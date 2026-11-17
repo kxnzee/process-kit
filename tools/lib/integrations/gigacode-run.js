@@ -37,4 +37,4 @@ function run(cwd,command,spec){
  return controller.operation(cwd,command,spec,options);
 }
 module.exports={run};
-if(require.main===module){try{const [command,file,...rest]=process.argv.slice(2);if(!file||rest.length||!commands.includes(command))throw new Error('node tools/kit.js run <'+commands.join('|')+'> <spec.json>');console.log(JSON.stringify(run(root(),command,JSON.parse(fs.readFileSync(file,'utf8'))),null,2));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}
+if(require.main===module){try{const [command,file,...rest]=process.argv.slice(2);if(!file||rest.some(flag=>flag!=='--full')||!commands.includes(command))throw new Error('node tools/kit.js run <'+commands.join('|')+'> <spec.json> [--full]');const response=run(root(),command,JSON.parse(fs.readFileSync(file,'utf8'))),full=rest.includes('--full');console.log(JSON.stringify(full?response:controller.brief(command,response),null,full?2:undefined));}catch(error){console.error(error.message);if(error.summaryFile)console.error('Итог: '+error.summaryFile);process.exitCode=1;}}

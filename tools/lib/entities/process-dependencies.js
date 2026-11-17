@@ -31,10 +31,11 @@ function bind(value,params,artifacts={}){
   // Replace only tokens outside JSON strings, parse JSON, then restore typed values.
   const references=new Map();let encoded='',quoted=false,escaped=false;
   for(let i=0;i<value.length;){
-   const match=!quoted&&value.slice(i).match(/^\{params\.([^}]+)\}/);
+   const match=!quoted&&value.slice(i).match(/^\{(?:params\.([^}]+)|([a-z0-9-]+))\}/);
    if(match){
-    if(!Object.hasOwn(params,match[1]))throw new Error('Нет параметра JSON: '+match[1]);
-    const token='pk-binding-'+require('node:crypto').randomUUID();references.set(token,params[match[1]]);encoded+=JSON.stringify(token);i+=match[0].length;continue;
+    const source=match[1]?params:artifacts,key=match[1]||match[2];
+    if(match[1]&&!Object.hasOwn(source,key))throw new Error('Нет параметра JSON: '+key);
+    const token='pk-binding-'+require('node:crypto').randomUUID();references.set(token,Object.hasOwn(source,key)?source[key]:match[0]);encoded+=JSON.stringify(token);i+=match[0].length;continue;
    }
    const ch=value[i++];encoded+=ch;
    if(escaped){escaped=false;continue;}if(quoted&&ch==='\\'){escaped=true;continue;}if(ch==='"')quoted=!quoted;
@@ -56,7 +57,45 @@ function stepParams(params,step,overrides={},artifacts={},defaults={}){
 function childParams(cwd,parent,step,params,artifacts={},overrides={}){
  const child=processModel(fs.readFileSync(inside(cwd,`processes/${step.ref}/PROCESS.md`),'utf8'));
  const scope={...params,...overrides};
- return {...params,...child.data.params,...Object.fromEntries(Object.entries(step.params).map(([key,value])=>[key,bind(value,scope,artifacts)])),...overrides};
+ return {...params,...declaredParams(cwd,step.ref,child),...Object.fromEntries(Object.entries(step.params).map(([key,value])=>[key,bind(value,scope,artifacts)])),...overrides};
+}
+// Файл настроек ближнего уровня заменяет процессу его собственные значения params,
+// но не то, что в него передал вызывающий процесс или человек явным аргументом.
+function processSettings(cwd,name,model){
+ return require('../config/process-settings').merge(cwd,name,Object.keys(model.data.params||{}),model.data.requires?.config||[]);
+}
+function declaredParams(cwd,name,model){
+ return {...model.data.params,...processSettings(cwd,name,model).params};
+}
+// Explicit data inputs are pinned by each Run, but are not executable definition resources.
+// Keep this inventory static: no runtime hooks or user-selected modules are loaded here.
+function runtimeInputFiles(cwd,name,params={},overrides=params){
+ const files=new Set(),protectedFiles=new Set();
+ const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
+ function visit(name,inherited,stack=[]){
+  if(!NAME.test(name||''))throw new Error('Неверное имя процесса');
+  if(stack.includes(name)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
+  const model=processModel(fs.readFileSync(inside(cwd,`processes/${name}/PROCESS.md`),'utf8'));
+  const inputs=model.data.runtimeInputs||[],declared=model.data.params||{},values={...declaredParams(cwd,name,model),...inherited};
+  if(!Array.isArray(inputs)||new Set(inputs).size!==inputs.length||inputs.some(key=>typeof key!=='string'||!Object.hasOwn(declared,key)||['dataFile','input','resultContract','rulesFile','rendererFile','templateFile','queryFile','styleFile'].includes(key)))throw new Error('runtimeInputs: нужны уникальные имена объявленных параметров данных');
+  for(const key of inputs){
+   const file=values[key];if(file==='')continue;
+   if(typeof file!=='string'||!file.startsWith(`processes/${name}/data/`)||!/\.(json|xlsx)$/i.test(file)||file.includes('\\')||file.split('/').some(part=>!part||part==='.'||part==='..'))throw new Error('runtimeInputs: нужен JSON/XLSX из data/ своего процесса: '+key);
+   inside(cwd,file);files.add(file);
+  }
+  for(const step of model.steps.filter(step=>step.kind==='action')){
+   const meta=action(cwd,step.ref),effective=stepParams(values,step,overrides,{},meta.defaults);
+   for(const file of meta.requiresFiles||[])protectedFiles.add(file);
+   for(const key of ['resultContract','rulesFile','rendererFile','templateFile','queryFile','styleFile'])if(typeof effective[key]==='string')protectedFiles.add(effective[key]);
+   for(const file of Object.values(meta.contracts))if(file!=='text')protectedFiles.add(`actions/${step.ref}/${file}`);
+  }
+  const children=new Set(model.data.requires?.processes||[]);
+  for(const step of model.steps.filter(step=>step.kind==='process')){children.delete(step.ref);visit(step.ref,childParams(cwd,model,step,values,{},overrides),[...stack,name]);}
+  for(const ref of children)visit(ref,childParams(cwd,model,{ref,params:{}},values,{},overrides),[...stack,name]);
+ }
+ visit(name,params);
+ for(const file of files)if(protectedFiles.has(file))throw new Error('runtimeInputs не может исключать ресурс определения: '+file);
+ return [...files].sort();
 }
 // Freeze the shipped implementation, including transitive helpers, without loading it.
 // A conservative inventory avoids maintaining a second, incomplete import graph.
@@ -76,7 +115,7 @@ function definitionFiles(cwd,name,params={},overrides=params){
   if(!NAME.test(name||''))throw new Error('Неверное имя процесса');
   if(stack.includes(name)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
   const file=`processes/${name}/PROCESS.md`;files.add(file);
-  const model=processModel(fs.readFileSync(inside(cwd,file),'utf8')),values={...model.data.params,...inherited};
+  const model=processModel(fs.readFileSync(inside(cwd,file),'utf8')),values={...declaredParams(cwd,name,model),...inherited};
   if(model.data.branchRule)tree(`processes/${name}/rules`);
   for(const ref of model.data.requires?.actions||[]){if(!NAME.test(ref))throw new Error('Неверное действие');tree('actions/'+ref);}
   for(const step of model.steps.filter(s=>s.kind==='action')){
@@ -100,7 +139,8 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
  const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;include('config/master/config.json');
  function visit(process,values,depth=0){
   if(!NAME.test(process)||visiting.has(process)||depth>=maxDepth)throw new Error('Цикл или глубина подпроцессов');visiting.add(process);
-  const model=processModel(include(`processes/${process}/PROCESS.md`));require('./entities').declarations(cwd,process,model);values={...model.data.params,...values};if(model.errors.length)throw new Error(model.errors.join('; '));
+  const model=processModel(include(`processes/${process}/PROCESS.md`));require('./entities').declarations(cwd,process,model);if(model.errors.length)throw new Error(model.errors.join('; '));
+  const settings=processSettings(cwd,process,model);for(const file of settings.files)include(file);values={...model.data.params,...settings.params,...values};
   if(model.data.branchRule){include(`processes/${process}/${model.data.branchRule}`);entityFiles(`processes/${process}/rules`);}
   for(const level of model.data.requires?.context||[])for(const file of require('./context').contextLevel(cwd,process,level))include(file);
   if(model.data.requires?.context?.includes('team'))for(const file of require('../config/config').loadConfig(cwd).files)include(file);
@@ -131,6 +171,7 @@ function dependencies(cwd,name,params={},mode='local',extras=[],overrides=params
   }
   visiting.delete(process);
  }
+ for(const file of runtimeInputFiles(cwd,name,params,overrides))include(file);
  for(const file of definitionFiles(cwd,name,params,overrides))include(file);
  visit(name,params);
  for(const file of extras)if(!files.has(file)){
@@ -155,4 +196,4 @@ function resultPorts(cwd,name,stack=[]){
  }
  visit(model.entry,null);return [...found];
 }
-module.exports={literalParams,runtimeFiles,definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};
+module.exports={processSettings,declaredParams,runtimeInputFiles,literalParams,runtimeFiles,definitionFiles,dependencies,action,bind,stepParams,childParams,resultPorts};

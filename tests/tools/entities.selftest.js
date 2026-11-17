@@ -1,7 +1,17 @@
 'use strict';
 const ctx=require('../fixture')(),{fs,path,assert,tmp,write,check}=ctx;
 const {manifest}=require('../../tools/lib/entities/entities'),journal=require('../../tools/lib/runtime/run-journal');
+const {stepParams}=require('../../tools/lib/entities/process-dependencies');
 try{
+ check('step parameters pass maps and lists by reference instead of collapsing them to text',()=>{
+  const params={scales:{'Раздел A':['rules/gmi.js','rule-apply']},aliases:{частота:['ежедневно']},readOnly:['params.goal'],notes:'processes/example/notes.md',goal:'6.0'};
+  const bound=stepParams(params,{name:'check',params:{parameters:'{"scales":{params.scales},"aliases":{params.aliases},"readOnly":{params.readOnly},"notes":"{params.notes}"}',
+   list:'[{params.readOnly}]',quoted:'["{params.goal}"]',title:'цель {params.goal}',data:'{report-data}'}},{},{'report-data':'05-compose.md'});
+  assert.deepEqual(bound.parameters,{scales:{'Раздел A':['rules/gmi.js','rule-apply']},aliases:{частота:['ежедневно']},
+   readOnly:['params.goal'],notes:'processes/example/notes.md'});
+  assert.deepEqual(bound.list,[['params.goal']]);assert.deepEqual(bound.quoted,['6.0']);
+  assert.equal(bound.title,'цель 6.0');assert.equal(bound.data,'05-compose.md');
+ });
  check('JSON bindings preserve objects and arrays without rebinding user strings',()=>{
   const {bind}=require('../../tools/lib/entities/process-dependencies');
   const params={map:{section:['target','method'],literal:'{params.name}'},name:'Текст \"с кавычками\"',list:[1,true,'a']};

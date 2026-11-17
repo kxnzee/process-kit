@@ -29,10 +29,13 @@ try{
   assert.equal(JSON.parse(config.stdout).schemaVersion,2);
   const manifest=call(['entities','example','local']);assert.equal(manifest.status,0,manifest.stderr);assert.equal(JSON.parse(manifest.stdout).ready,true);
   let number=0;
-  const run=(command,spec)=>{const file=path.join(tmp,`spec-${number++}.json`);fs.writeFileSync(file,JSON.stringify(spec));const result=call(['run',command,file]);assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};
+  const run=(command,spec,flags=[])=>{const file=path.join(tmp,`spec-${number++}.json`);fs.writeFileSync(file,JSON.stringify(spec));const result=call(['run',command,file,...flags]);assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};
   const started=run('start',{process:'example',mode:'local',date:'2026-11-05',inputText:'12 задач.',params:{to:'User',subject:'Status'}}),output=started.output;
-  const begun=run('begin',{output,step:'edit'});run('save',{...begun.save,content:'12 задач.'});run('execute',{output,step:'draft'});
-  const state=run('finish',{output,resultName:'письмо.md'});assert.equal(state.status,'completed');assert.ok(fs.readFileSync(path.join(tmp,'outputs',output,'письмо.md'),'utf8').endsWith('12 задач.'));
+  assert.equal(started.state.params.to,'User');assert.ok(!Object.hasOwn(started,'identity')&&!Object.hasOwn(started,'files')&&Array.isArray(started.readFiles));
+  const full=run('next',{output},['--full']);assert.ok(full.spec);
+  const begun=run('begin',{output,step:'edit'},['--full']);assert.ok(begun.identity&&begun.pending.params);run('save',{...begun.save,content:'12 задач.'});run('execute',{output,step:'draft'});
+  const state=run('finish',{output,resultName:'письмо.md'});assert.ok(!state.identity&&state.summaryFile&&state.resultFile);assert.equal(state.status,'completed');assert.ok(fs.readFileSync(path.join(tmp,'outputs',output,'письмо.md'),'utf8').endsWith('12 задач.'));
+  const bogus=call(['run','next',path.join(tmp,'spec-0.json'),'--bogus']);assert.equal(bogus.status,1);assert.match(bogus.stderr,/\[--full\]/);
   const diagnostic=run('diagnose',{output});
   const file=diagnostic.reportFile;assert.ok(fs.existsSync(file));assert.ok(!fs.readFileSync(file,'utf8').includes('12 задач.'));
  });

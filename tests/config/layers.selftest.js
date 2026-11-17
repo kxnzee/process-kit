@@ -93,4 +93,37 @@ try{
   const run=journal.start(tmp,{process:'my-select',mode:'live',date:'2026-11-04'});
   my.preferences.language='en';save();assert.throws(()=>journal.operation(tmp,'begin',{output:run.output,step:'read'}),/Изменён вход/);
  });
+ check('process settings file of the nearest level fills declared params and is pinned in the snapshot',()=>{
+  const {resolveProcess}=require('../../tools/lib/config/config'),{spawnSync}=require('node:child_process');
+  const rules=(...args)=>spawnSync(process.execPath,[path.join(source,'tools/lib/validation/validate.js'),'--root',tmp,'--only','processFiles','--json',...args],{encoding:'utf8'});
+  my.defaults={};save();
+  write('processes/my-perimeter/queries/tasks.md','# Read tasks\n');
+  write('processes/my-perimeter/PROCESS.md','---\nname: my-perimeter\nversion: 1.0.0\narea: тест\nstatus: действует\npublication: required\ndescription: Process settings test\nexample: test\nrequires:\n  config: [master, team, my]\nparams:\n  taskStore: ""\nentry: read\n---\n## Шаги\n### read\n- действие: run-query\n- параметры:\n  - `taskStore: {params.taskStore}`\n  - `queryFile: processes/my-perimeter/queries/tasks.md`\n  - `parameters: {}`\n- артефакт: task-records\n- следующий: end\n');
+  assert.equal(resolveProcess(tmp,'my-perimeter').ready,false);
+  write('config/team/processes/my-perimeter.json',JSON.stringify({taskStore:'team-tasks'}));
+  let resolved=resolveProcess(tmp,'my-perimeter');
+  assert.equal(resolved.ready,true,JSON.stringify(resolved.missing));
+  assert.equal(resolved.connections[0].id,'team-tasks');
+  assert.equal(resolved.paramOrigins['my-perimeter:taskStore'],'config/team/processes/my-perimeter.json');
+  write('config/my/processes/my-perimeter.json',JSON.stringify({taskStore:'my-tasks'}));
+  resolved=resolveProcess(tmp,'my-perimeter');
+  assert.equal(resolved.connections[0].id,'my-tasks');
+  assert.equal(resolved.paramOrigins['my-perimeter:taskStore'],'config/my/processes/my-perimeter.json');
+  assert.equal(resolveProcess(tmp,'my-perimeter',{taskStore:'team-tasks'}).connections[0].id,'team-tasks');
+  assert.ok(dependencies(tmp,'my-perimeter',{},'live').includes('config/my/processes/my-perimeter.json'));
+  const run=journal.start(tmp,{process:'my-perimeter',mode:'live',date:'2026-11-16'});
+  const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/state.json')));
+  assert.equal(state.params.taskStore,'my-tasks');
+  assert.ok(Object.keys(state.identity.files).includes('config/my/processes/my-perimeter.json'));
+  fs.writeFileSync(path.join(tmp,'config/my/processes/my-perimeter.json'),JSON.stringify({taskStore:'team-tasks'}));
+  assert.throws(()=>journal.operation(tmp,'begin',{output:run.output,step:'read'}),/Изменён вход/);
+  fs.writeFileSync(path.join(tmp,'config/my/processes/my-perimeter.json'),JSON.stringify({taskStore:'my-tasks'}));
+  write('config/my/processes/my-perimeter.json',JSON.stringify({taskStr:'my-tasks'}));
+  assert.throws(()=>resolveProcess(tmp,'my-perimeter'),/не объявлен в params процесса/);
+  write('config/my/processes/my-perimeter.json',JSON.stringify({taskStore:'my-tasks'}));
+  assert.equal(rules().status,0,rules().stdout);
+  write('config/my/processes/no-such-process.json','{}');
+  const orphan=rules();assert.notEqual(orphan.status,0);assert.match(orphan.stdout,/настройки процесса no-such-process, а процесса нет/);
+  fs.unlinkSync(path.join(tmp,'config/my/processes/no-such-process.json'));
+ });
 }finally{ctx.close();}

@@ -6,6 +6,10 @@ const {inside}=require('../core/safe-path'),{root}=require('../core/paths');
 const {validateDefinition}=require('./process-definition'),{dependencies}=require('./process-dependencies');
 const {atomic,hash}=require('../runtime/run-storage');
 const relevant=file=>/^(processes|actions|context)\//.test(file)&&!file.endsWith('/publication.json');
+function publicationFiles(cwd,name,files,params={},overrides=params){
+ const inputs=new Set(require('./process-dependencies').runtimeInputFiles(cwd,name,params,overrides));
+ return files.filter(file=>file!==params.dataFile&&!inputs.has(file));
+}
 function snapshot(cwd,files){return Object.fromEntries([...new Set(files)].filter(relevant).sort().map(file=>[file,hash(fs.readFileSync(inside(cwd,file)))]));}
 function validReceipt(receipt,process=receipt?.process){
  if(!receipt||receipt.schemaVersion!==1||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
@@ -40,12 +44,12 @@ function assertPublished(cwd,name,files=[],params={},overrides=params){
  const file=inside(cwd,`processes/${name}/publication.json`);
  const receipt=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(receipt?.status!=='published'||receipt.process!==name||!current(cwd,receipt))throw new Error('Определение не опубликовано или изменилось после проверки: выполните definition validate/test/publish');
- for(const [file,digest]of Object.entries(snapshot(cwd,files)))if(receipt.files[file]!==digest)throw new Error('Выбранная зависимость не проверена при публикации: '+file);
+ for(const [file,digest]of Object.entries(snapshot(cwd,publicationFiles(cwd,name,files,params,overrides))))if(receipt.files[file]!==digest)throw new Error('Выбранная зависимость не проверена при публикации: '+file);
 }
 function assertPublishedTree(cwd,name,params,mode,overrides,files,options={}){
  admitPublished(cwd,name,params,overrides);
  const model=validateDefinition(cwd,name);
- assertPublished(cwd,name,(files||dependencies(cwd,name,params,mode,[],overrides,options)).filter(f=>f!==params.dataFile),params,overrides);
+ assertPublished(cwd,name,files||dependencies(cwd,name,params,mode,[],overrides,options),params,overrides);
  const {childParams}=require('./process-dependencies');
  for(const step of model.steps.filter(s=>s.kind==='process'))assertPublishedTree(cwd,step.ref,childParams(cwd,model,step,params,{},overrides),mode,overrides,undefined,options);
 }
@@ -57,8 +61,8 @@ function lifecycle(cwd,operation,spec){
  if(!['validate','test','publish'].includes(operation))throw new Error('Нужна операция inspect/validate/test/publish/status');
  let receipt;
  if(operation==='validate'){
-  const params={...model.data.params,...spec.params};
-  const files=dependencies(cwd,spec.process,params,spec.mode==='demo'?'demo':'local',[],spec.params||{}).filter(f=>f!==params.dataFile);
+  const params={...require('./process-dependencies').declaredParams(cwd,spec.process,model),...spec.params};
+  const files=publicationFiles(cwd,spec.process,dependencies(cwd,spec.process,params,spec.mode==='demo'?'demo':'local',[],spec.params||{}),params,spec.params||{});
   receipt={schemaVersion:1,process:spec.process,status:'validated',files:snapshot(cwd,files)};
  }else{
   if(previous?.process!==spec.process||!current(cwd,previous))throw new Error('Сначала definition validate для текущей версии');
@@ -70,7 +74,7 @@ function lifecycle(cwd,operation,spec){
     const card=require('../runtime/run-journal').operation(cwd,'next',{output});
     const dir=inside(cwd,`outputs/${output}/.run`),state=JSON.parse(fs.readFileSync(inside(dir,'state.json'),'utf8'));
     if(card.status!=='completed'||state.identity.process!==spec.process||!state.identity.definitionTest||!['local','demo'].includes(state.identity.mode))throw new Error('Требуется завершённый local/demo definitionTest текущего процесса');
-    for(const f of Object.keys(state.identity.files))if(f!==state.identity.params.dataFile)allFiles.add(f);
+    for(const f of publicationFiles(cwd,spec.process,Object.keys(state.identity.files),state.identity.params,state.identity.overrides))allFiles.add(f);
     const rows=fs.readFileSync(inside(dir,'trace.jsonl'),'utf8').trim().split('\n').map(JSON.parse);
     for(const e of rows)if(e.type==='branch_decision')covered.add(`${e.process}:${e.step}:${e.next}`);
    }

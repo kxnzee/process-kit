@@ -1,0 +1,248 @@
+{
+  "type": "object",
+  "description": "Таблица оценок сотрудников, прочитанная из файла без пересчётов. Числа и тексты дословные из ячеек; null — в файле значения нет (пусто или «-»), а не ноль. Проверка сходится так: employees.length + skipped.length равно числу строк данных файла.",
+  "required": ["source", "names", "employees", "skipped", "gaps"],
+  "properties": {
+    "source": {
+      "type": "object",
+      "description": "Откуда прочитано и что в файле осталось неразобранным",
+      "required": ["file", "format", "sheet", "columnCount", "dataRowCount", "unknownColumns"],
+      "properties": {
+        "file": { "type": "string", "minLength": 1, "description": "Точный путь файла, переданный параметром scoreFile" },
+        "format": { "type": "string", "enum": ["xlsx", "json"], "description": "Формат входа по разрешению" },
+        "sheet": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+          "description": "Имя прочитанного листа для xlsx; для json — null"
+        },
+        "columnCount": { "type": "integer", "minimum": 1, "description": "Число столбцов строки заголовков файла" },
+        "dataRowCount": { "type": "integer", "minimum": 0, "description": "Число строк данных под заголовками, включая пропущенные" },
+        "unknownColumns": {
+          "type": "array",
+          "description": "Заголовки, которые шаг не знает: значение этих столбцов в артефакт не попало",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "names": {
+      "type": "object",
+      "description": "Справка о том, откуда ФИО: из колонки выгрузки, из справочника или ниоткуда — в отчёте это видно по числам",
+      "required": ["file", "column", "source", "matched", "unmatched"],
+      "properties": {
+        "file": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+          "description": "Путь справочника ФИО или null — справочник не передан"
+        },
+        "column": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+          "description": "Заголовок колонки ФИО в файле или null — такой колонки в снимке нет"
+        },
+        "source": {
+          "anyOf": [{ "enum": ["колонка таблицы", "справочник"] }, { "type": "null" }],
+          "description": "Откуда взято большинство ФИО; null — ни одна строка не получила имя"
+        },
+        "matched": { "type": "integer", "minimum": 0, "description": "Сколько строк получили ФИО — из колонки или из справочника" },
+        "unmatched": { "type": "integer", "minimum": 0, "description": "Сколько строк остались с табельным номером" }
+      },
+      "additionalProperties": false
+    },
+    "employees": {
+      "type": "array",
+      "description": "По одной строке на строку файла с заполненным номером сотрудника; порядок файла сохранён",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "initiative", "targetAudience", "team", "teamTitle", "teamType", "role", "expertise", "usage", "training", "skills", "productivity", "total", "percentiles", "tribeTotal"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "description": "Номер сотрудника дословно из файла — устойчивый идентификатор строки (столбец «Номер сотрудникА» или «ТН»)" },
+          "name": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "ФИО: значение колонки выгрузки, а если её нет — из справочника; null — ни там ни там не нашлось" },
+          "initiative": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "targetAudience": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Признак целевой аудитории GigaCode дословно («Да»/«Нет»)" },
+          "team": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Код команды из файла" },
+          "teamTitle": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Название команды из файла (столбец «Команда»); null — в снимке такой колонки нет или она пуста" },
+          "teamType": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "role": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Основная роль из файла" },
+          "expertise": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Область экспертизы из файла" },
+          "usage": {
+            "type": "object",
+            "required": ["frequency", "mode"],
+            "properties": {
+              "frequency": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Частота использования дословно" },
+              "mode": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Режим работы дословно (ассистент или агент)" }
+            },
+            "additionalProperties": false
+          },
+          "training": {
+            "type": "object",
+            "description": "Блок «Обучение и применение»: исходные признаки и баллы файла",
+            "required": ["onTime", "audience", "courses", "balls"],
+            "properties": {
+              "onTime": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Число курсов, завершённых в срок, из столбца файла" },
+              "audience": {
+                "type": "object",
+                "description": "Признаки целевого аудиторного курса: вне ЦА курса его статус на балл не влияет",
+                "required": ["context", "sdd"],
+                "properties": {
+                  "context": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                  "sdd": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+                },
+                "additionalProperties": false
+              },
+              "courses": {
+                "type": "array",
+                "description": "Курс и его статус дословно; столбцов без известного имени здесь нет",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "status"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "status": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "balls": {
+                "type": "object",
+                "required": ["courses", "frequency", "mode", "total"],
+                "properties": {
+                  "courses": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "frequency": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "mode": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "total": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Балл блока из файла: сверяется с пересчётом правила" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "skills": {
+            "type": "object",
+            "description": "Блок «Навыки»: уровни и флаги шести навыков, когорта токенов и баллы файла",
+            "required": ["planReached", "doneCount", "list", "tokens", "cohort", "balls"],
+            "properties": {
+              "planReached": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Сводный флаг «достиг планового значения по навыкам» дословно" },
+              "doneCount": { "type": "integer", "minimum": 0, "description": "Сколько навыков помечены достигшими планового уровня по флагам файла" },
+              "list": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "level", "done"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "level": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Уровень навыка из файла" },
+                    "done": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Флаг достижения планового уровня из файла (1/0)" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "tokens": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Количество токенов CLI из файла" },
+              "cohort": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Когорта потребления токенов дословно" },
+              "balls": {
+                "type": "object",
+                "required": ["plan", "count", "cohort", "total"],
+                "properties": {
+                  "plan": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "count": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "cohort": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                  "total": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Балл блока «Навыки и токены» из файла" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "productivity": {
+            "type": "object",
+            "description": "Блок «Продуктивность»: шесть метрик с градациями файла плюс строка про Story",
+            "required": ["metrics", "story", "totalBall"],
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "description": "По одной записи на известную метрику продуктивности; порядка столбцов файл не диктует",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "value", "band", "toMedian", "median", "ball"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "value": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Индивидуальный показатель за период" },
+                    "band": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Градация файла дословно (top/mid/bot)" },
+                    "toMedian": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Отношение к медиане целевой аудитории, процентах" },
+                    "median": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                    "ball": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "story": {
+                "type": "object",
+                "required": ["team", "cluster", "comparison", "ball"],
+                "properties": {
+                  "team": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Story на сотрудника в его команде" },
+                  "cluster": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Story на сотрудника по цели кластера" },
+                  "comparison": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Сравнение с целью кластера дословно" },
+                  "ball": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
+                },
+                "additionalProperties": false
+              },
+              "totalBall": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Балл блока «Продуктивность и Story» из файла" }
+            },
+            "additionalProperties": false
+          },
+          "total": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "«Общий итог» из файла: базовая величина отбора ниже цели" },
+          "percentiles": {
+            "type": "object",
+            "description": "Справочные величины распределения из файла: квартили, оценка в баллах перцентиля и медиана блока с флагом рекомендации",
+            "required": ["p25", "p50", "bpScore", "blocks"],
+            "properties": {
+              "p25": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "p50": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "bpScore": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["block", "p50", "recommendation"],
+                  "properties": {
+                    "block": { "type": "string", "minLength": 1 },
+                    "p50": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+                    "recommendation": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Флаг рекомендации блока из файла (1/0)" }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "tribeTotal": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "Средний общий итог трайба из файла — справка для знаменателя, человека по ней не оценивают" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "description": "Строки данных, не ставшие строками сотрудника: номер не заполнен",
+      "items": {
+        "type": "object",
+        "required": ["row", "reason"],
+        "properties": {
+          "row": { "type": "integer", "minimum": 1, "description": "Номер строки файла, считая от единиц" },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "Сколько раз пустовал каждый знакомый столбец; пустое значение не приравнивается нулю",
+      "items": {
+        "type": "object",
+        "required": ["field", "count"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,221 @@
+{
+  "type": "object",
+  "description": "Данные отчёта «GigaCode Maturity Index: цифры кластера и план подъёма». Счётчики и средние считает правило процесса; форма отчёта ничего не пересчитывает. Знаменатель средних — строки с заполненным «Общий итог» (counters.counted), он же называется в отчёте.",
+  "required": ["meta", "cluster", "people", "levers", "counters", "mismatches", "gaps", "notes", "questions"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["reportTitle", "generatedAt", "demo", "goal", "source", "methodologyVersion", "perimeter", "names"],
+      "properties": {
+        "reportTitle": { "type": "string", "minLength": 1 },
+        "generatedAt": { "type": "string", "minLength": 1, "description": "Дата прогона, дд.мм.гггг" },
+        "demo": { "type": "boolean", "description": "true — данные вымышлены, форма обязана показать это первой строкой" },
+        "goal": {
+          "type": "object",
+          "description": "Цель владельца процесса и её разложение по весам блоков 30/30/40",
+          "required": ["total", "warn", "training", "skills", "productivity", "max"],
+          "properties": {
+            "total": { "type": "number", "minimum": 0 },
+            "warn": { "type": "number", "minimum": 0, "description": "Предупреждающий порог владельца: ниже него оценка E" },
+            "training": { "type": "number", "minimum": 0 },
+            "skills": { "type": "number", "minimum": 0 },
+            "productivity": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 1, "description": "Максимум шкалы методики: 3 + 3 + 4" }
+          },
+          "additionalProperties": false
+        },
+        "source": {
+          "type": "object",
+          "description": "Откуда взята таблица: путь, формат, лист и размеры",
+          "required": ["file", "format", "sheet", "columnCount", "dataRowCount", "unknownColumns"],
+          "properties": {
+            "file": { "type": "string", "minLength": 1 },
+            "format": { "type": "string", "enum": ["xlsx", "json"] },
+            "sheet": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+            "columnCount": { "type": "integer", "minimum": 1 },
+            "dataRowCount": { "type": "integer", "minimum": 0 },
+            "unknownColumns": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+          },
+          "additionalProperties": false
+        },
+        "methodologyVersion": { "type": "string", "description": "Каким снимком методики воспользовалось правило; пусто — версия не закреплена и это видно в оговорках" },
+        "perimeter": { "type": "string", "minLength": 1, "description": "Как назван периметр: все строки файла или отбор" },
+        "names": {
+          "type": "object",
+          "required": ["file", "column", "source", "matched", "unmatched"],
+          "properties": {
+            "file": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+            "column": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+            "source": { "anyOf": [{ "enum": ["колонка таблицы", "справочник"] }, { "type": "null" }] },
+            "matched": { "type": "integer", "minimum": 0 },
+            "unmatched": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "cluster": {
+      "type": "array",
+      "description": "Строка «Цифры кластера» из сценария: пары подписи и уже отформатированного значения, порядок печатается как есть",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "people": {
+      "type": "array",
+      "description": "Сотрудники от меньшего общего итога к большему; строки без итога — в конце",
+      "items": {
+        "type": "object",
+        "required": ["ordinal", "who", "name", "id", "team", "role", "email", "training", "skills", "productivity", "total", "recomputed", "status", "grade", "recommendation", "potential", "reachesGoal", "leftToGoal", "gaps", "fileBlocks", "fileRecommendationFlags", "levers"],
+        "properties": {
+          "ordinal": { "type": "integer", "minimum": 1 },
+          "who": { "type": "string", "minLength": 1, "description": "ФИО из справочника, а если его нет — табельный номер" },
+          "name": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "id": { "type": "string", "minLength": 1, "description": "Номер сотрудника из файла" },
+          "team": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "role": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "email": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Адрес письма из почтового справочника, взятый по точному совпадению ФИО; null — письма не будет, причину несёт letterReason" },
+          "letterReason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Почему под блоком человека нет ссылки «Письмо сотруднику»; null — ссылка есть" },
+          "training": { "type": "number", "minimum": 0, "description": "Балл блока «Обучение и применение», пересчитанный правилом" },
+          "skills": { "type": "number", "minimum": 0, "description": "Балл блока «Навыки», пересчитанный правилом" },
+          "productivity": { "type": "number", "minimum": 0, "description": "Балл блока «Продуктивность», пересчитанный правилом" },
+          "total": { "anyOf": [{ "type": "number" }, { "type": "null" }], "description": "«Общий итог» из файла: по нему идёт отбор ниже цели; null — в файле пусто" },
+          "recomputed": { "type": "number", "minimum": 0, "description": "Сумма трёх пересчитанных блоков — сверка с итогом файла" },
+          "status": { "type": "string", "enum": ["ниже цели", "цель достигнута", "итог в файле не заполнен"] },
+          "grade": { "anyOf": [{ "type": "string", "enum": ["A", "B", "C", "D", "E"] }, { "type": "null" }], "description": "Оценка крупными мазками: A — заметно выше цели, B — на цели, C — чуть ниже цели, D — заметно ниже цели, E — ниже предупреждающего порога; null — в файле нет итога" },
+          "recommendation": { "type": "string", "minLength": 1, "description": "Короткие действия для колонки таблицы: то, что можно отправить человеку, без баллов и ссылок на шкалы" },
+          "potential": { "type": "number", "minimum": 0, "description": "Сумма балльных приростов перечисленных рычагов" },
+          "reachesGoal": { "type": "boolean", "description": "true — перечисленных рычагов хватает, чтобы достичь цели" },
+          "leftToGoal": { "anyOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }], "description": "Сколько баллов до цели останется после всех рычагов; null — в файле нет общего итога" },
+          "gaps": { "type": "array", "description": "Что в строке не подтверждено: пустые градации, неизвестные формулировки", "items": { "type": "string", "minLength": 1 } },
+          "fileBlocks": {
+            "type": "object",
+            "description": "Баллы блоков как их посчитала выгрузка — для раздела расхождений",
+            "required": ["training", "skills", "productivity", "total"],
+            "properties": {
+              "training": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "skills": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "productivity": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "total": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
+            },
+            "additionalProperties": false
+          },
+          "fileRecommendationFlags": { "type": "array", "description": "Блоки, по которым файл сам выставил флаг рекомендации", "items": { "type": "string", "minLength": 1 } },
+          "levers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["kind", "brief", "text", "gain", "steps", "items"],
+              "properties": {
+                "kind": { "type": "string", "minLength": 1, "description": "Группа рычага: курсы, частота, режим, навыки, когорта, метрики, story" },
+                "brief": { "type": "string", "minLength": 1, "description": "Короткая формулировка для колонки сводной таблицы" },
+                "text": { "type": "string", "minLength": 1, "description": "Что сделать — формулировка для человека: какие именно курсы или навыки, какое значение метрики; баллов и ссылок на шкалы здесь нет" },
+                "steps": { "type": "array", "description": "Чем измеряется шаг шкалы: сами шкалы, текущее и целевое значение, нужное число в штуках — печатается отдельным списком под рекомендациями", "items": { "type": "string", "minLength": 1 } },
+                "items": { "type": "array", "description": "Что именно стоит за рычагом: названия курсов, навыки, метрики, текущая градация — для общих рычагов периметра", "items": { "type": "string", "minLength": 1 } },
+                "gain": { "type": "number", "minimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "levers": {
+      "type": "array",
+      "description": "Общие рычаги периметра: сколько людей затронуты, какой суммарный прирост дают и что именно за этим стоит",
+      "items": {
+        "type": "object",
+        "required": ["lever", "people", "potential", "details"],
+        "properties": {
+          "lever": { "type": "string", "minLength": 1 },
+          "people": { "type": "integer", "minimum": 1, "description": "Сколько человек затронуто этим видом рычага (человек считается один раз, даже если рычагов вида несколько)" },
+          "potential": { "type": "number", "minimum": 0, "description": "Сумма приростов всех рычагов этого вида по всем людям" },
+          "details": {
+            "type": "array",
+            "description": "Что стоит за рычагом: какие курсы, навыки и метрики и у скольких людей",
+            "items": {
+              "type": "object",
+              "required": ["item", "people"],
+              "properties": {
+                "item": { "type": "string", "minLength": 1 },
+                "people": { "type": "integer", "minimum": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "counters": {
+      "type": "object",
+      "required": ["employees", "counted", "belowGoal", "reachedGoal", "belowWarn", "withoutTotal", "withoutName", "mismatches", "skipped"],
+      "properties": {
+        "employees": { "type": "integer", "minimum": 0, "description": "Строк файла, ставших сотрудниками" },
+        "counted": { "type": "integer", "minimum": 0, "description": "Знаменатель средних: строки с заполненным общим итогом" },
+        "belowGoal": { "type": "integer", "minimum": 0 },
+        "reachedGoal": { "type": "integer", "minimum": 0 },
+        "belowWarn": { "type": "integer", "minimum": 0, "description": "Ниже предупреждающего порога (по сценарию — 3,0)" },
+        "withoutTotal": { "type": "integer", "minimum": 0 },
+        "withoutName": { "type": "integer", "minimum": 0, "description": "Сколько строк остались с табельным номером вместо ФИО" },
+        "mismatches": { "type": "integer", "minimum": 0, "description": "Сколько сверок блока с файлом разошлись" },
+        "skipped": { "type": "integer", "minimum": 0, "description": "Строк файла без номера сотрудника" }
+      },
+      "additionalProperties": false
+    },
+    "mismatches": {
+      "type": "array",
+      "description": "Расхождения пересчёта правила с баллами выгрузки; значения уже отформатированы для показа",
+      "items": {
+        "type": "object",
+        "required": ["id", "block", "file", "recomputed", "delta"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "block": { "type": "string", "minLength": 1 },
+          "file": { "type": "string", "minLength": 1 },
+          "recomputed": { "type": "string", "minLength": 1 },
+          "delta": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "Сколько раз пустовал каждый знакомый столбец файла",
+      "items": {
+        "type": "object",
+        "required": ["field", "count"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": { "type": "array", "description": "Оговорки прогона: откуда данные, какой знаменатель, что трактовано по сноске", "items": { "type": "string", "minLength": 1 } },
+    "questions": {
+      "type": "array",
+      "description": "То, что решает человек: пустые итоги, отсутствие ФИО, массовые расхождения шкал",
+      "items": {
+        "type": "object",
+        "required": ["scope", "text", "why"],
+        "properties": {
+          "scope": { "type": "string", "minLength": 1 },
+          "text": { "type": "string", "minLength": 1 },
+          "why": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

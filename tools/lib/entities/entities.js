@@ -22,12 +22,12 @@ function declarations(cwd,name,model){
 }
 function manifest(cwd,name,params={},mode='local',overrides=params,options={}){
  if(!NAME.test(name||'')||!params||typeof params!=='object'||Array.isArray(params)||!['local','demo','live'].includes(mode))throw new Error('Нужны имя процесса, объект параметров и режим local/demo/live');
- const {processModel}=require('./process-model'),{dependencies,childParams}=require('./process-dependencies');
+ const {processModel}=require('./process-model'),{dependencies,childParams,processSettings}=require('./process-dependencies');
  const entities=[],seen=new Set();
  function add(kind,name,entry,extra={}){const key=kind+':'+name;if(!seen.has(key)){seen.add(key);entities.push({kind,name,entry,...extra});}}
  function visit(name,inherited,stack=[]){
   if(stack.includes(name)||stack.length>=require('../config/config').loadMaster(cwd).execution.maxProcessDepth)throw new Error('Цикл или глубина подпроцессов');
-  const entry=`processes/${name}/PROCESS.md`,model=processModel(fs.readFileSync(inside(cwd,entry),'utf8')),req=declarations(cwd,name,model),values={...model.data.params,...inherited};
+  const entry=`processes/${name}/PROCESS.md`,model=processModel(fs.readFileSync(inside(cwd,entry),'utf8')),req=declarations(cwd,name,model),settings=processSettings(cwd,name,model),values={...model.data.params,...settings.params,...inherited};
   add('process',name,entry);
   for(const ref of req.actions||[])add('action',ref,`actions/${ref}/ACTION.md`);
   for(const level of req.context||[])add('context',level,`context/${level}`,{topics:require('./context').contextLevel(cwd,name,level)});

@@ -43,4 +43,18 @@ try{
   const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/state.json')));assert.equal(state.status,'failed');assert.ok(state.failure.reason);
   const card=j.operation(tmp,'next',{output:run.output});assert.equal(card.status,'failed');assert.equal(card.operation,'done');assert.ok(fs.existsSync(card.summaryFile));assert.ok(!card.summaryFile.includes('.run'+path.sep));
  });
+ check('explicit branch selection followed by execute keeps the run alive',()=>{
+  const run=j.start(tmp,{process:'sdd-stories-report',mode:'demo',date:'2026-11-06',slug:'ветвление',params:{dataFile:'processes/sdd-stories-report/fixture.json',wantsMail:true,recipients:'test@example.invalid'}});
+  for(const step of ['fetch','read-code','assess','compose'])j.execute(tmp,{output:run.output,step});
+  let card=j.operation(tmp,'next',{output:run.output});assert.equal(card.operation,'choose');
+  assert.throws(()=>j.execute(tmp,{output:run.output,step:'end',decision:'письмо не нужно'}),/run choose/);
+  card=j.operation(tmp,'next',{output:run.output});assert.equal(card.operation,'choose','отказ по позиции не должен двигать прогон');
+  j.operation(tmp,'choose',{output:run.output,step:card.step,target:'prepare-mail-data',decision:'человек попросил письмо для стори без SDD'});
+  const after=j.execute(tmp,{output:run.output,step:'prepare-mail-data'});
+  assert.equal(after.last_step_name,'prepare-mail-data');
+  const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/state.json')));
+  assert.equal(state.status,'running');assert.equal(state.next_step,'compose-mail');assert.equal(state.failure,undefined);
+  assert.ok(state.artifacts['mail-data'],'шаг развилки не сохранил артефакт');
+  assert.ok(/"type":"branch_decision"/.test(fs.readFileSync(path.join(tmp,'outputs',run.output,'.run/trace.jsonl'),'utf8')),'переход по развилке не зафиксирован');
+ });
 }finally{ctx.close();}

@@ -74,14 +74,14 @@ function assertDiagnosticAccess(cwd,output){
  for(const name of names)allowed(name);
 }
 function assertAccess(cwd,name,params={},files=[]){
- const {allowed,resources,paths}=accessRules(cwd),{stepParams,childParams,action:metadata,literalParams}=require('./process-dependencies');
+ const {allowed,resources,paths}=accessRules(cwd),{stepParams,childParams,declaredParams,action:metadata,literalParams}=require('./process-dependencies');
  const maxDepth=require('../config/config').loadMaster(cwd).execution.maxProcessDepth;
  const checks=[],bindings=[],literals=new Set();
  function visit(ref,inherited,stack=[]){
   allowed(ref,stack.at(-1));
   if(stack.includes(ref)||stack.length>=maxDepth)throw new Error('Цикл или глубина подпроцессов');
   const model=processModel(fs.readFileSync(inside(cwd,`processes/${ref}/PROCESS.md`),'utf8'));
-  const declared=model.data.requires||{},values={...model.data.params,...inherited};
+  const declared=model.data.requires||{},values={...declaredParams(cwd,ref,model),...inherited};
   checks.push({values,ref,strict:!!model.data.branchRule});
   for(const step of model.steps)bindings.push(...Object.entries(step.params));
   const actions=new Set([...(Array.isArray(declared.actions)?declared.actions:[]),...model.steps.filter(s=>s.kind==='action').map(s=>s.ref)]);

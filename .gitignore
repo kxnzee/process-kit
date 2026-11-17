@@ -31,5 +31,6 @@ process-kit.local.json
 # старые имена папок результатов, удалить в следующей версии
 Process Kit/
 .runs/
+.run/
 # Временные рабочие копии переноса
 .gigacode/worktrees/

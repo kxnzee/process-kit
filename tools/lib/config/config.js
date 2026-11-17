@@ -65,15 +65,18 @@ function resolveStore(cwd,config,slot,explicit,fields=[]){
  return {id:entry.id,configFile:FILES[config.origins[entry.id]],adapterFile,mcpServer:entry.mcpServer,fields,settings:entry};
 }
 function resolveProcess(cwd,name,params={},overrides=params){
- const {processModel,NAME}=require('../entities/process-model'),{stepParams,childParams,action}=require('../entities/process-dependencies');
+ const {processModel,NAME}=require('../entities/process-model'),{stepParams,childParams,action,processSettings}=require('../entities/process-dependencies');
  if(!NAME.test(name||'')||!object(params))throw new Error('Нужны имя процесса и объект параметров');
- const configFiles=new Set(),connections=[],missing=[],visiting=new Set(),maxDepth=loadMaster(cwd).execution.maxProcessDepth;
+ const configFiles=new Set(),connections=[],missing=[],visiting=new Set(),paramOrigins={},maxDepth=loadMaster(cwd).execution.maxProcessDepth;
  function visit(process,inherited,depth){
   if(visiting.has(process)||depth>=maxDepth)throw new Error('Цикл или глубина подпроцессов');visiting.add(process);
   const model=processModel(fs.readFileSync(inside(cwd,`processes/${process}/PROCESS.md`),'utf8'));
   if(model.errors.length)throw new Error(model.errors.join('; '));
   require('../entities/entities').declarations(cwd,process,model);
-  const values={...model.data.params,...inherited};
+  const settings=processSettings(cwd,process,model);
+  for(const file of settings.files)configFiles.add(file);
+  for(const [key,rel]of Object.entries(settings.origins))paramOrigins[process+':'+key]=rel;
+  const values={...model.data.params,...settings.params,...inherited};
   for(const step of model.steps){
    if(step.kind==='process'){visit(step.ref,childParams(cwd,model,step,values,{},overrides),depth+1);continue;}
    if(step.kind!=='action')continue;
@@ -91,7 +94,7 @@ function resolveProcess(cwd,name,params={},overrides=params){
   visiting.delete(process);
  }
  visit(name,params,0);
- return {ready:missing.length===0,process:name,configFiles:[...configFiles],connections,readFiles:[...new Set(connections.map(item=>item.adapterFile))],missing,note:'Доступность MCP-инструментов проверяется отдельно в среде агента.'};
+ return {ready:missing.length===0,process:name,configFiles:[...configFiles],connections,paramOrigins,readFiles:[...new Set(connections.map(item=>item.adapterFile))],missing,note:'Доступность MCP-инструментов проверяется отдельно в среде агента.'};
 }
 module.exports={FILES,loadMaster,loadConfig,selectedStore,selectedResource,requiredFields,resolveStore,resolveProcess};
 

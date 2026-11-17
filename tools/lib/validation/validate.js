@@ -262,9 +262,13 @@ function ruleLayout() {
   if (teamUnknown()) {
     W('уровни', null, 0, `ветка «${branch}» не называет команду: файлы уровня с префиксом не проверить, передайте --team <код> или настройте выбранную команду в config/my/config.json`);
   }
-  for(const file of ['config/team/config.json','config/my/config.json']){
-    if((branch==='master'||(branch||'').startsWith('master-'))&&tracked.includes(file))E('раскладка',path.join(ROOT,file),0,'в master нет реальных настроек team/my');
-    if((branch||'').startsWith('team-')&&file==='config/my/config.json'&&tracked.includes(file))E('раскладка',path.join(ROOT,file),0,'личный конфиг не переносится в team');
+  // Настройки процесса лежат рядом с настройками уровня: личные файлы не уезжают в team/master.
+  const sharedDoc=(f)=>/(^|\/)(README\.md|EXAMPLE\.json)$/.test(f);
+  const teamBranch=(branch||'').startsWith('team-'),commonBranch=branch==='master'||(branch||'').startsWith('master-');
+  for(const f of tracked){
+    if(sharedDoc(f))continue;
+    if(f.startsWith('config/my/')&&(commonBranch||teamBranch))E('раскладка',path.join(ROOT,f),0,teamBranch&&f==='config/my/config.json'?'личный конфиг не переносится в team':'личные настройки не переносятся в общий и командный уровни');
+    if(f.startsWith('config/team/')&&commonBranch)E('раскладка',path.join(ROOT,f),0,'в master нет реальных настроек team/my');
   }
 
   const gi = path.join(ROOT, '.gitignore');
@@ -735,7 +739,10 @@ function ruleProcessValues() {
     const file = path.join(ROOT, 'processes', name, 'PROCESS.md');
     if (!exists(file)) { E('значения', file, 0, `нет процесса ${name}`); visiting.delete(name); return; }
     const model = processModel(read(file));
-    model.data.params={...model.data.params,...inherited};
+    try{
+      const settings=require('../config/process-settings').merge(ROOT,name,Object.keys(model.data.params||{}),asList(model.data.requires?.config));
+      model.data.params={...model.data.params,...settings.params,...inherited};
+    }catch(error){E('настройки',file,0,error.message);model.data.params={...model.data.params,...inherited};}
     const req = model.data.requires || {};
     for (const step of model.steps) {
       if (step.kind === 'process') { scan(step.ref, depth + 1, require('../entities/process-dependencies').childParams(ROOT,model,step,model.data.params,{},overrides)); continue; }
@@ -774,6 +781,29 @@ function ruleProcessValues() {
   scan(opt.process);
 }
 
+// ---------- файлы настроек процессов ----------
+
+// Файл config/<уровень>/processes/<имя>.json существует только чтобы задать параметры
+// уже существующего процесса: сирота и неизвестный параметр молча ничего не настраивают.
+function ruleProcessFiles() {
+  const { NAME } = require('../entities/process-model');
+  const settings = require('../config/process-settings');
+  for (const level of settings.LEVELS) {
+    const dir = path.join(ROOT, 'config', level, 'processes');
+    for (const name of ls(dir)) {
+      const full = path.join(dir, name);
+      if (!isDir(full) && !/\.json$/i.test(name)) { E('файлы настроек', full, 0, 'в этой папке лежат только JSON-файлы настроек процессов'); continue; }
+      if (isDir(full)) { E('файлы настроек', full, 0, 'настройки процесса — один файл <имя процесса>.json, подпапок здесь нет'); continue; }
+      const process = name.replace(/\.json$/i, '');
+      if (!NAME.test(process)) { E('файлы настроек', full, 0, `имя файла должно быть именем процесса: <имя процесса>.json`); continue; }
+      const entry = path.join(ROOT, 'processes', process, 'PROCESS.md');
+      if (!exists(entry)) { E('файлы настроек', full, 0, `настройки процесса ${process}, а процесса нет на этом или дальнем уровне`); continue; }
+      try { settings.read(ROOT, level, process, Object.keys(processModel(read(entry)).data.params || {})); }
+      catch (error) { E('файлы настроек', full, 0, error.message); }
+    }
+  }
+}
+
 // ---------- запуск ----------
 
 const RULES = {
@@ -784,6 +814,7 @@ const RULES = {
   actions: ruleActions,
   adapters: ruleAdapters,
   sources: ruleSources,
+  processFiles: ruleProcessFiles,
   settings: ruleSettings,
   secrets: ruleSecrets,
   team: ruleTeam,

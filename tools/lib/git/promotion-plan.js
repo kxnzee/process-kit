@@ -34,11 +34,14 @@ function promotionPlan(cwd, targetRef) {
     const levels = file.startsWith('context/')?[]:parts.map(part => owner(part));
     const scopedContext=file.match(/^context\/(master|team|my)\/([^/]+)\//);
     const contextLevel=scopedContext&&scopedContext[2]!=='example'?scopedContext[1]:null;
-    const personal = contextLevel==='my'||levels.some(item => item.level === 2);
+    const configLevel=file.match(/^config\/(team|my)\/processes\//)?.[1];
+    const personal = configLevel==='my'||contextLevel==='my'||levels.some(item => item.level === 2);
     const teams = levels.filter(item => item.level === 1).map(item => item.team);
     if(contextLevel==='team'){let id;try{id=require('../config/config').loadConfig(cwd).teamId;}catch{}teams.push(id||'unresolved-context-owner');}
-    const admin = file === 'config/team/config.json';
-    if (forbidden || personal || (team ? (!admin && (!teams.length || teams.some(code => code !== team))) : (admin || teams.length))) {
+    let configTeam=null;
+    if(configLevel==='team'){try{configTeam=require('../config/config').loadConfig(cwd).teamId;}catch{}}
+    const admin = file === 'config/team/config.json'||configLevel==='team';
+    if (forbidden || personal || (configLevel==='team'&&(!configTeam||team!==configTeam||teams.some(code=>code!==configTeam))) || (team ? (!admin && (!teams.length || teams.some(code => code !== team))) : (admin || teams.length))) {
       excluded.push({ path: file, reason: 'outside destination ownership or local data' }); continue;
     }
     const full = path.join(cwd, file);

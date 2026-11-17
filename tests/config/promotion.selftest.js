@@ -23,5 +23,14 @@ try{
  assert.ok(shared.excluded.some(row=>row.path==='context/team/domain/CONTEXT.md'));
  for(const plan of [target,foreign,shared])assert.ok(plan.excluded.some(row=>row.path==='context/my/domain/CONTEXT.md'));
  assert.ok(shared.candidates.some(row=>row.path==='context/master/domain/CONTEXT.md'));
+ for(const level of ['my','team']){
+  const folder=path.join(cwd,'config',level,'processes');fs.mkdirSync(folder,{recursive:true});
+  fs.writeFileSync(path.join(folder,'example.json'),'{"subject":"settings"}');
+ }
+ const settingsPlans=[promotionPlan(cwd,'origin/team-a'),promotionPlan(cwd,'origin/team-b'),promotionPlan(cwd,'origin/master')];
+ for(const plan of settingsPlans)assert.ok(plan.excluded.some(row=>row.path==='config/my/processes/example.json'));
+ assert.ok(settingsPlans[0].candidates.some(row=>row.path==='config/team/processes/example.json'&&row.administrative));
+ for(const plan of settingsPlans.slice(1))assert.ok(plan.excluded.some(row=>row.path==='config/team/processes/example.json'));
  console.log('✓ team config is explicit administrative input; personal config is excluded from team/master');
+ console.log('✓ process settings retain personal and selected-team ownership during promotion');
 }finally{fs.rmSync(cwd,{recursive:true,force:true});}

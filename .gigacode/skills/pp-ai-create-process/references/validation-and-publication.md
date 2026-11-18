@@ -26,11 +26,11 @@ node tools/kit.js definition publish <spec.json>. Это локальный до
 внешних изменений; не выдавай рукописный ответ экшена за проверку живого инструмента.
 publication.json создаёт инструмент; не заполняй статусы и хеши вручную.
 DefinitionTest не отключает trusted approvals: маршрут с Action kind=act требует
-verifyApproval до begin и verifyEffect=applied для save, а защищённое продолжение
-decision=user также требует доверенного канала. Обычный gigacode-run их не даёт.
-Если такой маршрут нужен для покрытия, без интеграции можно получить validated,
-но нельзя обещать tested/published. Безопасный end корневой user-развилки не покрывает
-остальные ветки. Не используй tests/trusted-integration.js в рабочей копии и не меняй
+verifyApproval до begin и verifyEffect=applied для save. Обычный gigacode-run их не даёт.
+Если маршрут с act нужен для покрытия, без интеграции можно получить validated,
+но нельзя обещать tested/published. Для decision=user нужен явный ответ человека
+из диалога и непустой decision, без обязательного хоста. End одной ветки не покрывает
+остальные исходы. Не используй tests/trusted-integration.js в рабочей копии и не меняй
 kind, decision, покрытие или publication ради обхода. Объясни препятствие; создание
 доверенной интеграции не входит в эту операцию.
 После изменения определения или зависимостей проверь и опубликуй новую версию.

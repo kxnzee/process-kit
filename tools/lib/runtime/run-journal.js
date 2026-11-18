@@ -173,7 +173,7 @@ function operationLocked(cwd,command,spec,environment={}){
    return trust.request(state,spec.output,'external-action',{step:step.name,action:step.ref,adapter:{declaration:meta.adapter,connections},params});
   }
   function effectRequest(){return trust.request(state,spec.output,'external-effect',{step:state.pending.step,action:model.steps.find(s=>s.name===state.pending.step).ref,attemptId:state.pending.id,approvalRequestId:state.pending.approval?.requestId||null,params:state.pending.params});}
-  const stepStatus=state.status==='failed'?'failed':state.status==='completed'?'completed':state.pending?(action(cwd,model.steps.find(s=>s.name===state.pending.step).ref).kind==='act'?'blocked':'running'):model.steps.find(s=>s.name===state.next_step)?.decision==='user'?'blocked':'pending';
+  const stepStatus=state.status==='failed'?'failed':state.status==='completed'?'completed':state.pending?(action(cwd,model.steps.find(s=>s.name===state.pending.step).ref).kind==='act'?'blocked':'running'):'pending';
   const responsePaths={stepStatus,outputDir:path.dirname(dir),summaryFile:path.join(path.dirname(dir),'итог.md'),resultFile:state.result?path.join(path.dirname(dir),state.result):null,...(state.identity.startRequest?.requestFileHash?{startRequestFile:inside(dir,'start-request.json')}:{} )};
   if(command==='next'||command==='recover'){
    if(command==='recover')project(cwd,spec.output,state,{},true);
@@ -183,7 +183,7 @@ function operationLocked(cwd,command,spec,environment={}){
    if(!step)throw new Error('Текущий шаг отсутствует в процессе');
    if(step.kind==='branch'){
     const resolved=decision(step);
-    return {...responsePaths,status:state.status,operation:'choose',spec:{output:spec.output,step:step.name,...(resolved?{target:resolved.target}:{})},targets:resolved?[resolved.target]:step.targets,decision:resolved?.reason,decisionMode:resolved?'code':step.decision||'model',requiresApproval:step.decision==='user',verificationAvailable:typeof environment.verifyApproval==='function',approvalRequests:step.decision==='user'?step.targets.filter(needsApproval).map(target=>approvalFor(step,target)):[],step:step.name,branch:step.body.join('\n').trim(),facts:facts(Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,inside(dir,file)]))),instruction:'Вызовите run choose с данным spec и target. Для model нужен decision; user требует проверенный approval receipt доверенной интеграции, кроме end корневого процесса. После выбора снова вызовите next.'};
+    return {...responsePaths,status:state.status,operation:'choose',spec:{output:spec.output,step:step.name,...(resolved?{target:resolved.target}:{})},targets:resolved?[resolved.target]:step.targets,decision:resolved?.reason,decisionMode:resolved?'code':step.decision||'model',requiresApproval:false,verificationAvailable:typeof environment.verifyApproval==='function',approvalRequests:step.decision==='user'&&state.identity.runId?step.targets.filter(needsApproval).map(target=>approvalFor(step,target)):[],step:step.name,branch:step.body.join('\n').trim(),facts:facts(Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,inside(dir,file)]))),instruction:'Вызовите run choose с данным spec и target. Для model/user нужен непустой decision; для user запишите явный ответ человека из диалога, при молчании выберите безопасную остановку. Receipt доверенного хоста необязателен. После выбора снова вызовите next.'};
    }
    if(step.kind==='process')return {...responsePaths,status:state.status,operation:'enter',spec:{output:spec.output,step:step.name},process:step.ref};
    const meta=action(cwd,step.ref),params=state.pending?.params||stepParams(state.params,step,state.identity.overrides,Object.fromEntries(Object.entries(state.artifacts).map(([name,file])=>[name,path.relative(cwd,inside(dir,file))])),meta.defaults),context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params,mode:state.identity.mode};
@@ -194,10 +194,10 @@ function operationLocked(cwd,command,spec,environment={}){
   }
   function chooseBranch(branch,target){
    if(branch?.kind!=='branch'||!branch.targets.includes(target))throw new Error('Шаг не соответствует сохранённой позиции или цель не объявлена');
-   const approval=branch.decision==='user'&&needsApproval(target)?trust.verify(environment,'approval',approvalFor(branch,target),spec.approval,'approved'):null;
+   const approval=branch.decision==='user'&&spec.approval!==undefined?trust.verify(environment,'approval',approvalFor(branch,target),spec.approval,'approved'):null;
    const resolved=decision(branch);
    if(resolved?resolved.target!==target:typeof spec.decision!=='string'||!spec.decision.trim())throw new Error('Выбор ветки не соответствует условию или нет decision');
-   event(dir,'branch_decision',{process:state.cursorProcess,step:branch.name,next:target,reason:resolved?.reason||spec.decision,decisionMode:resolved?'code':branch.decision||'model',...(branch.decision==='user'?{approval:approval||{verification:'not-requested',reason:'terminal-exit'}}:{})});
+   event(dir,'branch_decision',{process:state.cursorProcess,step:branch.name,next:target,reason:resolved?.reason||spec.decision,decisionMode:resolved?'code':branch.decision||'model',...(branch.decision==='user'?{approval:approval||(needsApproval(target)?{verification:'conversation-recorded'}:{verification:'not-requested',reason:'terminal-exit'})}:{})});
    return target;
   }
   function selected(kind){

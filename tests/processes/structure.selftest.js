@@ -14,6 +14,34 @@ try {
       }
     }finally{write(file,original);}
   });
+  check('independent definition errors retain exact files and source lines in check and preflight',()=>{
+    const file='processes/example/PROCESS.md',original=fs.readFileSync(path.join(tmp,file),'utf8');
+    try{
+      const broken=original.replace('version: 1.0.0','version: wrong').replace(/^- артефакт: .+$/gm,'');
+      write(file,broken);
+      const definition=require('../../tools/lib/entities/process-definition');
+      let failure;try{definition.validateDefinition(tmp,'example');}catch(error){failure=error;}
+      assert.ok(failure?.issues.length>=3, failure?.message);
+      for(const args of [['--only','processes'],['--process','example']]){
+        const result=require('node:child_process').spawnSync(process.execPath,[path.join(source,'tools/lib/validation/validate.js'),'--root',tmp,'--json',...args],{encoding:'utf8'});
+        assert.equal(result.status,1,result.stderr);const report=JSON.parse(result.stdout);
+        const issues=report.issues.filter(issue=>issue.file===file);
+        assert.ok(issues.some(issue=>issue.msg.includes('version')&&issue.line===3));
+        for(const step of ['edit','draft'])assert.ok(issues.some(issue=>issue.msg===`шаг ${step}: нужен артефакт`&&issue.line===broken.split(/\r?\n/).indexOf('### '+step)+1),JSON.stringify(issues));
+      }
+    }finally{write(file,original);}
+  });
+  check('collecting errors never loads child branch code under a broken parent',()=>{
+    const child='my-validation-child',parent='my-validation-parent',marker=path.join(tmp,'branch-loaded');
+    const original=fs.readFileSync(path.join(tmp,'processes/example/PROCESS.md'),'utf8');
+    write(`processes/${child}/PROCESS.md`,original.replace('name: example','name: '+child).replace('entry: edit','branchRule: rules/probe.js\nentry: edit'));
+    write(`processes/${child}/rules/probe.js`,`require('node:fs').writeFileSync(${JSON.stringify(marker)},'loaded');exports.choose=()=>{};`);
+    write(`processes/${parent}/PROCESS.md`,`---\nname: ${parent}\nversion: 1.0.0\narea: test\nstatus: действует\ndescription: broken parent\nexample: probe\nentry: child\n---\n## Шаги\n### child\n- процесс: ${child}\n- артефакт: child-result\n- следующий: broken\n### broken\n- действие: edit-text\n- следующий: end\n`);
+    try{
+      assert.throws(()=>require('../../tools/lib/entities/process-definition').validateDefinition(tmp,parent),/нужен артефакт/);
+      assert.ok(!fs.existsSync(marker));
+    }finally{for(const name of [child,parent])fs.rmSync(path.join(tmp,'processes',name),{recursive:true,force:true});}
+  });
   check('фикстура без процесса запрещена', () => {
     write('processes/orphan/fixture.json', '{}');
     try { validate(['--only', 'processes'], false, 'папка без определения процесса'); }

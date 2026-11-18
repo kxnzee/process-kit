@@ -75,6 +75,10 @@ function report(level, entity, file, line, msg) {
 }
 const E = (entity, file, line, msg) => report('E', entity, file, line, msg);
 const W = (entity, file, line, msg) => report('W', entity, file, line, msg);
+function definitionErrors(error,fallback){
+  if(error.issues)for(const issue of error.issues)E('процесс',path.join(ROOT,issue.file),issue.line,issue.msg);
+  else E('процесс',fallback,0,error.message);
+}
 
 // ---------- общие помощники ----------
 
@@ -302,6 +306,18 @@ function ruleSkills() {
     const desc = String(fm.data.description || '');
     if (!desc) E('скилл', file, 2, 'нет description');
   }
+  const commands=require('../../kit').commands;
+  function inspect(file){
+    lines(read(file)).forEach((row,index)=>{
+      for(const match of row.matchAll(/\bnode\s+['"]?(tools\/[A-Za-z0-9_./-]+)['"]?(?:\s+([a-z][a-z-]*))?/g)){
+        if(match[1]!=='tools/kit.js')E('команды инструкций',file,index+1,'используйте публичный node tools/kit.js вместо '+match[1]);
+        else if(match[2]&&!Object.hasOwn(commands,match[2])&&match[2]!=='help')E('команды инструкций',file,index+1,'неизвестная публичная команда '+match[2]);
+      }
+    });
+  }
+  function walk(folder){for(const name of ls(folder)){const file=path.join(folder,name);if(isDir(file))walk(file);else if(name.endsWith('.md'))inspect(file);}}
+  for(const rel of ['.gigacode/skills','.gigacode/references'])walk(path.join(ROOT,rel));
+  if(exists(path.join(ROOT,'GIGACODE.md')))inspect(path.join(ROOT,'GIGACODE.md'));
 }
 
 // ---------- процессы ----------
@@ -324,7 +340,7 @@ function ruleProcesses() {
     if (!fm.data) { E('процесс', file, 1, 'нет шапки-манифеста --- … ---'); continue; }
     let model;
     try { model = require('../entities/process-definition').validateDefinition(ROOT, base); }
-    catch (error) { E('процесс', file, 0, error.message); continue; }
+    catch (error) { definitionErrors(error,file); continue; }
     const d = model.data;
     if (String(d.description).length > 400) W('процесс', file, 2, 'description длиннее 400 символов');
     if (d.examples && (asList(d.examples).length < 2 || asList(d.examples).length > 5)) W('процесс', file, 2, 'examples: нужно от 2 до 5');
@@ -777,7 +793,7 @@ function ruleProcessValues() {
     visiting.delete(name);
   }
   try { const definition=require('../entities/process-definition'),model=definition.validateDefinition(ROOT,opt.process);definition.validateRunInput(ROOT,opt.process,model,{...model.data.params,...overrides}); }
-  catch(error){E('процесс',null,0,error.message);return;}
+  catch(error){definitionErrors(error,path.join(ROOT,'processes',opt.process,'PROCESS.md'));return;}
   scan(opt.process);
 }
 

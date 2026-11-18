@@ -27,9 +27,9 @@ try{
   assert.equal(state(output).pending,null);assert.equal(state(output).next_step,'draft');
   const begun=journal.operation(tmp,'begin',{output,step:'draft'});assert.equal(begun.pending.step,'draft');
  });
- check('agent confirmation cannot open a user checkpoint; verified receipts bind the current decision',()=>{
+ check('optional verified receipts bind the current user decision',()=>{
   const output=gate('my-user','user'),host=trusted(),card=journal.operation(tmp,'next',{output}),request=card.approvalRequests.find(r=>r.target==='draft'),before=state(output),log=trace(output);
-  assert.equal(card.requiresApproval,true);assert.equal(card.verificationAvailable,false);
+  assert.equal(card.requiresApproval,false);assert.equal(card.verificationAvailable,false);assert.equal(card.stepStatus,'pending');
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Да',confirmed:true}),/confirmed/);
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Да',approval:host.receipt(request)}),/Нет доверенного канала/);
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Да',approval:{source:'agent-reported',requestId:request.id,proof:'yes'}},host.environment),/Заявление агента/);
@@ -43,10 +43,19 @@ try{
   assert.ok(!trace(output).includes(receipt.proof.signature));assert.equal(state(output).pending,null);
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Повтор',approval:receipt},host.environment),/текущую развилку/);
  });
- check('an active user default is not an approval bypass',()=>{
+ check('a user choice needs an explicit recorded decision even for an active default',()=>{
   const output=gate('my-active-default','user','draft'),card=journal.operation(tmp,'next',{output}),before=state(output);
-  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Default'}),/Нет доверенного канала/);
+  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'draft'}),/нет decision/);
   assert.deepEqual(state(output),before);
+ });
+ check('user continuation works without a host and records its actual assurance',()=>{
+  const output=gate('my-conversation','user'),card=journal.operation(tmp,'next',{output});
+  assert.equal(card.requiresApproval,false);assert.equal(card.verificationAvailable,false);assert.equal(card.stepStatus,'pending');
+  journal.operation(tmp,'choose',{...card.spec,target:'draft',decision:'Человек ответил: продолжить подготовку письма'});
+  assert.equal(state(output).next_step,'draft');
+  const event=trace(output).trim().split('\n').map(JSON.parse).find(e=>e.type==='branch_decision');
+  assert.equal(event.approval.verification,'conversation-recorded');assert.match(event.reason,/Человек ответил/);
+  assert.equal(event.approval.authority,undefined);
  });
  check('a safe user default is recorded without claiming verified consent',()=>{
   const output=gate('my-stop','user');journal.operation(tmp,'choose',{output,step:'gate',target:'end',decision:'Нет проверенного разрешения на продолжение'});
@@ -67,7 +76,7 @@ try{
    assert.equal(fs.readFileSync(path.join(other.tmp,'outputs',output,'.run/state.json'),'utf8'),before);
   }finally{other.close();}
  });
- check('a child user end cannot resume its parent without verified approval',()=>{
+ check('a child user end resumes its parent after an explicit conversational decision',()=>{
   gate('my-child','user');
   const original=fs.readFileSync(path.join(tmp,'processes/example/PROCESS.md'),'utf8');
   write('processes/my-parent/PROCESS.md',original.replace('name: example','name: my-parent').replace('processes: []','processes: [my-child]').replace('entry: edit','entry: child').replace('### edit','### child\n- процесс: my-child\n- артефакт: child-result\n- следующий: edit\n\n### edit'));
@@ -76,10 +85,11 @@ try{
   const begun=journal.operation(tmp,'begin',{output,step:'edit'});journal.operation(tmp,'save',{...begun.save,content:'12 задач.'});
   const host=trusted(),card=journal.operation(tmp,'next',{output}),request=card.approvalRequests.find(r=>r.target==='end'),before=state(output),log=trace(output);
   assert.ok(request);assert.equal(request.rootProcess,'my-parent');assert.equal(request.callStack.length,1);
-  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'end',decision:'Выход'}),/Нет доверенного канала/);
+  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'end'}),/нет decision/);
   assert.throws(()=>journal.operation(tmp,'leave',{output}),/run choose/);
   assert.deepEqual(state(output),before);assert.equal(trace(output),log);
-  journal.operation(tmp,'choose',{...card.spec,target:'end',decision:'Подтверждено хостом',approval:host.receipt(request)},host.environment);
+  journal.operation(tmp,'choose',{...card.spec,target:'end',decision:'Человек завершил сверку в диалоге'});
+  const event=trace(output).trim().split('\n').map(JSON.parse).find(e=>e.type==='branch_decision');assert.equal(event.approval.verification,'conversation-recorded');
   journal.operation(tmp,'leave',{output});assert.equal(journal.operation(tmp,'next',{output}).spec.step,'edit');
  });
  check('verifier errors do not disclose proof or change the checkpoint',()=>{

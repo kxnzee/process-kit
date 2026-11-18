@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "process": "gmi-cluster-report",
+  "status": "published",
+  "files": {
+    "actions/check-methodology/ACTION.md": "f3872d6dbaf6d558eeef394a66bcf4e9bf54ece53d2c26fca135c7c27480d30f",
+    "actions/check-methodology/contracts/methodology-check.json": "5562fa07bf789c512ca6149f95b6f80aaa4f0d94eb224e4edc84ec94d0af2285",
+    "actions/check-methodology/rules/methods.md": "24b777574dbe7c8e7233f03aa2a9c79de0184284c153a9e11eaf06cfebd3e5c9",
+    "actions/check-methodology/rules/result-shape.md": "c915442b4a583b97e017ef514ef109f829f2adf176e8c0474b44db111d26328d",
+    "actions/check-methodology/runtime.js": "0a3cfcf428b74333ace58c0a567f17a7a2b0aae3253805761bba6d6c0c008b09",
+    "actions/compose-report/ACTION.md": "4e4cdd05c328bc2bb670768c7641b1dfda7db004502d9ec4cf818b333ef96e43",
+    "actions/compose-report/contracts/input.json": "d4ec5f73692b184fec19276f092704c7f73cf696fde88988cd5a0aa4bdf2fcbe",
+    "actions/compose-report/runtime.js": "51c307b5fa37879359fdad80ce53fd96d6e7fba6c970535c9bc205e8b618ee7d",
+    "actions/evaluate-data/ACTION.md": "8383c9464264355304f42fdd2d6288ab676ccf97bc4199b98eb3d1708dd4cedc",
+    "actions/evaluate-data/contracts/result.json": "31259dcce1aec6aac8a7352eda5cc970d4fed2a21e1a0b6bdd8a3a139a3252d7",
+    "actions/evaluate-data/runtime.js": "0dce312dd46136e2d98c4b717af85e3f148f955db6377a7742adc56d7bbb9739",
+    "actions/read-score-table/ACTION.md": "368e1aec4352cfca8849b23e92d7216564a240671147b3aad59abc59d7ebdd9e",
+    "actions/read-score-table/contracts/result.json": "6ae2c7e7533f2d495781a7a1a1e55e0dbebcf04a06127dc1ea3bde654c45e39b",
+    "actions/read-score-table/runtime.js": "15100a346154fa99f8a0871745da7e343da5b5883e6e99d147e9b791253751ac",
+    "processes/gmi-cluster-report/PROCESS.md": "6ad52cabe4a325fac73098348a44532a962697a5295c641b9e8c5b81d7aef682",
+    "processes/gmi-cluster-report/contracts/report-data.json": "156169f7a3d93e86e536fb990efbe61451ceee12f329d27cd91257bde4341c27",
+    "processes/gmi-cluster-report/methodology-notes.md": "815822d47003dd16e5dd02e519b59b56c499ea4a4672b88e95fd2283e892e409",
+    "processes/gmi-cluster-report/renderers/report-html.js": "e49331c0b7fc06140b20dd24119772543e09149ee0fd3a63b950457b214046ac",
+    "processes/gmi-cluster-report/renderers/report.js": "deba70c190acc425ba5984669ff84786774ac36c22e86d7d998450780178e082",
+    "processes/gmi-cluster-report/rules/branches.js": "4c3ac1ac99682d835d0408e08beda9bd05b73d58de5530a4d156435ec5b8e42e",
+    "processes/gmi-cluster-report/rules/gmi.js": "fea3e28d815e2d1d7239438734b113fb58d5fea77541831417dcc3ad8b65dfba",
+    "processes/gmi-cluster-report/templates/report.md": "7f9338cc8d72669fb4a8c52c9284261d12bf27ee4cab344ca494c2ed2bd64113"
+  },
+  "updated": "2026-11-18T20:50:20.403Z",
+  "scope": "local/demo",
+  "outputs": [
+    "2026-11-18_проба-проверка-gmi-6",
+    "2026-11-18_проба-проверка-gmi-7",
+    "2026-11-18_проба-проверка-gmi-8",
+    "2026-11-18_проба-проверка-gmi-9"
+  ]
+}

@@ -4,29 +4,26 @@ const journal=require('../../../tools/lib/runtime/run-journal');
 const release=require('../../../tools/lib/entities/process-release');
 const {runtimeInputFiles}=require('../../../tools/lib/entities/process-dependencies');
 const {modelResult}=require('../publication-helpers');
-const host=require('../../trusted-integration')();
 const processName='gmi-cluster-report',params={runDate:'17.11.2026',demo:true,methodologyCheck:'no'};
 function route({methodologyCheck='no',review=true,html=false,definitionTest=true,extra={}}={}){
  const spec={process:processName,mode:'demo',definitionTest,params:{...params,methodologyCheck,...extra}};
- const started=journal.start(tmp,spec,host.environment),output=started.output;
+ const started=journal.start(tmp,spec),output=started.output;
  for(let i=0;i<40;i++){
-  const card=journal.operation(tmp,'next',{output},host.environment);
+  const card=journal.operation(tmp,'next',{output});
   if(card.operation==='done'){assert.equal(card.status,'completed');return output;}
   if(card.operation==='choose'){
    const target=card.decisionMode==='code'?card.targets[0]:card.step==='methodology-review'?(review?'read':'end'):(html?'render-html':'end');
-   const request=card.approvalRequests.find(item=>item.target===target);
-   if(request)assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target,decision:'agent cannot approve'}),/доверенного канала/);
-   journal.operation(tmp,'choose',{...card.spec,target,decision:'Синтетическая приёмка без сети',...(request?{approval:host.receipt(request)}:{})},host.environment);
-  }else if(card.operation==='execute')journal.execute(tmp,card.spec,host.environment);
-  else if(card.operation==='begin')journal.operation(tmp,'begin',card.spec,host.environment);
-  else if(card.operation==='model')journal.operation(tmp,'save',{...card.save,content:modelResult(tmp,output,card)},host.environment);
-  else if(card.operation==='finish')journal.operation(tmp,'finish',{output,resultName:'result.'+(card.lastArtifact==='report-page-html'?'html':card.lastArtifact==='methodology-index'?'json':'md')},host.environment);
+   journal.operation(tmp,'choose',{...card.spec,target,decision:'Проверочный выбор владельца без сети'});
+  }else if(card.operation==='execute')journal.execute(tmp,card.spec);
+  else if(card.operation==='begin')journal.operation(tmp,'begin',card.spec);
+  else if(card.operation==='model')journal.operation(tmp,'save',{...card.save,content:modelResult(tmp,output,card)});
+  else if(card.operation==='finish')journal.operation(tmp,'finish',{output,resultName:'result.'+(card.lastArtifact==='report-page-html'?'html':card.lastArtifact==='methodology-index'?'json':'md')});
   else throw new Error('Unexpected operation: '+card.operation);
  }
  throw new Error('Run did not finish');
 }
 try{
- check('GMI gates enforce explicit input, computed choice and trusted human continuation',()=>{
+ check('GMI gates enforce explicit input, computed choice and conversational human continuation',()=>{
   assert.throws(()=>journal.start(tmp,{process:processName,mode:'demo',definitionTest:true,params:{...params,methodologyCheck:'ask'}}),/до start/);
   assert.throws(()=>journal.start(tmp,{process:processName,mode:'demo',definitionTest:true,params:{...params,demo:false}}),/В режиме demo/);
   const {output}=journal.start(tmp,{process:processName,mode:'demo',definitionTest:true,params});
@@ -34,8 +31,8 @@ try{
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'check-scales',decision:'agent override'}),/не соответствует/);
   journal.operation(tmp,'choose',{...card.spec,target:'read'});
   for(const step of ['read','assess','compose'])journal.execute(tmp,{output,step});
-  card=journal.operation(tmp,'next',{output});assert.equal(card.decisionMode,'user');assert.equal(card.requiresApproval,true);
-  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'render-html',decision:'agent says yes'}),/доверенного канала/);
+  card=journal.operation(tmp,'next',{output});assert.equal(card.decisionMode,'user');assert.equal(card.requiresApproval,false);
+  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'render-html'}),/нет decision/);
   journal.operation(tmp,'choose',{...card.spec,target:'end',decision:'Отказ'});
   journal.operation(tmp,'finish',{output,resultName:'declined.md'});
  });

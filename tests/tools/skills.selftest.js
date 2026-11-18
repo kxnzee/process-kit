@@ -25,6 +25,19 @@ try{
   const result=call([]);assert.equal(result.status,0,result.stderr);
   assert.deepEqual(JSON.parse(result.stdout),before);
  });
+ check('instruction commands use the public CLI in Skills and lazy references',()=>{
+  const run=()=>require('node:child_process').spawnSync(process.execPath,['tools/kit.js','check','--only','skills','--root',tmp,'--json'],{cwd:tmp,encoding:'utf8'});
+  for(const file of ['.gigacode/skills/custom-skill/references/commands.md','.gigacode/references/commands-probe.md']){
+   write(file,'Run `node tools/lib/runtime/run-journal.js start spec.json`.');
+   let result=run();assert.equal(result.status,1,result.stderr);
+   let issues=JSON.parse(result.stdout).issues;assert.ok(issues.some(issue=>issue.file===file&&issue.line===1&&issue.msg.includes('публичный')));
+   write(file,'Run `node tools/kit.js missing-command spec.json`.');
+   result=run();assert.equal(result.status,1,result.stderr);assert.ok(JSON.parse(result.stdout).issues.some(issue=>issue.file===file&&issue.msg.includes('missing-command')));
+   write(file,'Run `node tools/kit.js run next spec.json`.');
+   result=run();assert.equal(result.status,0,result.stdout+result.stderr);
+   fs.rmSync(path.join(tmp,file));
+  }
+ });
  check('broken skill metadata fails without a partial catalog or instruction text',()=>{
   write('.gigacode/skills/custom-skill/SKILL.md','---\nname: another-name\ndescription: Invalid\n---\nPRIVATE_INSTRUCTION_BODY\n');
   assert.throws(()=>catalog(tmp));

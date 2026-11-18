@@ -12,7 +12,7 @@ JSON.stringify/json.dump, без ручного экранирования shell
 |---|---|---|
 | start | process, mode: local/live/demo; необязательные date (только по явному требованию), slug, title, inputText, params, explicitParams, files | Один раз до первого действия. |
 | next | output | Получить проверенную карточку следующего шага без выполнения. |
-| choose | output, step текущей развилки, target; decision для model/user, approval: {source: adapter, requestId, proof} для продолжения user | Зафиксировать разрешённую ветку; поддерживает цепочки развилок. Затем next. |
+| choose | output, step текущей развилки, target; decision для model/user; для user — смысл явного ответа человека, approval: {source: adapter, requestId, proof} необязателен | Зафиксировать разрешённую ветку; поддерживает цепочки развилок. Затем next. |
 | recover | output | Завершить прерванную запись и получить следующую карточку без повтора внешнего действия. |
 | retry | output, attemptId, effect: {source: adapter, requestId, proof} | VerifyEffect должен подтвердить not-applied; новый begin требует нового approval. |
 | execute | output, step; attemptId для уже начатой попытки | Выполнить объявленную локальную функцию и сохранить результат. Не вызывает MCP и не выполняет act. |

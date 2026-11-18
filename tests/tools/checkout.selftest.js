@@ -4,7 +4,7 @@ const os=require('node:os'),crypto=require('node:crypto'),{execFileSync}=require
 const release=require('../../tools/lib/entities/process-release'),journal=require('../../tools/lib/runtime/run-journal');
 const checkout=fs.mkdtempSync(path.join(os.tmpdir(),'pk lf checkout пробелы '));
 const git=(args,cwd=tmp)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe'],env:{...process.env,GIT_OPTIONAL_LOCKS:'0'}});
-const names=['example','sdd-stories-report','info-povod'];
+const names=['example','sdd-stories-report','info-povod','gmi-cluster-report'];
 const sha=body=>crypto.createHash('sha256').update(body).digest('hex');
 let output;
 try{

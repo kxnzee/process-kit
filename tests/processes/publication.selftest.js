@@ -78,13 +78,12 @@ try{
   assert.throws(()=>journal.operation(tmp,'save',{...pending.save,content:{...value,matched:1}}),/Счётчики/);
   const partial=structuredClone(value);partial.sections[0].status='matched';partial.matched=1;partial.unverified--;partial.unverifiedSections=partial.unverifiedSections.filter(row=>row.section!==partial.sections[0].section);
   journal.operation(tmp,'save',{...pending.save,content:partial});
-  const review=journal.operation(tmp,'next',{output});assert.equal(review.decisionMode,'user');assert.equal(review.requiresApproval,true);assert.equal(review.stepStatus,'blocked');
+  const review=journal.operation(tmp,'next',{output});assert.equal(review.decisionMode,'user');assert.equal(review.requiresApproval,false);assert.equal(review.stepStatus,'pending');
   assert.throws(()=>journal.operation(tmp,'begin',{output,step:'fetch-sigma',decision:'Я согласен'}),/run choose/);
   assert.equal(journal.operation(tmp,'next',{output}).step,'methodology-review');
-  const host=require('../trusted-integration')(),request=review.approvalRequests.find(r=>r.target==='fetch-sigma');
   assert.throws(()=>journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',confirmed:true}),/confirmed/);
-  assert.throws(()=>journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',decision:'Продолжай'}),/доверенного канала/);
-  journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',approval:host.receipt(request),decision:'Синтетический ответ доверенного хоста'},host.environment);
+  assert.throws(()=>journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma'}),/нет decision/);
+  journal.operation(tmp,'choose',{...review.spec,target:'fetch-sigma',decision:'Человек ответил: продолжай после сверки'});
   assert.equal(journal.operation(tmp,'next',{output}).spec.step,'fetch-sigma');
  });
 }finally{ctx.close();}

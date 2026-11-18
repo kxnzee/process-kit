@@ -122,6 +122,17 @@ try {
     assert.throws(() => page.validate(html + '\n<p>правка вручную</p>', data), /штатное формирование/);
   });
 
+  check('сводная таблица сохраняет все рычаги и оценку рядом со статусом каждого человека', () => {
+    const summary = form.render(data).split('## Сводная таблица')[1].split('## Что делать каждому')[0];
+    for (const person of data.people) {
+      const row = summary.split('\n').find(line => line.startsWith(`| ${person.ordinal} |`));
+      assert.ok(row, `нет строки ${person.id}`);
+      const cells = row.split('|').slice(1, -1).map(cell => cell.trim());
+      for (const lever of person.levers) assert.ok(cells[8].includes(lever.brief), `в рекомендации ${person.id} потерян рычаг ${lever.kind}`);
+      assert.equal(cells[9], person.grade ? `${person.grade} — ${person.status}` : person.status);
+    }
+  });
+
   check('письмо сотруднику: адрес из почтового справочника по точному ФИО, без сверки с задачами', () => {
     const letters = readTable([
       line({ ...WEAK, id: '9000201', name: 'Письмов Евгений Васильевич' }),
@@ -161,6 +172,10 @@ try {
     assert.equal(links.length, 2, 'ссылок на письма больше, чем подтверждённых адресов');
     assert.ok(links.some(link => link.startsWith('mailto:ploskiy@example.com?')), 'адрес из плоской карты не попал в страницу');
     const href = links.find(link => link.startsWith('mailto:pismov@example.com?'));
+    const subject = new URL(href).searchParams.get('subject');
+    assert.equal(subject, 'Точки роста по итогам оценки: что сделать');
+    assert.doesNotMatch(subject, /[\u0000-\u001f\u007f]/);
+    assert.ok(!subject.includes(rowOf('9000201').who), 'в тему письма попало ФИО');
     assert.ok(href, 'адрес не попал в ссылку письма');
     const body = decodeURIComponent(href.split('&body=')[1]);
     // Тело = ровно те формулировки «что сделать», что напечатаны над ссылкой: без математики.

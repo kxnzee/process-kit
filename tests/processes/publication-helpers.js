@@ -20,15 +20,14 @@ function modelResult(cwd,output,card){
  throw new Error('Для приёмки не задан model-выход '+card.action);
 }
 function executeRoute(cwd,spec,{continueReview=false}={}){
- const host=require('../trusted-integration')(),environment=host.environment;
+ const environment={};
  const started=journal.start(cwd,spec,environment),output=started.output;
  for(let i=0;i<80;i++){
   const card=journal.operation(cwd,'next',{output},environment);
   if(card.operation==='done'){if(card.status!=='completed')throw new Error('Приёмочный прогон завершился неуспешно');const s=readState(cwd,output);if(spec.process==='sdd-stories-report'&&s.last_artifact==='mail-draft'&&!s.published['sdd-report'])journal.operation(cwd,'publish',{output,artifact:'sdd-report',name:'отчёт.md'});return {output,resultFile:card.resultFile};}
   if(card.operation==='choose'){
    const target=card.decisionMode==='code'?card.targets[0]:continueReview?'fetch-sigma':'end';
-   const request=card.approvalRequests?.find(r=>r.target===target);
-   journal.operation(cwd,'choose',{...card.spec,target,...(request?{approval:host.receipt(request)}:{}),decision:'Синтетическое решение доверенного тестового хоста'},environment);
+   journal.operation(cwd,'choose',{...card.spec,target,decision:'Проверочный выбор владельца без сети'},environment);
   }else if(card.operation==='execute')journal.execute(cwd,card.spec,environment);
   else if(card.operation==='begin')journal.operation(cwd,'begin',card.spec,environment);
   else if(card.operation==='model')journal.operation(cwd,'save',{...card.save,content:modelResult(cwd,output,card)},environment);

@@ -6,7 +6,10 @@ const {inside}=require('../core/safe-path');
 function probe(cwd,file,timeout=5000){return new Promise(resolve=>{
  const inherited=Object.fromEntries(['PATH','Path','SystemRoot','COMSPEC','TEMP','TMP'].filter(key=>process.env[key]).map(key=>[key,process.env[key]]));
  const child=spawn(process.execPath,[file],{cwd,windowsHide:true,stdio:['pipe','pipe','ignore'],env:{...inherited,BITBUCKET_URL:'https://example.invalid',BITBUCKET_TOKEN:'probe',USER:'probe',PASSWORD:'probe',SMTP_FROM:'probe@example.invalid',LDAP_BIND_DN:'probe',LDAP_BIND_PASSWORD:'probe'}});
- let settled=false,buffer='';const finish=result=>{if(settled)return;settled=true;clearTimeout(timer);child.kill();resolve(result);};
+ let settled=false,buffer='',outcome;
+ // Windows keeps cwd/files busy until the child and its stdio handles are closed.
+ const finish=result=>{if(settled)return;settled=true;outcome=result;clearTimeout(timer);child.kill();};
+ child.once('close',()=>{if(!settled)finish({status:'failed',reason:'exited-before-tools'});resolve(outcome);});
  const timer=setTimeout(()=>finish({status:'failed',reason:'timeout'}),timeout);
  child.on('error',()=>finish({status:'failed',reason:'start-failed'}));child.on('exit',()=>finish({status:'failed',reason:'exited-before-tools'}));child.stdin.on('error',()=>{});
  const send=value=>child.stdin.write(JSON.stringify(value)+'\n');

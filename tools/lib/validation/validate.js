@@ -71,7 +71,7 @@ const { runFolderParts } = require('../core/paths');
 
 const issues = [];
 function report(level, entity, file, line, msg) {
-  issues.push({ level, entity, file: file ? path.relative(ROOT, file) || '.' : '.', line: line || 0, msg });
+  issues.push({ level, entity, file: file ? path.relative(ROOT, file).split(path.sep).join('/') || '.' : '.', line: line || 0, msg });
 }
 const E = (entity, file, line, msg) => report('E', entity, file, line, msg);
 const W = (entity, file, line, msg) => report('W', entity, file, line, msg);

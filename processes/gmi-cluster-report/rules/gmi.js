@@ -356,8 +356,17 @@ function evaluate(inputs, parameters) {
     // отключённые учётки) — человек читает под своим блоком именно её, а не общее «нет в карте».
     const detail = entry && typeof entry === 'object' ? entry : null;
     const mail = tidy(detail ? detail.email : entry);
-    if (isMail(mail)) addresses[key] = { email: mail, reason: null };
-    else addresses[key] = { email: null, reason: (detail && tidy(detail['причина'])) || NO_MAIL };
+    // Карта может содержать `"кандидаты"`: два-три адреса на одно ФИО, которые ничем в
+    // выгрузке не различить. Угадывать адресата нельзя, но и оставлять человека без письма тоже:
+    // все кандидаты уходят на страницу, где под блоком стоит по кнопке на каждый адрес.
+    const picks = detail && Array.isArray(detail['кандидаты'])
+      ? detail['кандидаты']
+        .map((one) => ({ email: tidy(one && one['почта']), post: tidy(one && one['должность']), org: tidy(one && one['отдел']) }))
+        .filter((one) => isMail(one.email))
+      : [];
+    if (isMail(mail)) addresses[key] = { email: mail, reason: null, options: [] };
+    else if (picks.length >= 2 && picks.length <= 3) addresses[key] = { email: null, reason: null, options: picks };
+    else addresses[key] = { email: null, reason: (detail && tidy(detail['причина'])) || NO_MAIL, options: [] };
   }
   const twins = new Set();
   const listed = new Set();
@@ -368,11 +377,13 @@ function evaluate(inputs, parameters) {
   }
   people.forEach(row => {
     const key = tidy(row.who);
-    const hit = twins.has(key) ? { email: null, reason: TWIN_NAMES } : (addresses[key] || { email: null, reason: NO_BOOK });
+    const hit = twins.has(key) ? { email: null, reason: TWIN_NAMES, options: [] } : (addresses[key] || { email: null, reason: NO_BOOK, options: [] });
     row.email = hit.email;
+    row.letterOptions = hit.options;
     // Причина пишется у блока человека на странице: «письма нет» без объяснения человек
-    // прочитал бы как ошибку отчёта.
-    row.letterReason = hit.reason;
+    // прочитал бы как ошибку отчёта. Когда адресатов несколько и под блоком несколько кнопок,
+    // причины нет — человек выбирает сам.
+    row.letterReason = hit.options.length ? null : hit.reason;
   });
 
   const counted = people.filter(row => row.total !== null);
@@ -437,7 +448,9 @@ function evaluate(inputs, parameters) {
   if (scores.skipped.length) notes.push(`Строк без номера сотрудника (в расчёт не попали): ${scores.skipped.map(row => row.row).join(', ')}.`);
   // Покрытие адресами — часть честного итога: без этой строки отчёт с письмами неотличим
   // от прогона, где карту адресов вообще не передали.
-  const needMail = belowGoal.filter(row => !row.email);
+  const pickMail = belowGoal.filter(row => (row.letterOptions || []).length);
+  const needMail = belowGoal.filter(row => !row.email && !(row.letterOptions || []).length);
+  if (pickMail.length) notes.push(`Письмо сотруднику — с выбором адреса для ${pickMail.length} человек(а) ниже цели: в справочнике на одно ФИО две-три живые записи, различить которые выгрузкой нечем. Под блоком каждого — кнопка на каждую запись с должностью и отделом, адресата выбирает человек.`);
   if (Object.keys(addresses).length && needMail.length) {
     // Причины считаются группами: «нет письма у 22 человек» без разбора неотличимо от того, что
     // карту адресов забыли передать.
@@ -469,7 +482,7 @@ function evaluate(inputs, parameters) {
     cluster,
     people: people.map(row => ({
       ordinal: row.ordinal, who: row.who, name: row.name, id: row.id, team: row.team, role: row.role,
-      email: row.email, letterReason: row.letterReason,
+      email: row.email, letterReason: row.letterReason, letterOptions: row.letterOptions,
       training: row.training, skills: row.skills, productivity: row.productivity,
       total: row.total, recomputed: row.recomputed, status: row.status, grade: row.grade,
       recommendation: row.recommendation, potential: row.potential, reachesGoal: row.reachesGoal,

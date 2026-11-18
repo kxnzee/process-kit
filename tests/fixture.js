@@ -23,7 +23,7 @@ function copyProject(from,to){
   fs.mkdirSync(dst,{recursive:true});
   for(const item of fs.readdirSync(src,{withFileTypes:true})){
    const original=path.join(src,item.name),target=path.join(dst,item.name);
-   if(/^\.gigacode\/(tmp|history|memory|cache|logs|state|sessions|projects|shell-snapshots|plugins|worktrees)(\/|$)/.test(path.relative(from,original).split(path.sep).join('/')))continue;
+   if(/^\.gigacode\/(tmp|history|memory|cache|logs|state|sessions|projects|shell-snapshots|plugins|worktrees|mcp)(\/|$)/.test(path.relative(from,original).split(path.sep).join('/')))continue;
    if(/^config\/(my|team)\/config\.json$/.test(path.relative(from,original).split(path.sep).join('/')))continue;
    if(item.isDirectory())tree(original,target);else if(item.isFile())fs.copyFileSync(original,target);else throw new Error('Unsupported fixture entry: '+original);
   }

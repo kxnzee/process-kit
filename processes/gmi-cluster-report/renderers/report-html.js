@@ -41,6 +41,7 @@ code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1
 .tag.low{color:var(--warn);border-color:#7a5c2a}
 .dim{color:var(--dim)}
 a.mail{display:inline-block;background:var(--panel2);border:1px solid var(--acc);color:var(--acc);border-radius:6px;padding:3px 10px;font-size:13px;text-decoration:none;font-weight:600}
+a.mail+a.mail{margin-left:6px}
 a.mail:hover{background:var(--acc);color:#0b1220}
 footer{color:var(--dim);font-size:13px;margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
 `.trim();
@@ -135,7 +136,7 @@ function split(markdown) {
 const LETTER_SECTION = /Что делать каждому/;
 const spaces = value => String(value === undefined || value === null ? '' : value).replace(/\s+/g, ' ').trim();
 
-function letterHref(person) {
+function letterHref(person, address = person.email) {
   const actions = (person.levers || []).map(lever => lever.text);
   const body = [
     'Добрый день!', '',
@@ -145,7 +146,7 @@ function letterHref(person) {
   // Тема без ФИО и без названия инструмента: письмо уходит адресату лично, а план шире одного
   // GigaCode — в нём обучение, навыки и метрики.
   const subject = encodeURIComponent('Точки роста по итогам оценки: что сделать');
-  const email = String(person.email || '');
+  const email = String(address || '');
   if (!email.isWellFormed()) throw new Error('Адрес письма: некорректная строка Unicode');
   const recipient = encodeURIComponent(email).replace(/%40/g, '@');
   return `mailto:${recipient}?subject=${subject}&body=${encodeURIComponent(body)}`;
@@ -155,6 +156,8 @@ function letterHref(person) {
 // список действий. Ссылка ставится сразу за этим списком — ровно под тем текстом, который
 // уходит в письме. Номер блока и ФИО сверяются с данными: без совпадения ссылки нет, потому что
 // письмо не имеет права уйти не тому человеку.
+const optionLabel = one => [spaces(one.post), spaces(one.org)].filter(Boolean).join(', ') || spaces(one.email);
+
 function withLetters(section, people) {
   if (!LETTER_SECTION.test(section.title) || !people.length) return section.parts;
   const byOrdinal = new Map(people.map(row => [row.ordinal, row]));
@@ -169,9 +172,17 @@ function withLetters(section, people) {
       continue;
     }
     if (block && /^<(ul|p)[ >]/.test(part.html)) {
-      const letter = block.email
-        ? `<a class="mail" href="${attr(letterHref(block))}">Письмо сотруднику</a>`
-        : `<span class="dim">письмо не создаём: ${esc(block.letterReason || 'адреса нет в почтовом справочнике')}</span>`;
+      const options = (block.letterOptions || []).filter(one => one && one.email).slice(0, 3);
+      let letter;
+      if (block.email) letter = `<a class="mail" href="${attr(letterHref(block, block.email))}">Письмо сотруднику</a>`;
+      else if (options.length >= 2) {
+        // Две-три живые записи на одно ФИО, различить которые нечем: кнопку на каждую запись,
+        // с должностью и отделом. Выбирать должен человек, а не процесс.
+        const crowded = new Set(options.map(optionLabel)).size < options.length;
+        letter = 'адресатов несколько, выберите: ' + options.map(one => `<a class="mail" href="${attr(letterHref(block, one.email))}">Письмо сотруднику — ${esc(optionLabel(one))}${crowded ? ' · ' + esc(one.email) : ''}</a>`).join(' ');
+      } else if (options.length === 1) {
+        letter = `<a class="mail" href="${attr(letterHref(block, options[0].email))}">Письмо сотруднику — ${esc(optionLabel(options[0]))}</a>`;
+      } else letter = `<span class="dim">письмо не создаём: ${esc(block.letterReason || 'адреса нет в почтовом справочнике')}</span>`;
       out.push({ html: `<p class="small">${letter}</p>`, items: 0 });
       block = null;
     }

@@ -1,0 +1,36 @@
+{
+  "manifestFile": "processes/example/data/rules-manifest.json",
+  "processedCount": 1,
+  "totalFailedCount": 1,
+  "skipped": false,
+  "sections": [
+    {
+      "field": "description",
+      "rulesFile": "processes/example/data/description-rules.md",
+      "ruleCount": 2,
+      "statusCounts": { "pass": 1, "fail": 1, "unknown": 0, "unreadable": 0 },
+      "items": [
+        {
+          "key": "SBAR-7236",
+          "summary": "Пример CR: загрузка реестра",
+          "emptyOrPlaceholder": false,
+          "results": [
+            {
+              "ruleId": "R1",
+              "status": "pass",
+              "basis": "Бизнес требование: загрузить реестр открытых данных за 3 квартал",
+              "note": null
+            },
+            {
+              "ruleId": "R2",
+              "status": "fail",
+              "basis": null,
+              "note": "Блок «Описание требований» в описании не найден"
+            }
+          ],
+          "failedCount": 1
+        }
+      ]
+    }
+  ]
+}

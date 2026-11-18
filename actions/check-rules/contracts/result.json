@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "required": ["manifestFile", "processedCount", "totalFailedCount", "skipped", "sections"],
+  "properties": {
+    "manifestFile": { "type": "string", "minLength": 1, "description": "Точный путь манифеста проверок" },
+    "skipped": { "type": "boolean", "description": "Истина — уровень задал пустой манифест: проверок по правилам нет" },
+    "processedCount": { "type": "integer", "minimum": 0, "description": "Число проверенных записей" },
+    "totalFailedCount": { "type": "integer", "minimum": 0, "description": "Сумма failedCount по всем секциям и записям" },
+    "sections": {
+      "type": "array",
+      "description": "Секция на строку манифеста; порядок — порядок манифеста; пуст при skipped=true",
+      "items": {
+        "type": "object",
+        "required": ["field", "rulesFile", "ruleCount", "statusCounts", "items"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1, "description": "Имя проверявшегося поля записи" },
+          "rulesFile": { "type": "string", "minLength": 1, "description": "Точный путь файла правил этой секции" },
+          "ruleCount": { "type": "integer", "minimum": 1, "description": "Число правил в файле секции" },
+          "statusCounts": {
+            "type": "object",
+            "required": ["pass", "fail", "unknown", "unreadable"],
+            "description": "Счётчики статусов секции; сумма равна processedCount × ruleCount",
+            "properties": {
+              "pass": { "type": "integer", "minimum": 0 },
+              "fail": { "type": "integer", "minimum": 0 },
+              "unknown": { "type": "integer", "minimum": 0 },
+              "unreadable": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+          },
+          "items": {
+            "type": "array",
+            "description": "По строке на запись выборки; порядок — порядок records",
+            "items": {
+              "type": "object",
+              "required": ["key", "summary", "emptyOrPlaceholder", "results", "failedCount"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "summary": { "type": "string", "description": "Заголовок задачи дословно; пусто, если не прочитан" },
+                "emptyOrPlaceholder": { "type": "boolean", "description": "Значение проверяемого поля пустое, заглушка или только HTML-теги" },
+                "results": {
+                  "type": "array",
+                  "description": "По строке на правило файла секции; порядок — порядок правил",
+                  "items": {
+                    "type": "object",
+                    "required": ["ruleId", "status", "basis", "note"],
+                    "properties": {
+                      "ruleId": { "type": "string", "minLength": 1 },
+                      "status": { "type": "string", "enum": ["pass", "fail", "unknown", "unreadable"] },
+                      "basis": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Дословная цитата-основание из значения поля; null — основания нет" },
+                      "note": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "description": "Примечание: что искалось при fail, почему unknown, причина unreadable" }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "failedCount": { "type": "integer", "minimum": 0, "description": "Число статусов, кроме pass" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

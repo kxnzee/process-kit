@@ -1,0 +1,125 @@
+{
+  "type": "object",
+  "description": "Данные валидации CR базового процесса: по каждому CR один исход (CHECK_OK или CHECK_ERROR) и причины. Записи в систему нет. Счётчики сходятся со строками: total равен числу items, okCount + errorCount = total.",
+  "required": ["meta", "counters", "items", "excluded", "unverified", "notes"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["runDate", "project", "issueType", "issueKey", "queryFile", "taskStore", "okLabel", "errorLabel", "demo"],
+      "properties": {
+        "runDate": { "type": "string", "minLength": 10, "description": "Дата прогона ГГГГ-ММ-ДД" },
+        "project": { "type": "string" },
+        "issueType": { "type": "string", "minLength": 1 },
+        "issueKey": { "type": "string", "description": "Ключ конкретного CR; пусто — обрабатывалась вся выборка" },
+        "queryFile": { "type": "string", "minLength": 1 },
+        "taskStore": { "type": "string" },
+        "okLabel": { "type": "string", "minLength": 1 },
+        "errorLabel": { "type": "string", "minLength": 1 },
+        "demo": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "counters": {
+      "type": "object",
+      "required": ["total", "okCount", "errorCount", "securityViolationCount", "unreadableCount", "excludedCount", "unverifiedCount"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "okCount": { "type": "integer", "minimum": 0 },
+        "errorCount": { "type": "integer", "minimum": 0 },
+        "securityViolationCount": { "type": "integer", "minimum": 0, "description": "CR с зафиксированной попыткой вмешательства" },
+        "unreadableCount": { "type": "integer", "minimum": 0, "description": "CR с физически нечитаемыми полями" },
+        "excludedCount": { "type": "integer", "minimum": 0 },
+        "unverifiedCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "description": "По строке на CR выборки; порядок — порядок records",
+      "items": {
+        "type": "object",
+        "required": ["key", "url", "summary", "verdict", "label", "failedFields", "failedRules", "securityViolation", "securityFindings"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "url": { "type": "string" },
+          "summary": { "type": "string" },
+          "verdict": { "type": "string", "enum": ["CHECK_OK", "CHECK_ERROR"] },
+          "label": { "type": "string", "minLength": 1, "description": "Метка исхода; совпадает с verdict" },
+          "failedFields": {
+            "type": "array",
+            "description": "Пусто, если проверка бизнес-полей не выполнялась",
+            "items": {
+              "type": "object",
+              "required": ["fieldId", "label", "requirement", "status", "value"],
+              "properties": {
+                "fieldId": { "type": "string", "minLength": 1 },
+                "label": { "type": "string" },
+                "requirement": { "type": "string", "minLength": 1 },
+                "status": { "type": "string", "enum": ["fail", "unreadable"] },
+                "value": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "failedRules": {
+            "type": "array",
+            "description": "Пусто, если проверки по правилам не выполнялись; field — проверявшееся поле",
+            "items": {
+              "type": "object",
+              "required": ["field", "ruleId", "status", "basis", "note"],
+              "properties": {
+                "field": { "type": "string", "minLength": 1 },
+                "ruleId": { "type": "string", "minLength": 1 },
+                "status": { "type": "string", "enum": ["fail", "unknown", "unreadable"] },
+                "basis": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+                "note": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "securityViolation": { "type": "boolean" },
+          "securityFindings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["place", "category", "quote"],
+              "properties": {
+                "place": { "type": "string" },
+                "category": { "type": "string", "minLength": 1 },
+                "quote": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "reason"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "unverified": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "reason"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Оговорки расчёта, в том числе «проверка не выполнялась» для пропущенных проверок" }
+  },
+  "additionalProperties": false
+}

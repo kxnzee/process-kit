@@ -24,6 +24,11 @@ try{
   for(const folder of ['tmp','cache'])assert.ok(!fs.existsSync(path.join(target,'.gigacode',folder)));
   for(const file of ['skills/probe/SKILL.md','references/probe.md','hooks/pre-push'])assert.ok(fs.existsSync(path.join(target,'.gigacode',file)));
  });
+ check('fixture copies exclude installed local MCP binaries and dependencies',()=>{
+  write('.gigacode/mcp/large-server/dist/index.js','LOCAL_BINARY_TREE');
+  const other=require('../fixture')({copy:false});
+  try{require('../fixture').copyProject(tmp,other.tmp);assert.ok(!fs.existsSync(path.join(other.tmp,'.gigacode/mcp')));}finally{other.close();fs.rmSync(path.join(tmp,'.gigacode/mcp'),{recursive:true,force:true});}
+ });
  check('next and execute complete every deterministic demo step and preserve report facts',()=>{
   const run=j.start(tmp,{process:'sdd-stories-report',mode:'demo',params:{dataFile:'processes/sdd-stories-report/fixture.json'}});
   assert.ok(Math.abs(new Date(run.output.slice(0,10)+'T12:00:00').valueOf()-Date.now())<86400000,'Run folder uses today, not fixture date');

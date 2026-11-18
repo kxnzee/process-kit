@@ -16,7 +16,7 @@ function snapshot(dir=tmp){
 try{
  git('init');git('symbolic-ref','HEAD','refs/heads/master');
  check('shipped definitions keep current publication and config levels do not imply forbidden entity references',()=>{
-  for(const name of ['example','info-povod','sdd-stories-report','gmi-cluster-report']){
+  for(const name of ['example','info-povod','sdd-stories-report','gmi-cluster-report','validation-cr']){
    const facts=inspect(name);assert.equal(facts.definition.status,'parsed');assert.deepEqual(facts.publication,{status:'published',current:true});assert.ok(!issue(facts,'dependency-forbidden'));
   }
   const facts=inspect('info-povod');assert.ok(facts.dependencies.items.some(item=>item.kind==='config'&&item.name==='my'&&item.status==='missing'));

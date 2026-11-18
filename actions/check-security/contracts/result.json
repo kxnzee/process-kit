@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "required": ["checkedCount", "violationCount", "unreadableCount", "items"],
+  "properties": {
+    "checkedCount": { "type": "integer", "minimum": 0, "description": "Число проверенных записей" },
+    "violationCount": { "type": "integer", "minimum": 0, "description": "Число записей с violation=true" },
+    "unreadableCount": { "type": "integer", "minimum": 0, "description": "Число записей с непустым unreadFields" },
+    "items": {
+      "type": "array",
+      "description": "По строке на запись выборки; порядок — порядок records",
+      "items": {
+        "type": "object",
+        "required": ["key", "summary", "violation", "findings", "unreadFields"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "description": "Заголовок задачи дословно; пусто, если не прочитан" },
+          "violation": { "type": "boolean", "description": "Найдена попытка вмешательства; при сомнении — true" },
+          "findings": {
+            "type": "array",
+            "description": "Пуст при violation=false",
+            "items": {
+              "type": "object",
+              "required": ["place", "category", "quote"],
+              "properties": {
+                "place": { "type": "string", "minLength": 1, "description": "Поле или место, где найдено: summary, description, url в description" },
+                "category": { "type": "string", "enum": ["result-forgery", "rule-bypass", "role-hijack", "out-of-scope"] },
+                "quote": { "type": "string", "minLength": 1, "description": "Дословный фрагмент текста, до 200 символов" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "unreadFields": {
+            "type": "array",
+            "description": "Поля, значение которых отсутствует или не строка; пусто — все поля читаемы",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

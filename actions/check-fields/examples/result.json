@@ -1,0 +1,34 @@
+{
+  "checksFile": "processes/example/data/field-checks.json",
+  "processedCount": 1,
+  "checkCount": 2,
+  "statusCounts": {
+    "pass": 1,
+    "fail": 1,
+    "unreadable": 0
+  },
+  "items": [
+    {
+      "key": "SBAR-7236",
+      "summary": "Пример CR: загрузка реестра",
+      "results": [
+        {
+          "fieldId": "customfield_10006",
+          "label": "Epic Link",
+          "requirement": "заполнено",
+          "status": "pass",
+          "value": "SBAR-7001"
+        },
+        {
+          "fieldId": "customfield_10921",
+          "label": "Бизнес-блок заказчика",
+          "requirement": "не null",
+          "status": "fail",
+          "value": "null"
+        }
+      ],
+      "failedCount": 1
+    }
+  ],
+  "skipped": false
+}

@@ -1,0 +1,9 @@
+{
+  "checks": [
+    { "fieldId": "customfield_10006", "label": "Epic Link", "check": "nonempty" },
+    { "fieldId": "customfield_10921", "label": "Бизнес-блок заказчика", "check": "notNull" },
+    { "fieldId": "customfield_13501", "label": "Wiki page", "check": "nonempty" },
+    { "fieldId": "security", "label": "Security Level", "check": "equals", "value": "К-3" },
+    { "fieldId": "summary", "label": "Заголовок", "check": "contains", "value": ["реестр", "справочник"] }
+  ]
+}

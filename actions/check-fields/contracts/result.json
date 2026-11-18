@@ -1,0 +1,134 @@
+{
+  "type": "object",
+  "required": [
+    "checksFile",
+    "processedCount",
+    "checkCount",
+    "skipped",
+    "statusCounts",
+    "items"
+  ],
+  "properties": {
+    "checksFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Точный путь файла проверок, по которому шла операция"
+    },
+    "skipped": {
+      "type": "boolean",
+      "description": "Истина — уровень задал пустой список проверок: проверок полей нет"
+    },
+    "processedCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Число проверенных записей"
+    },
+    "checkCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Число проверок в файле"
+    },
+    "statusCounts": {
+      "type": "object",
+      "required": [
+        "pass",
+        "fail",
+        "unreadable"
+      ],
+      "properties": {
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unreadable": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "description": "Сумма равна processedCount * checkCount"
+    },
+    "items": {
+      "type": "array",
+      "description": "По строке на запись выборки; порядок — порядок records",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "summary",
+          "results",
+          "failedCount"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "description": "Заголовок задачи дословно; пусто, если не прочитан"
+          },
+          "results": {
+            "type": "array",
+            "description": "По строке на проверку из файла; порядок — порядок checks",
+            "items": {
+              "type": "object",
+              "required": [
+                "fieldId",
+                "label",
+                "requirement",
+                "status",
+                "value"
+              ],
+              "properties": {
+                "fieldId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string"
+                },
+                "requirement": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Текст требования: «заполнено», «равно <value>», «не null» или «содержит <value>»"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "unreadable"
+                  ]
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Дословная цитата значения поля; для notNull — JSON-сериализация значения; для not-string в остальных проверках — описание типа"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "failedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "fail + unreadable по записи; равен числу таких статусов в results"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

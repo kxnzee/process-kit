@@ -27,6 +27,39 @@
       "headers": {
         "x-jira-token": "$secret:pp-ai-jira-delta/x-jira-token"
       }
+    },
+    "pp-ai-bitbucket": {
+      "command": "node",
+      "args": [
+        "./.gigacode/mcp/bitbucket-mcp/dist/index.js"
+      ],
+      "env": {
+        "BITBUCKET_URL": "https://sbrf-bitbucket.sigma.sbrf.ru",
+        "BITBUCKET_TOKEN": "$secret:bitbucket-inventory/BITBUCKET_TOKEN"
+      },
+      "timeout": 120000,
+      "trust": false
+    },
+    "pp-ai-onework": {
+      "httpUrl": "https://mcp.onework.sigma.sbrf.ru/mcp",
+      "headers": {
+        "Authorization": "$secret:onework/Authorization"
+      }
+    },
+    "pp-ai-email": {
+      "command": "node",
+      "args": [
+        "./.gigacode/mcp/mcp-email/dist/index.js"
+      ],
+      "env": {
+        "USER": "<ваш табельный номер>",
+        "PASSWORD": "$secret:mcp-email/PASSWORD",
+        "SMTP_FROM": "<ваш адрес>@sberbank.ru",
+        "LDAP_BIND_DN": "<ваш табельный номер>@sigma.sbrf.ru",
+        "LDAP_BIND_PASSWORD": "$secret:mcp-email/LDAP_BIND_PASSWORD"
+      },
+      "timeout": 60000,
+      "trust": false
     }
   },
   "$version": 4

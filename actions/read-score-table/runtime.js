@@ -259,6 +259,7 @@ function run(ctx) {
 }
 
 module.exports = {
+  readRawTable(cwd, file) { return /\.xlsx$/i.test(file) ? fromXlsx(cwd, file) : fromJson(cwd, file); },
   dependencies(ctx) {
     const files = [s.resource(ctx.cwd, ctx.processName, ctx.params.scoreFile, ctx.requires)];
     if (ctx.params.nameFile) files.push(s.resource(ctx.cwd, ctx.processName, ctx.params.nameFile, ctx.requires));

@@ -5,14 +5,14 @@ const release=require('../../../tools/lib/entities/process-release');
 const {runtimeInputFiles}=require('../../../tools/lib/entities/process-dependencies');
 const {modelResult}=require('../publication-helpers');
 const processName='gmi-cluster-report',params={runDate:'17.11.2026',demo:true,methodologyCheck:'no'};
-function route({methodologyCheck='no',review=true,html=false,definitionTest=true,extra={}}={}){
+function route({methodologyCheck='no',review=true,html=false,mail=false,definitionTest=true,extra={}}={}){
  const spec={process:processName,mode:'demo',definitionTest,params:{...params,methodologyCheck,...extra}};
  const started=journal.start(tmp,spec),output=started.output;
  for(let i=0;i<40;i++){
   const card=journal.operation(tmp,'next',{output});
-  if(card.operation==='done'){assert.equal(card.status,'completed');return output;}
+  if(card.operation==='done'){assert.equal(card.status,'completed');const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'),'utf8'));if(state.last_artifact==='report-page-html')journal.operation(tmp,'publish',{output,artifact:'report-page',name:'report.md'});return output;}
   if(card.operation==='choose'){
-   const target=card.decisionMode==='code'?card.targets[0]:card.step==='methodology-review'?(review?'read':'end'):(html?'render-html':'end');
+   const target=card.decisionMode==='code'?card.targets[0]:card.step==='mail-gate'?(mail?'lookup-mail':'mail-off'):card.step==='methodology-review'?(review?'read':'end'):(html?'render-html':'end');
    journal.operation(tmp,'choose',{...card.spec,target,decision:'Проверочный выбор владельца без сети'});
   }else if(card.operation==='execute')journal.execute(tmp,card.spec);
   else if(card.operation==='begin')journal.operation(tmp,'begin',card.spec);
@@ -30,17 +30,18 @@ try{
   let card=journal.operation(tmp,'next',{output});assert.equal(card.decisionMode,'code');assert.deepEqual(card.targets,['read']);
   assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'check-scales',decision:'agent override'}),/не соответствует/);
   journal.operation(tmp,'choose',{...card.spec,target:'read'});
-  for(const step of ['read','assess','compose'])journal.execute(tmp,{output,step});
-  card=journal.operation(tmp,'next',{output});assert.equal(card.decisionMode,'user');assert.equal(card.requiresApproval,false);
-  assert.throws(()=>journal.operation(tmp,'choose',{...card.spec,target:'render-html'}),/нет decision/);
-  journal.operation(tmp,'choose',{...card.spec,target:'end',decision:'Отказ'});
-  journal.operation(tmp,'finish',{output,resultName:'declined.md'});
+  journal.execute(tmp,{output,step:'read'});
+  journal.operation(tmp,'choose',{output,step:'mail-gate',target:'mail-off',decision:'Проверка без справочника'});
+  for(const step of ['mail-off','assess','compose'])journal.execute(tmp,{output,step});
+  card=journal.operation(tmp,'next',{output});assert.equal(card.operation,'execute');assert.equal(card.spec.step,'render-html');
+  journal.execute(tmp,card.spec);journal.operation(tmp,'finish',{output,resultName:'both.html'});
+
  });
  let outputs;
  check('GMI covers every branch through real validate/test/publish in an isolated fixture',()=>{
   assert.equal(release.lifecycle(tmp,'validate',{process:processName,mode:'demo',params}).status,'validated');
   const first=route();assert.throws(()=>release.lifecycle(tmp,'test',{process:processName,outputs:[first]}),/Не проверена ветка/);
-  outputs=[first,route({html:true}),route({methodologyCheck:'yes',review:false}),route({methodologyCheck:'yes',review:true})];
+  outputs=[first,route({html:true}),route({mail:true}),route({methodologyCheck:'yes',review:false}),route({methodologyCheck:'yes',review:true})];
   assert.equal(release.lifecycle(tmp,'test',{process:processName,outputs}).status,'tested');
   assert.equal(release.lifecycle(tmp,'publish',{process:processName}).status,'published');
   assert.equal(release.lifecycle(tmp,'status',{process:processName}).status,'published');

@@ -387,7 +387,7 @@ function ruleActions() {
 
     // ссылки на свои файлы — относительно папки действия
     lines(text).forEach((l, i) => {
-      if (l.includes(`actions/${name}/`)) W('действие', file, i + 1, `ссылка от корня: пишите путь относительно папки действия, без actions/${name}/`);
+      if (i >= fm.bodyLine - 1 && l.includes(`actions/${name}/`)) W('действие', file, i + 1, `ссылка от корня: пишите путь относительно папки действия, без actions/${name}/`);
       const re = /(?:^|[\s`(«"'])((?:templates|queries|rules)\/[^\s`'")»,;]+)/g;
       let m;
       while ((m = re.exec(l))) {

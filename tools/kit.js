@@ -3,6 +3,7 @@
 // The only public CLI. Libraries under lib/ are not agent-facing tools.
 const path=require('node:path'),{spawnSync}=require('node:child_process');
 const commands={
+ 'mcp-check':{file:'lib/integrations/local-mcp-check.js',usage:'[--probe]',purpose:'Проверить файлы локальных MCP; --probe проверяет stdio без рабочих доступов',scope:'local-execution'},
  definition:{file:'lib/entities/process-release.js',usage:'<inspect|validate|test|publish|status> <spec.json>',purpose:'Безопасно прочитать факты (inspect); глубоко проверить (status/validate) и допустить версию',scope:'local-write',scopeNote:'inspect: read-only; status: глубокая проверка с загрузкой кода; validate/test/publish: локальная запись и загрузка кода'},
  action:{file:'lib/actions/invoke.js',usage:'<spec.json>',purpose:'Выполнить локальный экшен без создания процесса',scope:'local-write'},
  entities:{file:'lib/entities/entities.js',usage:'<process> [local|demo|live] [params.json]',purpose:'Разрешить сущности и подключения процесса',scope:'definition-code',scopeNote:'Глубокая проверка может загрузить и выполнить код определения; только доверенные определения'},

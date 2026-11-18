@@ -185,6 +185,22 @@ try {
     assert.ok(!links.some(link => decodeURIComponent(link).includes('extra@example.com')), 'чужой адрес из карты попал в страницу');
   });
 
+  check('ambiguous mail candidates remain a human choice with safe links and labels',()=>{
+    const scores=readTable([line({...WEAK,name:'Synthetic Choice'})]);
+    const candidates=[{'почта':'first@example.invalid','должность':'<svg/onload=alert(1)>','отдел':'A'},{'почта':"o'brien+tag@example.invalid",'должность':'Second','отдел':'B'}];
+    const result=rules.evaluate({scores,people:{'Synthetic Choice':{name:'Synthetic Choice',кандидаты:candidates}}},GOAL);
+    assert.equal(result.people[0].email,null);assert.equal(result.people[0].letterOptions.length,2);
+    validateValue(loadContract(cwd,`processes/${PROCESS}/contracts/report-data.json`),result);
+    const html=page.render(result);assert.doesNotMatch(html,/<svg/);
+    const links=[...html.matchAll(/class="mail" href="([^"]*)"/g)].map(match=>new URL(match[1].replace(/&amp;/g,'&')));
+    assert.deepEqual(links.map(url=>decodeURIComponent(url.pathname)),candidates.map(row=>row['почта']));
+    for(const url of links){assert.equal(url.protocol,'mailto:');assert.deepEqual([...url.searchParams.keys()],['subject','body']);}
+    for(const bad of ['x"><svg/onload=alert(1)>@example.com','\ud800@example.com']){
+      const unsafe=rules.evaluate({scores,people:{'Synthetic Choice':{кандидаты:[{почта:bad},...candidates]}}},GOAL);
+      assert.ok(!unsafe.people[0].letterOptions.some(option=>option.email===bad));assert.doesNotThrow(()=>page.render(unsafe));
+    }
+  });
+
   check('боевой прогон с demo=false не помечается демонстрационным', () => {
     // Параметр из PROCESS.md приходит строкой: 'false' не должен читаться как правда.
     const real = assess(scores, { demo: 'false' });

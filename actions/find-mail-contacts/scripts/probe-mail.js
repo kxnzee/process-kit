@@ -19,6 +19,9 @@ const CLASS = [
   [/TIMELIMIT|0x3/, 'справочник не ответил за отведённое время']
 ];
 
+const replyText = value => typeof value === 'string' ? value : Array.isArray(value?.content) ? value.content.filter(part=>part.type==='text').map(part=>part.text||'').join('\n') : value?.output!==undefined ? String(value.output) : JSON.stringify(value||'');
+const replyError = (value,text) => !!(value?.isError||value?.error)||/^\s*(?:Ошибка(?=\s|:|$)|Error\b|Request failed|HTTP(?:\/[\d.]+)?\s+[45]\d\d|401\b|403\b|429\b|Unauthorized\b|Forbidden\b)/i.test(text);
+
 async function run(NAME, SERVER = '') {
   const keys = [];
   for (const bag of [typeof tools !== 'undefined' ? tools : null, typeof ALL_TOOLS !== 'undefined' ? ALL_TOOLS : null]) {
@@ -36,7 +39,8 @@ async function run(NAME, SERVER = '') {
   if (!фамилия) return { найден: true, сервер, чтение: 'нечем проверить: пустой список людей', проверено: false };
   try {
     const answer = await tools[tool]({ query: фамилия });
-    const text = typeof answer === 'string' ? answer : JSON.stringify(answer || '');
+    const text = replyText(answer);
+    if(replyError(answer,text)){const why=CLASS.find(rule=>rule[0].test(text));return {найден:true,сервер,чтение:why?why[1]:'справочник ответил ошибкой',проверено:false};}
     if (/TIMELIMIT|0x3/i.test(text)) return { найден: true, сервер, чтение: 'справочник не ответил за отведённое время', проверено: false };
     const записей = (text.match(/👤/g) || []).length;
     return { найден: true, сервер, чтение: записей ? 'ок' : 'ок, на это ФИО записей нет — доступ работает', записей, проверено: true };

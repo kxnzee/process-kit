@@ -23,6 +23,7 @@ function check(data) {
 
 function reasons(item) {
   const lines = [];
+  for (const field of item.unreadFields || []) lines.push(`- Не удалось прочитать поле «${field}».`);
   for (const field of item.failedFields || []) {
     lines.push(`- Бизнес-поле ${field.label || field.fieldId} (${field.fieldId}): ${field.requirement} — ${field.status}; значение: ${field.value ?? 'нечитаемо'}.`);
   }
@@ -75,8 +76,10 @@ function render(data, params) {
   if (!reasonsAny) out.push('Нет записей: замечаний не обнаружено.');
   out.push('## Проверить не удалось');
   out.push('');
-  if (!data.unverified.length) out.push('Нет записей.');
-  else for (const row of data.unverified) out.push(`- ${link(row.key, row.url)}: ${cell(row.reason)}.`);
+  const unread=data.items.filter(item=>(item.unreadFields||[]).length);
+  if (!data.unverified.length&&!unread.length) out.push('Нет записей.');
+  for(const item of unread)out.push(`- ${link(item.key,item.url)}: не удалось прочитать ${item.unreadFields.map(cell).join(', ')}.`);
+  for (const row of data.unverified) out.push(`- ${link(row.key, row.url)}: ${cell(row.reason)}.`);
   out.push('');
   out.push('## Исключены');
   out.push('');

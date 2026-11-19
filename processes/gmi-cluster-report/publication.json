@@ -17,9 +17,9 @@
     "actions/find-mail-contacts/ACTION.md": "6c46046064ee4b8b38f69b945db4314bb0c57a680f7e4519d92884a807ca180b",
     "actions/find-mail-contacts/contracts/people-map.json": "5a76130e751d86f68e73279f22508616ae46f9a296f16971e3f5b8e02eeea642",
     "actions/find-mail-contacts/runtime.js": "e1fd6824160b2f2649d4d1399724c9fc313e249d76633f22e9bf1afda67c4db1",
-    "actions/find-mail-contacts/scripts/build-map.js": "c0d49f388685f009498314c9a32e6ca8719a2eabede9dff23de94748d37c98a0",
-    "actions/find-mail-contacts/scripts/poll-ldap.js": "110abd04e0fe3d08770483df37f0e5c700a7f61e2a6635da7a77387d6873293e",
-    "actions/find-mail-contacts/scripts/probe-mail.js": "98b2f3ad1e5164e2965e999848af68f6599f3bc3d38f8940c6bc74180434d950",
+    "actions/find-mail-contacts/scripts/build-map.js": "224d1411d9ea251a866eac81e1ce62e6d02a755480de34649f4415fdb9eab2d6",
+    "actions/find-mail-contacts/scripts/poll-ldap.js": "5aedc43d1e88b939e667b3ff6b88c90e360cdd63f552dbdc241c309d4315e2c8",
+    "actions/find-mail-contacts/scripts/probe-mail.js": "909dc7237bef2cfcab745d35d3e8782911ef153b3ef9592242638d2e73df2e4a",
     "actions/read-score-table/ACTION.md": "368e1aec4352cfca8849b23e92d7216564a240671147b3aad59abc59d7ebdd9e",
     "actions/read-score-table/contracts/result.json": "6ae2c7e7533f2d495781a7a1a1e55e0dbebcf04a06127dc1ea3bde654c45e39b",
     "actions/read-score-table/runtime.js": "df3808b44a80139318a7f3b3161335d25b55e0baed16b5fd3192b42725ed9993",
@@ -32,12 +32,12 @@
     "processes/gmi-cluster-report/rules/gmi.js": "9d1218c0ead87e9e75f4b2271fe9bee7a2768dcec4bba23c7c96e995792623ac",
     "processes/gmi-cluster-report/templates/report.md": "7f9338cc8d72669fb4a8c52c9284261d12bf27ee4cab344ca494c2ed2bd64113"
   },
-  "updated": "2026-11-18T21:17:06.815Z",
+  "updated": "2026-11-19T05:15:18.144Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-19_проба-проверка-gmi-6",
-    "2026-11-19_проба-проверка-gmi-7",
-    "2026-11-19_проба-проверка-gmi-8",
-    "2026-11-19_проба-проверка-gmi-9"
+    "2026-11-19_проба-проверка-gmi-11",
+    "2026-11-19_проба-проверка-gmi-12",
+    "2026-11-19_проба-проверка-gmi-13",
+    "2026-11-19_проба-проверка-gmi-14"
   ]
 }

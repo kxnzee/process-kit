@@ -49,13 +49,24 @@ function runContext(value,cwd=process.cwd()){
   const scores=JSON.parse(fs.readFileSync(safe.inside(dir,artifact),'utf8'));
   return {output,dir,state,scores,card};
 }
+function savedQueries(raw,from,to){
+  const states={};
+  const read=name=>fs.existsSync(path.join(raw,name))?fs.readFileSync(path.join(raw,name),'utf8'):null;
+  const error=text=>/^\s*(?:Ошибка:|Error\b)/im.test(text||'');
+  const timeout=text=>/TIMELIMIT|0x3/i.test(text||'');
+  for(let i=from;i<to;i++){
+    const name=String(i).padStart(3,'0'),general=read(name+'.txt'),short=read(name+'-s.txt'),narrow=read(name+'-n.txt');
+    states[i]={general:general!==null&&!error(general)&&!timeout(general),needsShort:general!==null&&!error(general)&&(timeout(general)||!general.includes('👤')),short:short!==null&&!error(short)&&!timeout(short),narrow:narrow!==null&&!error(narrow)&&!timeout(narrow)};
+  }
+  return states;
+}
 function pollInput(value,from,to){
   const ctx=runContext(value);
   if(ctx.card.operation!=='model'||ctx.card.action!=='find-mail-contacts')throw new Error('Опрос разрешён только после begin текущего find-mail-contacts');
   if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<from||to-from>40)throw new Error('Нужен диапазон до 40 строк');
   const raw=require('../../../tools/lib/core/safe-path').inside(ctx.dir,'inputs/mail-batches/raw');
   fs.mkdirSync(raw,{recursive:true});
-  return {goal:ctx.state.params.goal??'',names:ctx.scores.employees.slice(from,to).map((person,index)=>[from+index,String(person.name||''),person.total]),files:fs.existsSync(raw)?fs.readdirSync(raw):[]};
+  return {goal:ctx.state.params.goal??'',names:ctx.scores.employees.slice(from,to).map((person,index)=>[from+index,String(person.name||''),person.total]),files:fs.existsSync(raw)?fs.readdirSync(raw):[],states:savedQueries(raw,from,to)};
 }
 
 // --- нормализация ---------------------------------------------------------------------------
@@ -125,7 +136,7 @@ function resolve(name, all, orgValue) {
   const want = normOrg(orgValue);
   let hit = want ? live.filter((c) => normOrg(c.org) === want) : [];
   let how = 'точное совпадение с столбцом выгрузки';
-  if (!hit.length && want) { hit = live.filter((c) => normOrg(c.org).includes(want) || want.includes(normOrg(c.org))); how = 'подстрока столбца выгрузки'; }
+  if (!hit.length && want) { hit = live.filter((c) => normOrg(c.org) && (normOrg(c.org).includes(want) || want.includes(normOrg(c.org)))); how = 'подстрока столбца выгрузки'; }
   if (hit.length === 1) {
     const rec = Object.assign(base, { email: hit[0].email, организация: hit[0].org, различение: how, 'записей': live.length });
     if (hit[0].contractor) rec['подряд'] = true;
@@ -220,7 +231,7 @@ function main() {
     if (dup.get(who) > 1) rec['дубликат_в_выгрузке'] = true;
     if (!rec.email && !rec['кандидаты']) {
       const cards = parseCards(text).filter((c) => normName(c.name) === normName(who));
-      if (cards.some((c) => c.contractor || /OU=\{/i.test(c.dn))) narrow.push({ индекс: i, ФИО: who, причина: rec['причина'] });
+      if (/подряд/i.test(kindOf.get(who) || '') || cards.some((c) => c.contractor || /OU=\{/i.test(c.dn))) narrow.push({ индекс: i, ФИО: who, причина: rec['причина'] });
     }
     map[who] = rec;
   });
@@ -260,4 +271,4 @@ function main() {
 }
 
 if (require.main === module) {try {if(process.argv[2]==='--poll-input')console.log(JSON.stringify(pollInput(process.argv[3],Number(process.argv[4]),Number(process.argv[5]))));else main();}catch(error){console.error(error.message);process.exitCode=1;}}
-module.exports = { parseCards, resolve, normName, normOrg, sheetCells, runContext, pollInput };
+module.exports = { parseCards, resolve, normName, normOrg, sheetCells, runContext, pollInput, savedQueries };

@@ -26,16 +26,19 @@ const strip = (r) => {
   const b = t.lastIndexOf('\nError: ');
   return (a >= 0 ? t.slice(a + 9, b > a ? b : undefined) : t).replace(/^\r?\n/, '').replace(/^\r?\n/, '').replace(/\r?\n$/, '');
 };
+const replyText = value => typeof value === 'string' ? value : Array.isArray(value?.content) ? value.content.filter(part=>part.type==='text').map(part=>part.text||'').join('\n') : value?.output!==undefined ? String(value.output) : JSON.stringify(value||'');
+const replyError = (value,text) => !!(value?.isError||value?.error)||/^\s*(?:Ошибка(?=\s|:|$)|Error\b|Request failed|HTTP(?:\/[\d.]+)?\s+[45]\d\d|401\b|403\b|429\b|Unauthorized\b|Forbidden\b)/i.test(text);
+
 async function run() {
   const output=String(RUN).replace(/\\/g,'/').replace(/\/$/,'').replace(/\/\.run$/,'').replace(/^outputs\//,'');
   if(!/^\d{4}-\d{2}-\d{2}_[a-zа-яё0-9-]+$/i.test(output))throw new Error('Нужен точный output прогона');
   if(!Number.isInteger(FROM)||!Number.isInteger(TO)||FROM<0||TO<FROM)throw new Error('Неверный диапазон строк');
   const rawDir='outputs/'+output+'/.run/'+RAW,names=[],notRecipient=[];
-  let goalRaw='',existing=[];
+  let goalRaw='',existing=[],states={};
   for(let at=FROM;at<TO;at+=40){
     const command='node actions/find-mail-contacts/scripts/build-map.js --poll-input "'+output+'" '+at+' '+Math.min(TO,at+40);
     const chunk=JSON.parse(strip(await tools.run_shell_command({command,description:'адресаты текущей попытки'})));
-    goalRaw=String(chunk.goal??'').trim();existing=chunk.files||[];
+    goalRaw=String(chunk.goal??'').trim();existing=chunk.files||[];Object.assign(states,chunk.states||{});
     const goal=goalRaw?Number(goalRaw.replace(',','.')):NaN;
     for(const [index,who,total]of chunk.names){if(!Number.isFinite(goal)||typeof total==='number'&&Number.isFinite(total)&&total<goal)names.push([index,who]);else notRecipient.push(index);}
   }
@@ -50,7 +53,7 @@ async function run() {
     for (let attempt = 1; attempt <= 6; attempt++) {
       try {
         const r = await ldap(params);
-        return typeof r === 'string' ? r : String((r && r.output) || '');
+        const text=replyText(r);if(replyError(r,text))throw new Error(text);return text;
       } catch (e) {
         const msg = String((e && e.message) || e);
         if (!/лимит запросов|rate|429|too many/i.test(msg)) return 'Ошибка: запрос справочника завершился ошибкой';
@@ -66,28 +69,27 @@ async function run() {
   let sincePause = 0;
   for (const [i, who] of names) {
     if (i < FROM || i >= TO) continue;
-    const file = String(i).padStart(3, '0') + '.txt';
-    if (!tree && have.has(file)) { skipped.push(i); continue; }
-    if (tree && have.has(String(i).padStart(3, '0') + suffix + '.txt')) { skipped.push(i); continue; }
-    if (!who.trim()) { skipped.push(i + ':пустое ФИО'); continue; }
-    if (++sincePause >= 8) { sincePause = 0; await nap(6); }
-    const params = tree
-      ? { query: who.trim().split(/\s+/)[0], limit: 100, baseDN: tree, scope: 'sub' }
-      : { query: who, limit: 100 };
-    let text = await ask(params);
-    if (/превышен лимит запросов/i.test(text)) { failed.push(i + ': лимит запросов'); continue; }
-    if (/^\s*Контакты не найдены|не относится к настроенному корню|baseDN/i.test(text) && tree) { failed.push(i + ': дерево не принято — ' + text.slice(0, 60)); continue; }
-    await write(String(i).padStart(3, '0') + (tree ? suffix : '') + '.txt', text);
-    // Сервер не уложился в лимит времени: тот же человек коротким фильтром, иначе «не проверено»
-    // осталось бы в отчёте там, где запись есть (правило 7 рецепта).
-    if (!tree && /0x3|TIMELIMIT/i.test(text)) {
-      await nap(6);
-      const shortQuery = await ask({ query: who.trim().split(/\s+/)[0], limit: 100 });
-      if (/превышен лимит запросов/i.test(shortQuery)) { failed.push(i + ': лимит запросов при коротком фильтре'); continue; }
-      await write(String(i).padStart(3, '0') + '-s.txt', shortQuery);
-      retried.push(i);
+    const name=String(i).padStart(3,'0'),saved=states[i]||{general:have.has(name+'.txt'),needsShort:false,short:have.has(name+'-s.txt'),narrow:have.has(name+'-n.txt')};
+    if(tree?saved.narrow:saved.general&&(!saved.needsShort||saved.short)){skipped.push(i);continue;}
+    if(!who.trim()){skipped.push(i+':пустое ФИО');continue;}
+    if(++sincePause>=8){sincePause=0;await nap(6);}
+    let text='',needsShort=!tree&&saved.needsShort;
+    if(tree||!needsShort){
+      const params=tree?{query:who.trim().split(/\s+/)[0],limit:100,baseDN:tree,scope:'sub'}:{query:who,limit:100};
+      text=await ask(params);
+      if(/превышен лимит запросов/i.test(text)){failed.push(i+': лимит запросов');continue;}
+      await write(name+(tree?suffix:'')+'.txt',text);
+      if(/^Ошибка:/m.test(text)){failed.push(i+': запрос справочника завершился ошибкой');continue;}
+      needsShort=!tree&&(/0x3|TIMELIMIT/i.test(text)||!text.includes('👤'));
     }
-    if ((text.match(/👤/g) || []).length >= 100) truncated.push(i);
+    if(needsShort&&!saved.short){
+      await nap(6);
+      const shortQuery=await ask({query:who.trim().split(/\s+/)[0],limit:100});
+      if(/превышен лимит запросов/i.test(shortQuery)){failed.push(i+': лимит запросов при коротком фильтре');continue;}
+      await write(name+'-s.txt',shortQuery);retried.push(i);
+      if(/^Ошибка:|TIMELIMIT|0x3/im.test(shortQuery)){failed.push(i+': короткая перепроверка не завершена');continue;}
+    }
+    if((text.match(/👤/g)||[]).length>=100)truncated.push(i);
     done.push(i);
   }
   return JSON.stringify({

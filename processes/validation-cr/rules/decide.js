@@ -102,6 +102,7 @@ function evaluate(inputs, parameters) {
       label: verdict,
       failedFields: failedFields.map(r => ({ fieldId: r.fieldId, label: r.label || '', requirement: r.requirement, status: r.status, value: r.value ?? null })),
       failedRules,
+      unreadFields,
       securityViolation: violation,
       securityFindings: (secRes.findings || []).map(f => ({ place: String(f.place || ''), category: String(f.category || ''), quote: String(f.quote || '') }))
     });

@@ -39,6 +39,11 @@ check('столбец выгрузки различает тёзок: точно
   assert.equal(rec['различение'], 'точное совпадение с столбцом выгрузки');
 });
 
+check('пустая организация не выбирает адресата по совпадению пустой подстроки',()=>{
+  const result=build.resolve('Тестов Пётр Петрович',[card({name:'Тестов Пётр Петрович',email:'blank@example.invalid',org:'',dn:'a'}),card({name:'Тестов Пётр Петрович',email:'other@example.invalid',org:'Другая компания',dn:'b'})],'Целевая компания');
+  assert.equal(result.email,undefined);assert.equal(result.кандидаты.length,2);
+});
+
 check('однофамильцев без различения процесс не выбирает: две-три записи идут кандидатами', () => {
   const live = [
     card({ name: 'Тестова Анна Сергеевна', email: 'a1@example.invalid', post: 'Аудитор', org: 'Сектор А' }),
@@ -101,6 +106,7 @@ check('пустая выдача отличается от непроверен�
     const tools = {
       'mcp__mcp_email__search_ldap': async (params) => {
         seen.push(params.query + (params.baseDN ? '|' + params.baseDN : ''));
+        if(o.reply)return o.reply(params,seen.length);
         if (/Илья/.test(params.query)) throw new Error('превышен лимит запросов (429)');
         if (/Анна/.test(params.query)) return '👤 Тестова Анна Сергеевна\n📧 a@example.invalid\nDN: CN=a,OU=GAL\nCode: 0x3';
         return '👤 ' + params.query + '\n📧 p@example.invalid\nDN: CN=p,OU=GAL';
@@ -110,7 +116,7 @@ check('пустая выдача отличается от непроверен�
         if(command.includes('--poll-input')){
           const values=JSON.parse(artifact).employees;
           const parts=command.match(/--poll-input "[^"]+" (\d+) (\d+)$/);
-          return {output:JSON.stringify({goal:goal??'',names:values.slice(Number(parts[1]),Number(parts[2])).map((person,i)=>[Number(parts[1])+i,person.name,person.total]),files:(o.ls||'').split(/\s+/).filter(Boolean)})};
+          return {output:JSON.stringify({goal:goal??'',names:values.slice(Number(parts[1]),Number(parts[2])).map((person,i)=>[Number(parts[1])+i,person.name,person.total]),files:(o.ls||'').split(/\s+/).filter(Boolean),states:o.states||{}})};
         }
         throw new Error('Непереносимая команда: '+command);
 
@@ -153,6 +159,15 @@ check('пустая выдача отличается от непроверен�
     assert.ok(tree.written.includes('000-n.txt'));
     assert.ok(tree.seen[0].startsWith('Тестов|OU={OMEGA}'), 'запрос по одной фамилии с базой дерева');
   });
+  const emptyRetry=await call({from:0,to:1,reply:async(params,count)=>count===1?'Контакты не найдены':'👤 Тестов Пётр Петрович\n📧 p@example.invalid'});
+  check('пустой ответ длинного ФИО проверяется коротким фильтром',()=>{assert.deepEqual(emptyRetry.seen,['Тестов Пётр Петрович','Тестов']);assert.ok(emptyRetry.written.includes('000-s.txt'));});
+  const retryFolder=fs.mkdtempSync(path.join(os.tmpdir(),'pk mail resume '));
+  try{
+    fs.writeFileSync(path.join(retryFolder,'000.txt'),'Code: 0x3 TIMELIMIT');
+    const states=build.savedQueries(retryFolder,0,1);
+    const resumed=await call({from:0,to:1,ls:'000.txt',states,reply:async()=>({content:[{type:'text',text:'👤 Тестов Пётр Петрович\n📧 p@example.invalid'}]})});
+    check('возобновление заканчивает прерванный короткий запрос и читает MCP content',()=>{assert.deepEqual(resumed.seen,['Тестов']);assert.ok(resumed.written.includes('000-s.txt'));assert.equal(resumed.out.опрощено,1);});
+  }finally{fs.rmSync(retryFolder,{recursive:true,force:true});}
   const probeSrc = fs.readFileSync(path.join(cwd, 'actions/find-mail-contacts/scripts/probe-mail.js'), 'utf8');
   const probe = (keys, behave) => new Function('tools', 'ALL_TOOLS', probeSrc + '\nreturn run("Тестов Пётр Петрович");')(
     Object.fromEntries(keys.map((k) => [k, behave])), Object.fromEntries(keys.map((k) => [k, 1])));
@@ -172,6 +187,10 @@ check('пустая выдача отличается от непроверен�
     assert.ok(!denied.чтение.includes('Request failed'), 'сырой текст ошибки наружу не печатается');
   });
 
+  for(const reply of [{isError:true,content:[{type:'text',text:'403 Forbidden'}]},'Ошибка 401 Unauthorized']){
+    const resolved=await probe(['mcp__mcp_email__search_ldap'],async()=>reply);
+    check('ошибка в обычном ответе MCP не подтверждает доступ',()=>{assert.equal(resolved.проверено,false);assert.match(resolved.чтение,/доступ отвергнут/);});
+  }
   const live = await probe(['mcp__mcp_email__search_ldap'], async () => '👤 кто-то\n📧 a@example.invalid');
   check('ответивший справочник даёт переход к живому опросу', () => {
     assert.equal(live.найден, true);
@@ -201,6 +220,19 @@ check('пустая выдача отличается от непроверен�
       const before=fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'),'utf8');
       const repeat=spawnSync(process.execPath,[path.join(cwd,'actions/find-mail-contacts/scripts/build-map.js'),output,'--без-подключения','нет'],{cwd:tmp,encoding:'utf8'});
       assert.notEqual(repeat.status,0);assert.equal(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'),'utf8'),before);
+    });
+    const data=JSON.parse(fs.readFileSync(path.join(tmp,'processes/gmi-cluster-report/data/score-table.example.json'),'utf8'));
+    data.headers.push('ФИО сотрудника','Подразделение 2 уровня','Юридическое лицо');
+    data.rows=data.rows.map((row,i)=>[...row,'Подрядчик Тестовый '+i,'Целевая компания','Подрядчик']);
+    const scoreFile='processes/gmi-cluster-report/data/contractor-review.json';ctx.write(scoreFile,JSON.stringify(data));
+    const other=journal.start(tmp,{process:'gmi-cluster-report',mode:'local',definitionTest:true,params:{methodologyCheck:'no',runDate:'19.11.2026',demo:true,scoreFile}}).output;
+    journal.operation(tmp,'choose',{output:other,step:'methodology-gate',target:'read'});journal.execute(tmp,{output:other,step:'read'});
+    journal.operation(tmp,'choose',{output:other,step:'mail-gate',target:'lookup-mail',decision:'Проверочный поиск'});journal.operation(tmp,'begin',{output:other,step:'lookup-mail'});
+    const state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',other,'.run/state.json'),'utf8')),scores=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',other,'.run',state.artifacts['score-table']),'utf8'));
+    for(let i=0;i<scores.employees.length;i++)ctx.write(`outputs/${other}/.run/inputs/mail-batches/raw/${String(i).padStart(3,'0')}.txt`,'Контакты не найдены');
+    const built=spawnSync(process.execPath,[path.join(cwd,'actions/find-mail-contacts/scripts/build-map.js'),other],{cwd:tmp,encoding:'utf8'});
+    check('подрядчик из выгрузки требует поиска по дереву даже при пустых LDAP-карточках',()=>{
+      assert.equal(built.status,0,built.stderr);const narrow=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',other,'.run/inputs/people-narrow-needed.json'),'utf8'));assert.ok(narrow.length>0);
     });
   }finally{ctx.close();}
 

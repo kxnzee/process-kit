@@ -53,6 +53,7 @@ function section(title, rows, emptyText) {
 // причина не появилась только в одной из форм.
 function reasonsOf(item) {
   const lines = [];
+  for (const field of item.unreadFields || []) lines.push(`Не удалось прочитать поле «${field}».`);
   for (const field of item.failedFields || []) {
     lines.push(`Бизнес-поле ${field.label || field.fieldId} (${field.fieldId}): ${field.requirement} — ${field.status}; значение: ${field.value ?? 'нечитаемо'}.`);
   }
@@ -106,7 +107,7 @@ function render(data, params) {
   }
   if (!reasonsAny) out.push('<p class="empty">Нет записей: замечаний не обнаружено.</p>');
 
-  const unverified = data.unverified.map(row => `${link(row.key, row.url)}: ${esc(row.reason)}`);
+  const unverified = data.unverified.map(row => `${link(row.key, row.url)}: ${esc(row.reason)}`).concat(data.items.filter(item=>(item.unreadFields||[]).length).map(item=>`${link(item.key,item.url)}: не удалось прочитать ${item.unreadFields.map(esc).join(', ')}`));
   out.push(section('Проверить не удалось', unverified));
   const excluded = data.excluded.map(row => `${link(row.key, row.url)}: ${esc(row.reason)}`);
   out.push(section('Исключены', excluded));

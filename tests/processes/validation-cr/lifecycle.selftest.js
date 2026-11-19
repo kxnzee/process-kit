@@ -68,4 +68,13 @@ try{
   write(`${base}/description-rules.md`,'changed rule');assert.throws(()=>journal.operation(tmp,'next',{output}),/Изменён вход/);
  });
 
+ check('custom outcome labels pass the complete lifecycle and keep error presentation',()=>{
+  const output=route({extra:{okLabel:'CUSTOM_OK',errorLabel:'CUSTOM_ERROR'}}),state=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run/state.json'),'utf8'));
+  const data=JSON.parse(fs.readFileSync(path.join(tmp,'outputs',output,'.run',state.artifacts['report-data']),'utf8'));
+  assert.equal(data.items.find(row=>row.key==='DEMO-103').verdict,'CUSTOM_ERROR');
+  assert.ok(fs.readFileSync(path.join(tmp,'outputs',output,'report.html'),'utf8').includes('class="verdict error">CUSTOM_ERROR'));
+  const altered=structuredClone(data);altered.items[0].verdict='INVENTED';assert.throws(()=>require('../../../processes/validation-cr/renderers/report').render(altered),/исход CR/);
+  assert.throws(()=>require('../../../processes/validation-cr/rules/decide').evaluate({records:{records:[]},fields:{skipped:true},rules:{skipped:true},security:{items:[]}},{runDate:'2026-11-19',okLabel:'SAME',errorLabel:'SAME'}),/различаться/);
+ });
+
 }finally{ctx.close();}

@@ -43,7 +43,7 @@
           "key": { "type": "string", "minLength": 1 },
           "url": { "type": "string" },
           "summary": { "type": "string" },
-          "verdict": { "type": "string", "enum": ["CHECK_OK", "CHECK_ERROR"] },
+          "verdict": { "type": "string", "minLength": 1, "description": "Один из meta.okLabel или meta.errorLabel; проверяется правилом и формой отчёта" },
           "label": { "type": "string", "minLength": 1, "description": "Метка исхода; совпадает с verdict" },
           "failedFields": {
             "type": "array",

@@ -43,6 +43,7 @@ function evaluate(inputs, parameters) {
   const p = object(parameters, 'parameters');
   const okLabel = typeof p.okLabel === 'string' && p.okLabel.trim() ? p.okLabel.trim() : fail('parameters.okLabel: нужна непустая строка');
   const errorLabel = typeof p.errorLabel === 'string' && p.errorLabel.trim() ? p.errorLabel.trim() : fail('parameters.errorLabel: нужна непустая строка');
+  if (okLabel === errorLabel) fail('parameters.okLabel и errorLabel должны различаться');
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(p.runDate || '')) === false) fail('parameters.runDate: нужна дата прогона ГГГГ-ММ-ДД; пусто — назвать дату параметром запуска runDate');
   const runDate = p.runDate;
 

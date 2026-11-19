@@ -38,11 +38,7 @@ a:hover{text-decoration:underline}
 small{color:var(--muted)}
 `.trim();
 
-function verdictClass(verdict) {
-  if (verdict === 'CHECK_OK') return 'ok';
-  if (verdict === 'CHECK_ERROR') return 'error';
-  return 'ok';
-}
+function verdictClass(verdict, meta) { return verdict === meta.errorLabel ? 'error' : 'ok'; }
 
 function section(title, rows, emptyText) {
   if (!rows.length) return `<h2>${esc(title)}</h2><p class="empty">${esc(emptyText || 'Нет записей.')}</p>`;
@@ -92,7 +88,7 @@ function render(data, params) {
     out.push('<table><tr><th>CR</th><th>Исход</th></tr>');
     for (const item of data.items) {
       out.push(`<tr><td>${link(item.key, item.url)}<br><small>${esc(item.summary)}</small></td>`);
-      out.push(`<td class="verdict ${verdictClass(item.verdict)}">${esc(item.verdict)}</td></tr>`);
+      out.push(`<td class="verdict ${verdictClass(item.verdict, m)}">${esc(item.verdict)}</td></tr>`);
     }
     out.push('</table>');
   }

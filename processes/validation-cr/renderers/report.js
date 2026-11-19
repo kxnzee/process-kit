@@ -16,7 +16,11 @@ function check(data) {
   }
   if (c.okCount + c.errorCount !== c.total) throw new Error('Счётчики исходов не сходятся с total');
   if (!Array.isArray(data.items)) throw new Error('Нет массива items');
-  for (const item of data.items) if (!item.key) throw new Error('Строка items без ключа');
+  for (const item of data.items) {
+    if (!item.key) throw new Error('Строка items без ключа');
+    if (![m.okLabel,m.errorLabel].includes(item.verdict) || item.label !== item.verdict) throw new Error('Неизвестный или несогласованный исход CR');
+  }
+  if (m.okLabel === m.errorLabel || data.items.length !== c.total || data.items.filter(item=>item.verdict===m.okLabel).length !== c.okCount || data.items.filter(item=>item.verdict===m.errorLabel).length !== c.errorCount) throw new Error('Счётчики исходов не соответствуют строкам отчёта');
   for (const key of ['excluded', 'unverified', 'notes']) if (!Array.isArray(data[key])) throw new Error(`Нет массива ${key}`);
   return data;
 }

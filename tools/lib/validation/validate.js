@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Валидатор сущностей Process Kit. Node >= 18, без зависимостей, CommonJS.
+// Валидатор сущностей RocKit. Node >= 22, без зависимостей, CommonJS.
 //
 // Запуск:
 //   node tools/kit.js check                 проверить всё
@@ -298,7 +298,7 @@ function ruleSkills() {
       E('скилл', sdir, 0, nested ? 'вложенный скилл: GigaCode их не видит, кладите плоско' : 'нет SKILL.md');
       continue;
     }
-    if (!/^(pp-ai-|my-|[a-z0-9]+-)/.test(name)) E('скилл', file, 0, 'имя скилла: pp-ai-*, <код>-* или my-*');
+    if (!/^(rk-|my-|[a-z0-9]+-)/.test(name)) E('скилл', file, 0, 'имя скилла: rk-*, <код>-* или my-*');
     const text = read(file);
     const fm = parseFrontmatter(text);
     if (!fm.data) { E('скилл', file, 1, 'нет шапки --- name/description ---'); continue; }
@@ -387,7 +387,9 @@ function ruleActions() {
 
     // ссылки на свои файлы — относительно папки действия
     lines(text).forEach((l, i) => {
-      if (i >= fm.bodyLine - 1 && l.includes(`actions/${name}/`)) W('действие', file, i + 1, `ссылка от корня: пишите путь относительно папки действия, без actions/${name}/`);
+      // Shell examples run from the repository root; ordinary resource links stay owner-relative.
+      const resourceText = l.replace(new RegExp(`\\bnode actions/${name}/scripts/[a-z0-9.-]+\\.js\\b`, 'g'), '');
+      if (i >= fm.bodyLine - 1 && resourceText.includes(`actions/${name}/`)) W('действие', file, i + 1, `ссылка от корня: пишите путь относительно папки действия, без actions/${name}/`);
       const re = /(?:^|[\s`(«"'])((?:templates|queries|rules)\/[^\s`'")»,;]+)/g;
       let m;
       while ((m = re.exec(l))) {
@@ -706,7 +708,7 @@ function checkRunDir(dir) {
 
 function checkSetupReport(file) {
   const t = read(file);
-  if (!/^# Настройка Process Kit/.test(t)) E('отчёт настройки', file, 1, 'первая строка — «# Настройка Process Kit, <дата>»');
+  if (!/^# Настройка (?:RocKit|Process Kit)(?:,|\r?\n|$)/.test(t)) E('отчёт настройки', file, 1, 'первая строка — «# Настройка RocKit, <дата>»');
   if (lines(t).filter((l) => l.trim()).length > 15) W('отчёт настройки', file, 0, 'отчёт длиннее 15 строк');
   if (/\$secret:|Bearer\s|x-[a-z]+-token/i.test(t)) E('отчёт настройки', file, 0, 'в отчёте есть данные доступа');
 }

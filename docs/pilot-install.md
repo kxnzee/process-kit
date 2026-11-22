@@ -45,7 +45,7 @@ execFileSync(process.execPath,['tools/kit.js','hooks-install'],{cwd:destination,
 const state=JSON.parse(execFileSync(process.execPath,['tools/kit.js','setup-status'],{cwd:destination,encoding:'utf8'}));
 if(!state.personalReady)throw new Error('Установка не готова: '+state.issues.join(', '));
 git('add','--','config/my/config.json');
-git('-c','commit.gpgsign=false','commit','-m','Личная настройка пилота Process Kit','--only','--','config/my/config.json');
+git('-c','commit.gpgsign=false','commit','-m','Личная настройка пилота RocKit','--only','--','config/my/config.json');
 console.log(JSON.stringify({pilot:true,revision,personalReady:true,connectionsReady:false,destination}));
 ```
 

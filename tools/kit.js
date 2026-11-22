@@ -21,7 +21,7 @@ function main(args){
  const [command,...rest]=args;
  if(!command||command==='--help'||command==='help'){
   if(rest.length){console.error('Использование: node tools/kit.js --help | --json | <command> [args]');return 2;}
-  console.log('Process Kit: node tools/kit.js <command> [args]\n');
+  console.log('RocKit: node tools/kit.js <command> [args]\n');
   for(const [name,item]of Object.entries(commands))console.log(`${name.padEnd(15)} ${item.purpose}\n                ${item.usage}${item.scopeNote?'\n                '+item.scopeNote:''}`);
   return 0;
  }

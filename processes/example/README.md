@@ -50,7 +50,7 @@ templates/, renderers/ и contracts/ только когда они реальн
 
 Демо: `processes/<имя>/fixture.json`, только по явному dataFile. Готовые ответы не хранятся.
 Глубина подпроцессов — по master.execution.maxProcessDepth (по умолчанию 5), без рекурсии. Общий процесс не ссылается на личные/командные сущности; между командами ссылки запрещены.
-Сохранение прогона: `.gigacode/skills/pp-ai-run-process/SKILL.md`. Проверка: `node tools/kit.js check --only processes` и preflight `--process <имя>`.
+Сохранение прогона: `.gigacode/skills/rk-run-process/SKILL.md`. Проверка: `node tools/kit.js check --only processes` и preflight `--process <имя>`.
 
 ## Разрешение сущностей
 

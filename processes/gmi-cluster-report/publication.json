@@ -14,7 +14,7 @@
     "actions/evaluate-data/ACTION.md": "8383c9464264355304f42fdd2d6288ab676ccf97bc4199b98eb3d1708dd4cedc",
     "actions/evaluate-data/contracts/result.json": "31259dcce1aec6aac8a7352eda5cc970d4fed2a21e1a0b6bdd8a3a139a3252d7",
     "actions/evaluate-data/runtime.js": "0dce312dd46136e2d98c4b717af85e3f148f955db6377a7742adc56d7bbb9739",
-    "actions/find-mail-contacts/ACTION.md": "6c46046064ee4b8b38f69b945db4314bb0c57a680f7e4519d92884a807ca180b",
+    "actions/find-mail-contacts/ACTION.md": "9325fbf6dea6cce7e6a01e7dfa32e17cfae0a9a1637afa0f0453d012f00ad626",
     "actions/find-mail-contacts/contracts/people-map.json": "5a76130e751d86f68e73279f22508616ae46f9a296f16971e3f5b8e02eeea642",
     "actions/find-mail-contacts/runtime.js": "e1fd6824160b2f2649d4d1399724c9fc313e249d76633f22e9bf1afda67c4db1",
     "actions/find-mail-contacts/scripts/build-map.js": "224d1411d9ea251a866eac81e1ce62e6d02a755480de34649f4415fdb9eab2d6",
@@ -32,12 +32,12 @@
     "processes/gmi-cluster-report/rules/gmi.js": "9d1218c0ead87e9e75f4b2271fe9bee7a2768dcec4bba23c7c96e995792623ac",
     "processes/gmi-cluster-report/templates/report.md": "7f9338cc8d72669fb4a8c52c9284261d12bf27ee4cab344ca494c2ed2bd64113"
   },
-  "updated": "2026-11-19T05:15:18.144Z",
+  "updated": "2026-11-22T18:16:07.255Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-19_проба-проверка-gmi-11",
-    "2026-11-19_проба-проверка-gmi-12",
-    "2026-11-19_проба-проверка-gmi-13",
-    "2026-11-19_проба-проверка-gmi-14"
+    "2026-11-22_проба-проверка-rockit-gmi",
+    "2026-11-22_проба-проверка-rockit-gmi-2",
+    "2026-11-22_проба-проверка-rockit-gmi-3",
+    "2026-11-22_проба-проверка-rockit-gmi-4"
   ]
 }

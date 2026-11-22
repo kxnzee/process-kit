@@ -31,11 +31,11 @@
     "pp-ai-bitbucket": {
       "command": "node",
       "args": [
-        "./.gigacode/mcp/bitbucket-mcp/dist/index.js"
+        ".gigacode/mcp/bitbucket-mcp/dist/index.js"
       ],
       "env": {
-        "BITBUCKET_URL": "https://sbrf-bitbucket.sigma.sbrf.ru",
-        "BITBUCKET_TOKEN": "$secret:bitbucket-inventory/BITBUCKET_TOKEN"
+        "BITBUCKET_URL": "https://stash.sigma.sbrf.ru",
+        "BITBUCKET_TOKEN": "$secret:pp-ai-bitbucket/BITBUCKET_TOKEN"
       },
       "timeout": 120000,
       "trust": false
@@ -49,14 +49,14 @@
     "pp-ai-email": {
       "command": "node",
       "args": [
-        "./.gigacode/mcp/mcp-email/dist/index.js"
+        ".gigacode/mcp/mcp-email/dist/index.js"
       ],
       "env": {
-        "USER": "<ваш табельный номер>",
-        "PASSWORD": "$secret:mcp-email/PASSWORD",
+        "USER": "<логин Sigma>",
+        "PASSWORD": "$secret:pp-ai-email/PASSWORD",
         "SMTP_FROM": "<ваш адрес>@sberbank.ru",
-        "LDAP_BIND_DN": "<ваш табельный номер>@sigma.sbrf.ru",
-        "LDAP_BIND_PASSWORD": "$secret:mcp-email/LDAP_BIND_PASSWORD"
+        "LDAP_BIND_DN": "$secret:pp-ai-email/LDAP_BIND_DN",
+        "LDAP_BIND_PASSWORD": "$secret:pp-ai-email/LDAP_BIND_PASSWORD"
       },
       "timeout": 60000,
       "trust": false

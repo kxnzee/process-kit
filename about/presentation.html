@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RocKit — презентация проекта</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2b313d;
+    --ink:#e8eaee; --muted:#9aa3b2; --acc:#60a5fa; --acc2:#f6ad55; --ok:#68d391;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif;overflow:hidden}
+  .deck{height:100vh;display:flex;flex-direction:column}
+  .bar{height:3px;background:var(--line);position:relative;flex:0 0 auto}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc);width:10%;transition:width .18s}
+  .stage{flex:1 1 auto;overflow:auto;padding:30px clamp(16px,4vw,58px) 86px}
+  .slide{display:none;max-width:1080px;margin:0 auto}
+  .slide.on{display:block;animation:fade .18s ease-out}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  footer{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:14px;
+    padding:11px clamp(14px,4vw,58px);background:rgba(15,17,21,.94);border-top:1px solid var(--line);
+    backdrop-filter:blur(6px);flex:0 0 auto}
+  footer .t{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  footer .n{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;margin-left:auto}
+  footer button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:5px 12px;font-size:14px;cursor:pointer}
+  footer button:hover{border-color:var(--acc);color:var(--acc)}
+  .dots{display:flex;gap:6px}
+  .dots i{width:8px;height:8px;border-radius:50%;background:var(--line);cursor:pointer;display:block}
+  .dots i[aria-current="true"]{background:var(--acc)}
+  .eyebrow{color:var(--acc2);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px}
+  h1{font-size:clamp(28px,4.4vw,50px);line-height:1.12;margin:0 0 16px;letter-spacing:-.01em}
+  h2{font-size:clamp(22px,2.7vw,32px);line-height:1.2;margin:0 0 8px}
+  .sub{color:var(--muted);font-size:clamp(15px,1.5vw,18px);margin:0 0 22px;max-width:92ch}
+  h3{font-size:14px;color:var(--acc);margin:22px 0 9px}
+  p{margin:0 0 12px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc);
+    border-radius:10px;padding:13px 15px}
+  .kpi b{display:block;font-size:clamp(24px,3vw,34px);line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .kpi span{display:block;color:var(--muted);font-size:13.5px;margin-top:5px}
+  .kpi.alt{border-left-color:var(--acc2)} .kpi.good{border-left-color:var(--ok)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .concl{margin-top:22px;background:var(--panel2);border-left:3px solid var(--acc2);
+    padding:12px 15px;border-radius:0 9px 9px 0;font-size:16.5px}
+  .concl b{color:var(--acc2)}
+  .note{background:var(--panel2);border-left:3px solid var(--acc);padding:12px 15px;border-radius:0 8px 8px 0;
+    font-size:16px;margin:18px 0}
+  .src{color:#7c8698;font-size:12.5px;margin-top:18px;line-height:1.5}
+  code{background:#11151c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:15px;margin-top:4px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+  td.hl{background:rgba(96,165,250,.07)} th.hl{color:var(--acc)}
+  tbody tr:last-child td{border-bottom:none}
+  .rowlab{color:var(--muted);width:24%}
+  .chart{margin:6px 0 0}
+  .r{display:grid;grid-template-columns:minmax(150px,26%) 1fr minmax(74px,auto);gap:10px;align-items:center;margin:7px 0}
+  .r .lab{color:var(--muted);font-size:13.5px}
+  .r .val{font-variant-numeric:tabular-nums;font-size:13.5px;text-align:right}
+  .track{background:#11151c;border:1px solid var(--line);border-radius:5px;height:22px;overflow:hidden}
+  .fill{height:100%;background:var(--acc)}
+  .fill.b{background:var(--acc)} .fill.o{background:var(--acc2)} .fill.g{background:var(--ok)}
+  .stack{display:flex;height:32px;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:8px 0 4px}
+  .stack div{display:flex;align-items:center;justify-content:center;font-size:12.5px;color:#0b1220;font-weight:600;min-width:0}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:13px;margin-top:8px}
+  .legend s{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:6px;text-decoration:none}
+  .lvl{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .lvl>div{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 15px;font-size:14.5px}
+  .lvl b{display:block;margin-bottom:5px;font-size:15.5px}
+  .lvl .path{color:var(--acc2);font-family:ui-monospace,Consolas,monospace;font-size:12px;display:block;margin-top:9px}
+  .loop{display:flex;flex-direction:column;gap:8px;margin:6px 0 0;max-width:780px}
+  .step{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:15px}
+  .step em{display:block;color:var(--muted);font-style:normal;font-size:13px;margin-top:3px}
+  .down{color:var(--muted);text-align:center;font-size:15px;line-height:1;margin:-3px 0}
+  ol.steps{margin:6px 0 0;padding-left:22px;font-size:16.5px} ol.steps li{margin:11px 0}
+  ul.tick{margin:6px 0 0;padding-left:0;list-style:none;font-size:16px}
+  ul.tick li{margin:10px 0;padding-left:24px;position:relative}
+  ul.tick li::before{content:"✓";position:absolute;left:0;top:-1px;color:var(--ok)}
+  ul.cross{margin:6px 0 0;padding-left:0;list-style:none;font-size:16px}
+  ul.cross li{margin:10px 0;padding-left:24px;position:relative;color:var(--muted)}
+  ul.cross li::before{content:"✕";position:absolute;left:0;top:-1px;color:var(--acc2)}
+  .two{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);
+    color:var(--muted);margin-left:6px;font-weight:400}
+  .tag.vis{color:var(--ok);border-color:#2f6b4a} .tag.svc{color:var(--acc2);border-color:#7a5c2a}
+  .ex-line{margin:9px 0 0;font-size:13.5px;color:var(--muted)}
+  .ex-line a{color:var(--acc);text-decoration:none;border-bottom:1px dotted var(--acc)}
+  .dense p,.dense li{font-size:13.5px}
+  .dense td,.dense th{padding:8px 10px;font-size:13.5px}
+  .dense th{font-size:12px}
+  ul.plain{margin:6px 0 0;padding-left:0;list-style:none;columns:2;column-gap:26px}
+  ul.plain li{margin:0 0 10px;break-inside:avoid;color:var(--muted);font-size:13.5px}
+  ul.plain li b{color:var(--ink)}
+  .chain{margin:8px 0 0;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px;color:var(--muted);line-height:1.7}
+  .muted{color:var(--muted);font-size:14px}
+  @media print{
+    body{overflow:visible;background:#fff;color:#111}
+    .deck{height:auto} footer,.bar{display:none}
+    .stage{overflow:visible;padding:0}
+    .slide{display:block!important;page-break-after:always;max-width:none;padding:18px 0}
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+<div class="bar"><i id="prog"></i></div>
+
+<main class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide on" data-t="Титул">
+  <p class="eyebrow">RocKit</p>
+  <h1>Open source уже дал нам агентов.<br>Он не дал нам контекст.</h1>
+  <p class="sub">Фокус: не производить ещё один скилл, а построить слой, в котором любой скилл начинает работать.</p>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-t="Open source: избыток предложения">
+  <p class="eyebrow">Слайд 2</p>
+  <h2>Open source: избыток предложения</h2>
+  <p class="sub">Экосистема агентов, скиллов и MCP-серверов растёт быстрее, чем кто-либо успевает её осваивать.</p>
+  <div class="grid">
+    <div class="kpi"><b>67&nbsp;196</b><span>открытых проектов AI-агентов проиндексировано в одном исследовании (MCP-серверы, Claude Skills, Codex Skills, агентные инструменты)</span></div>
+    <div class="kpi alt"><b>×45</b><span>ежемесячное создание новых проектов выросло с 280 (декабрь 2024) до 27&nbsp;720 (март 2026)</span></div>
+    <div class="kpi"><b>7&nbsp;273</b><span>MCP-сервера в крупнейшем каталоге; 408,5 тыс. звёзд на 7&nbsp;156 репозиториев</span></div>
+    <div class="kpi alt"><b>85&nbsp;000+</b><span>скиллов в марте 2026 против ~50 в середине 2025; отдельные реестры заявляют до 430&nbsp;000 и даже 1 млн</span></div>
+  </div>
+  <h3>Новых проектов в месяц</h3>
+  <div class="chart">
+    <div class="r"><div class="lab">декабрь 2024</div><div class="track"><div class="fill b" style="width:1%"></div></div><div class="val">280</div></div>
+    <div class="r"><div class="lab">март 2026</div><div class="track"><div class="fill o" style="width:99.5%"></div></div><div class="val">27&nbsp;720</div></div>
+  </div>
+  <h3>Для сравнения: GitHub понадобилось 27 месяцев, чтобы достичь 1 млн репозиториев. Реестр скиллов прошёл этот путь за 7 месяцев</h3>
+  <div class="chart">
+    <div class="r"><div class="lab">GitHub, 1 млн репо</div><div class="track"><div class="fill b" style="width:100%"></div></div><div class="val">27 мес.</div></div>
+    <div class="r"><div class="lab">реестр скиллов, 1 млн</div><div class="track"><div class="fill o" style="width:26%"></div></div><div class="val">7 мес.</div></div>
+  </div>
+  <div class="concl"><b>Вывод:</b> предложение агентов и скиллов перестало быть дефицитом. Дефицит — в другом.</div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-t="Почему пилоты не доходят до продакшена">
+  <p class="eyebrow">Слайд 3</p>
+  <h2>Почему пилоты не доходят до продакшена</h2>
+  <p class="sub">Это не проблема моделей.</p>
+  <div class="grid">
+    <div class="kpi alt"><b>60&nbsp;%</b><span>провалившихся или замороженных AI-проектов убиты плохим качеством данных: сведения разбросаны по несвязанным системам, готовых под ИИ пайплайнов нет — Gartner</span></div>
+    <div class="kpi alt"><b>&gt;&nbsp;40&nbsp;%</b><span>агентных AI-проектов будут отменены к 2027 году — Gartner</span></div>
+    <div class="kpi alt"><b>95&nbsp;%</b><span>корпоративных GenAI-пилотов не дают измеримой отдачи — MIT</span></div>
+  </div>
+  <div class="concl"><b>Вывод:</b> если данные и контекст не готовы, open-source агент лишь быстрее приведёт к провалу.</div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-t="Петля контекста, а не склад">
+  <p class="eyebrow">Слайд 4</p>
+  <h2>Петля контекста, а не склад</h2>
+  <div class="loop">
+    <div class="step">Встреча / документ / правка агента человеком</div>
+    <div class="down">↓</div>
+    <div class="step">Извлечение структуры (решения, шаги, правила)<em>черновик — в личный уровень: <code>context/my/&lt;тема&gt;/CONTEXT.md</code></em></div>
+    <div class="down">↓</div>
+    <div class="step">Курирование человеком</div>
+    <div class="down">↓</div>
+    <div class="step">Артефакт на командном уровне (правило «если–то», карточка)<em><code>context/team</code>; перенос наверх — отдельным запросом на изменения</em></div>
+    <div class="down">↓</div>
+    <div class="step">Агент достаёт через MCP → работает → правка снова в петлю<em>контекст подключается к шагу только явно</em></div>
+  </div>
+  <div class="concl"><b>Ключевое:</b> каждое решение оставляет след. Агент предложил шаг → человек поправил → поправка стала правилом.</div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-t="Малый шаг, который можно сделать сейчас">
+  <p class="eyebrow">Слайд 5</p>
+  <h2>Малый шаг, который можно сделать сейчас</h2>
+  <p class="sub">Один сценарий — агент по отклонениям в отчётах.</p>
+  <ol class="steps">
+    <li>Взять транскрибацию, где менеджер объясняет разбор отклонений.</li>
+    <li>Извлечь шаги и решения в структуру.</li>
+    <li>Человек превращает в 3–5 правил «если–то» → Obsidian.</li>
+    <li>Агент читает правила через MCP вместо галлюцинаций.</li>
+    <li>Каждая правка менеджера → новое правило.</li>
+  </ol>
+  <div class="concl"><b>Результат</b> — не «агент», а работающая петля, которую можно повторить на следующем сценарии.</div>
+</section>
+
+<!-- 6 -->
+<section class="slide dense" data-t="RocKit: цель проекта">
+  <p class="eyebrow">Слайд 6 · RocKit</p>
+  <h2>Цель проекта</h2>
+  <div class="note"><b>Главное — не отдельная задача пользователя, а удобная расширяемая инфраструктура, которую можно переиспользовать на разных уровнях (общем, командном, персональном)</b>: процесс под задачу один раз собирается, может быть переиспользован или кастомизирован на любом уровне ниже, человек при этом не обязан разбираться в тонкостях архитектуры решения. За базовый уровень отвечают отдельные специалисты.</div>
+  <div class="cards">
+    <div class="card"><h4>1 · Готовые решения под разные роли</h4>
+      <p>Один и тот же механизм на трёх уровнях: общий набор → командный → личный. Можно использовать базовые наработки, расширять и кастомизировать их на командном уровне, создавать процессы для решения своих командных и персональных задач.</p></div>
+    <div class="card"><h4>2 · Своё решение собирается из готового</h4>
+      <p>Ключевая особенность — переиспользование: типовые шаги и подключения к рабочим системам уже реализованы, поэтому процесс под свою задачу собирается быстро и по имени, а не с нуля. Берёте готовые части, задаёте параметры и получаете результат; следующему с той же задачей достаётся готовый процесс.</p></div>
+    <div class="card"><h4>3 · Максимально просто для любого сотрудника любой экспертизы</h4>
+      <p>Единая точка входа: пишешь задачу словами («собери инфо-поводы на эту неделю») — тебе подбирают готовый процесс, добирают недостающие значения и доводят до результата. Внутренние команды человеку не показываются и не предлагаются, разговор идёт предметными словами, а перед работой называется план. Ошибки объясняются простыми словами, с конкретным следующим действием и предложением по их устранению.</p></div>
+  </div>
+  <h3>Упор на простоту и понятность использования</h3>
+  <ul class="plain">
+    <li><b>Одна точка входа.</b> Человек пишет задачу словами; агент выбирает подходящую способность или готовый процесс, а при неоднозначности уточняет цель. Консультация, настройка, создание, запуск и диагностика доступны независимо, обязательного возврата к помощнику нет. Названия служебных навыков человеку знать не требуется.</li>
+    <li><b>Подсказки вместо инструкции.</b> До работы — короткий план (что прочитаю, что создам, что трону во внешних системах); после шага — одна строка хода; в конце — результат, полный путь и вопрос «Полезно?». Технические подробности уходят в служебный отчёт, а не в диалог.</li>
+    <li><b>Разговор предметными словами.</b> Правила общения прямо запрещают внутренний жаргон в репликах человеку: вместо названий уровней и файлов — «личная копия», «команда», «настройки», «запрос на изменения».</li>
+    <li><b>Спросить дешевле, чем угадать.</b> Недостающие значения добирает настройка, и только недостающее: повторная настройка не переспрашивает про то, что уже сохранено. Неизвестный уровень или отсутствие доступа — остановка с вопросом, а не подбор «похожего значения».</li>
+    <li><b>Можно попробовать без доступов.</b> Пробный прогон на вымышленных данных не требует ни подключений, ни настройки, ни токенов и помечается «ДАННЫЕ ДЕМО» — форма и логика видны сразу, доступ заводится потом.</li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section class="slide dense" data-t="RocKit: архитектура">
+  <p class="eyebrow">Слайд 7 · RocKit</p>
+  <h2>Архитектура</h2>
+  <div class="note">Подход — <b>Process as Code</b>: граф процесса, шаги и связи с рабочими системами описаны текстовыми и конфигурационными файлами, а не кодом приложения. Процесс читается человеком как рецепт, исполняется помощником и правится как обычный файл — без сборки и развёртывания. Тот же класс решений известен под вторым названием — <b>декларативные агентные фреймворки</b> (Declarative Agent Frameworks): PromptFlow от Microsoft, Rasa CALM / Flows и другие.</div>
+  <h3>Пять ключевых сущностей</h3>
+  <div class="lvl">
+    <div><b>Процесс</b>описывает задачу целиком и порядок действий — граф действий. Состоит из действий и других процессов (подпроцессов); только ссылки и параметры шага, текст действия не дублируется.</div>
+    <div><b>Действие</b>что делает один шаг. Выполняется независимо: получает на вход пакет данных и возвращает данные, соседние шаги не читает; может выполняться в отдельном агенте. Специфические данные передаёт процесс.</div>
+    <div><b>Адаптер</b>как обращаться к внешним хранилищам информации, без привязки к конкретному источнику. Адаптер нужен на каждую систему: Jira, Confluence, Mapp, SberTrack, Source Control.</div>
+    <div><b>Параметры</b>с какими значениями идём: берутся из командных или личных настроек либо передаются аргументами процесса.</div>
+    <div><b>Контекст</b>дополнительные знания: проверенные факты и договорённости. Подключается к шагу только явно и не сливается молча — при противоречии показываются оба источника.</div>
+  </div>
+  <p class="src">Сущности связаны только ссылками: процесс знает действие по имени, действие — систему по <code>id</code> подключения.</p>
+  <h3>Три уровня владения (начальный этап)</h3>
+  <p class="muted">Уровни — это ветки одного репозитория, а не разные папки и не разные настройки клиента: структура файлов одна, уровень определяет имя текущей ветки.</p>
+  <div class="lvl">
+    <div><b>общий</b>Базовые процессы, действия и адаптеры. Ссылается только на общий уровень.</div>
+    <div><b>командный</b>Правила и процессы команды поверх общих. Ссылается на свои и общие файлы.</div>
+    <div><b>личный</b>Свои подключения, настройки и процессы. Ссылается на свои, командные и общие файлы.</div>
+  </div>
+  <p class="src">Ссылки точные, по имени сущности; внутри своего уровня — без ограничений. Общее приходит в командную и личную копию принятием запроса сверху, поэтому в нижней копии виден и верхний набор.</p>
+</section>
+
+<!-- 8 -->
+<section class="slide dense" data-t="RocKit: функционал">
+  <p class="eyebrow">Слайд 8 · RocKit</p>
+  <h2>Функционал</h2>
+  <p class="sub">Функции шесть. Человек называет задачу словами, а какую работу взять — решает помощник; ниже под каждой — скиллы или команды, которые её держат.</p>
+  <div class="cards">
+    <div class="card"><h4>1 · Предварительная настройка</h4>
+      <p>Личная копия проекта, только необходимые подключения и защита отправки: <code>rk-init</code>.</p></div>
+    <div class="card"><h4>2 · Запуск процессов</h4>
+      <p>Подобрать готовый процесс под задачу, добрать недостающие значения и довести до результата с журналом прогона: <code>rk-run-process</code>.</p></div>
+    <div class="card"><h4>3 · Создание процессов</h4>
+      <p>Собрать маршрут из готовых шагов, определить новую операцию и описать подключение к новой системе: <code>rk-create-process</code>, <code>rk-create-action</code>, <code>rk-create-adapter</code>.</p></div>
+    <div class="card"><h4>4 · Перенос на общий или командный уровень</h4>
+      <p>Позволяет поделиться наработками: с командой или со всеми, перенося процесс на общий уровень. Скиллы переноса — <code>rk-promote-changes-team</code> и <code>rk-promote-changes-master</code>.</p></div>
+    <div class="card"><h4>5 · Участие на своём уровне</h4>
+      <p>Присоединиться к команде или создать свою, а также действовать без команды.</p></div>
+    <div class="card"><h4>6 · Демо-проверка</h4>
+      <p>Протестировать проект с помощью демо-режима.</p></div>
+  </div>
+  <h3>Набор скиллов</h3>
+  <p class="muted">В поставке 11 служебных скиллов с префиксом <code>rk-</code>. Они лежат строго плоско в <code>.gigacode/skills/</code>. Новый шаг процесса нового скилла не создаёт.</p>
+  <table class="dense">
+    <tr><th>Скилл</th><th>Кто видит</th><th>Что делает</th></tr>
+    <tr><td><code>rk-mentor</code></td><td><span class="tag vis">вход</span></td><td>Ментор-помощник: единственный, кого видит человек. Разбирает задачу словами, отвечает на «что ты умеешь», собирает процесс и переносит изменения, а саму работу передаёт служебным навыкам из списка ниже. Шаги процесса не исполняет.</td></tr>
+    <tr><td><code>rk-init</code></td><td><span class="tag svc">служебный</span></td><td>Первоначальная настройка окружения под человека: личная копия, только необходимые подключения, защита отправки и отчёт «что-сделано.md». Повторная настройка добирает лишь недостающее и не переспрашивает про сохранённое.</td></tr>
+    <tr><td><code>rk-run-process</code></td><td><span class="tag svc">служебный</span></td><td>Исполняет выбранный процесс по точным ссылкам: пакет на шаг, артефакт в журнал, делегирование чтения агенту, честный итог.</td></tr>
+    <tr><td><code>rk-create-process</code></td><td><span class="tag svc">служебный</span></td><td>Собирает процесс из разговора, переиспользует существующие действия, проверяет точные зависимости.</td></tr>
+    <tr><td><code>rk-create-action</code></td><td><span class="tag svc">служебный</span></td><td>Определяет границы новой законченной операции и создаёт <code>ACTION.md</code> с контрактами. Проверяет переиспользование, а не оборачивает вызов инструмента.</td></tr>
+    <tr><td><code>rk-create-adapter</code></td><td><span class="tag svc">служебный</span></td><td>Описание новой системы: реальные операции, схемы ответов, пагинация, ограничения. Не разрабатывает MCP-сервер и не заводит секреты.</td></tr>
+        <tr><td><code>rk-run-action</code></td><td>служебный</td><td>Выполняет одно локальное действие с контрактом, без создания процесса.</td></tr>
+    <tr><td><code>rk-diagnose</code></td><td>служебный</td><td>Проверяет конкретный запуск по безопасным фактам, объясняет расхождение и следующий шаг.</td></tr>
+    <tr><td><code>rk-install-local-mcp</code></td><td>служебный</td><td>Устанавливает локальные Bitbucket/email MCP и проверяет запуск; доступ человек добавляет в клиенте.</td></tr>
+<tr><td><code>rk-promote-changes-team</code></td><td><span class="tag svc">служебный</span></td><td>Перенос подготовленных изменений своего уровня в командный: отдельный worktree от свежей цели, проверка, показ диффа, отдельное согласие на отправку.</td></tr>
+    <tr><td><code>rk-promote-changes-master</code></td><td><span class="tag svc">служебный</span></td><td>То же в общий уровень. Сам запрос на изменения не сливает.</td></tr>
+  </table>
+</section>
+
+<!-- 9 -->
+<section class="slide dense" data-t="RocKit: рабочие процессы">
+  <p class="eyebrow">Слайд 9 · RocKit</p>
+  <h2>Рабочие процессы</h2>
+  <p>Ниже общие процессы и примеры командных/личных вариантов из исходной выгрузки. Доступные в этой копии процессы показывает <code>node tools/kit.js processes</code>; общий валидатор называется <code>validation-cr</code>, личный пример автора — <code>cr-validator</code>.</p>
+  <div class="cards">
+    <div class="card"><h4>gmi-cluster-report — цифры индекса зрелости и план подъёма <span class="tag">общий</span><span class="tag">версия 1.6.0</span></h4>
+      <p>Даёт картину по кластеру: средний индекс, сколько людей ниже цели и где именно проседает обучение, навыки и продуктивность. А каждому, кто ниже цели, — что подтянуть, чтобы дойти до неё: какие курсы доучить, какие навыки закрыть, как менять режим работы и какие метрики и истории догнать, с ценой каждого шага в баллах. Считает по шкалам методики «Методика оценки сотрудников по блокам метрик» (GigaCode Maturity Index, слайды 1–3): веса блоков 30/30/40 и балл за каждую градацию берутся оттуда, а планку 6,0 из 10 задаёт владелец процесса — в методике такой планки нет. Ссылка «Письмо сотруднику» берётся из карты адресов, которую собирает запускающий прогон по почтовому справочнику; сама карта — локальный файл и в репозиторий не попадает. Всегда создаёт HTML-страницу и текстовую форму рядом с итогом прогона. Почтовый справочник читается внутри запуска; при недоступном подключении отчёт выходит без ссылок на письма. Внешних изменений процесс не делает.</p>
+      <p class="chain">methodology-gate → check-scales → check-index → methodology-review → read → mail-gate → lookup-mail / mail-off → assess → compose → render-html → end</p>
+      <p class="ex-line"><a href="examples/gmi-cluster-report.html">пример отчёта</a></p></div>
+    <div class="card"><h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">версия 1.1.0</span></h4>
+      <p>Собирает релизы Release 2.0 периметра КЭ из обеих инсталляций Jira, читает состав каждого, отделяет содержательные задачи от технических и печатает таблицу из двух колонок: текущие инфоповоды и планы на следующую неделю, построчно по КЭ. Результат отдаёт файлом прогона: развилка в конце спрашивает, положить ли сверху одностраничник <code>отчёт-инфо-поводы.html</code> — форма страницы не меняет ни строки содержимого.</p>
+      <p class="chain">methodology-gate → fetch-sigma ∥ fetch-delta → classify-sigma ∥ classify-delta → assess → compose → publish-gate → render-html → end</p>
+      <p class="ex-line"><a href="examples/info-povod.html">пример отчёта</a></p></div>
+    <div class="card"><h4>sdd-stories-report — доля стори по SDD (командная методика дашборда) <span class="tag">командный</span><span class="tag">версия 1.0.0</span></h4>
+      <p>Считает истории КЭ из периметра команды, доведённые до «Тестирование — Внедрен», и делит на выполненные по SDD (метка или спецификация в принятой правке/привязанном коммите) и без неё. На выходе доля, разбивка по КЭ, признак ТОП КЭ, худший КЭ, исключения и сверка с методикой дашборда.</p>
+      <p class="chain">methodology-gate → check-methodology → methodology-review → fetch → read-code → assess → compose → end</p>
+      <p class="ex-line"><a href="examples/team-irbis-sdd-stories-report.html">пример отчёта</a></p></div>
+    <div class="card"><h4>cr-validator — валидация CR <span class="tag">личный</span><span class="tag">версия 1.0.0</span></h4>
+      <p>Читает один Change Request запросом команды (CR с меткой <code>CHECK_OK</code> или <code>CHECK_ERROR</code> повторно не проверяется). Три проверки — бизнес-поля, обязательные блоки описания, уровень безопасности текста. Затем пишет итог в Jira — метку, исполнителя, комментарий — но только по явному согласию человека на точное изменение (задача, метки, исполнитель был → станет, полный текст комментария), и подтверждает запись повторным чтением; отказ не обрывает прогон. Завершается html-отчётом: ход проверки, замечания, что итог предписывает записать и что фактически изменилось в задаче.</p>
+      <p class="chain">fetch → validate · cr-validator → apply → report → end</p>
+      <p class="ex-line"><a href="examples/cr-validation-report.html">пример отчёта</a></p></div>
+    <div class="card"><h4>example — подготовка письма <span class="tag">общий</span><span class="tag">учебный</span><span class="tag">версия 1.0.0</span></h4>
+      <p>Процесс <code>edit → draft → end</code>: переписывает переданный текст и готовит черновик по явным адресатам. Служит образцом для копирования: поля, шаблон и проверка описаны в <code>processes/example/README.md</code>.</p></div>
+  </div>
+  <div class="note">Исторические заметки автора исходной выгрузки (не перечень текущих ограничений RocKit): перенос несохранённых правок этой копии выше личного уровня; команды журнала <code>run save --from &lt;файл&gt;</code> и <code>run packet &lt;шаг&gt;</code> (сейчас пакеты собирают скрипты в папке прогона); ответы на три вопроса классификации прошлого прогона; расхождение оговорки «строка = релиз в группе КЭ» с формой «строка = ИТ-услуга»; неполнота чтения комментариев не попадает в раздел «Проверить не удалось». Личные варианты процессов этой копии продолжают оставаться в папке автора рабочей.</div>
+</section>
+
+</main>
+
+<footer>
+  <button id="prev" aria-label="Предыдущий слайд">←</button>
+  <button id="next" aria-label="Следующий слайд">→</button>
+  <div class="dots" id="dots"></div>
+  <div class="t" id="title">Титул</div>
+  <div class="n" id="counter">1 / 9</div>
+</footer>
+</div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var dots=document.getElementById('dots'), prog=document.getElementById('prog');
+  var title=document.getElementById('title'), counter=document.getElementById('counter');
+  var i=0;
+  slides.forEach(function(s,n){
+    var d=document.createElement('i');
+    d.title=(n+1)+'. '+(s.dataset.t||'');
+    d.addEventListener('click',function(){go(n)});
+    dots.appendChild(d);
+  });
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,k){s.classList.toggle('on',k===i)});
+    [].forEach.call(dots.children,function(d,k){d.setAttribute('aria-current',k===i?'true':'false')});
+    prog.style.width=((i+1)/slides.length*100)+'%';
+    title.textContent=slides[i].dataset.t||'';
+    counter.textContent=(i+1)+' / '+slides.length;
+    document.getElementById('stage').scrollTop=0;
+    if(history.replaceState)history.replaceState(null,'','#'+(i+1));
+  }
+  document.getElementById('prev').addEventListener('click',function(){go(i-1)});
+  document.getElementById('next').addEventListener('click',function(){go(i+1)});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}
+    else if(e.key==='Home'){go(0)} else if(e.key==='End'){go(slides.length-1)}
+  });
+  var fromHash=parseInt(location.hash.replace('#',''),10);
+  go(isNaN(fromHash)?0:fromHash-1);
+})();
+</script>
+</body>
+</html>

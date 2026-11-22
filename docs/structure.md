@@ -3,7 +3,7 @@
 Этот файл — эталон раскладки файлов для разработчика.
 Количество и имена веток, владельцы, префиксы определений и допустимые ссылки заданы
 только в [модели владения](ownership.md). Изменение эталона под существующую
-реализацию требует явного решения владельца Process Kit; иначе исправляется реализация.
+реализацию требует явного решения владельца RocKit; иначе исправляется реализация.
 
 ## Ветки
 
@@ -14,7 +14,7 @@
 
 ```
 $ git branch -vv
-* my  3f2a1c9 Настройка Process Kit
+* my  3f2a1c9 Настройка RocKit
 $ git config branch.my.pushRemote
 no_push
 $ git remote -v
@@ -30,7 +30,7 @@ branch.my.pushRemote=mine.
 ```
 $ git branch -vv
   team-urmepk 8b11d02 [origin/team-urmepk] Новая команда: URMEPK
-* my          5c0e7aa Настройка Process Kit
+* my          5c0e7aa Настройка RocKit
 $ git ls-remote origin team-urmepk
 8b11d02...  refs/heads/team-urmepk
 ```
@@ -40,7 +40,8 @@ $ git ls-remote origin team-urmepk
 ```
 <корень>/
 ├── GIGACODE.md
-├── README.md
+├── README.md                      обзор и быстрый старт
+├── ABOUT.md                       руководство разработчика
 ├── .gitignore
 ├── .gigacode/
 │   ├── settings.json                ссылки $secret:…, значений доступа нет
@@ -49,16 +50,17 @@ $ git ls-remote origin team-urmepk
 │   │   ├── interaction.md           случаи продолжения, изменений и отмены
 │   │   └── promotion.md             общая процедура двух переносов
 │   └── skills/
-│       ├── pp-ai-mentor/SKILL.md   консультация; знакомство в references/guide.md
-│       ├── pp-ai-init/SKILL.md     факты через setup-status; детали в references/
-│       ├── pp-ai-diagnose/SKILL.md
-│       ├── pp-ai-run-process/SKILL.md
-│       ├── pp-ai-run-action/SKILL.md
-│       ├── pp-ai-create-process/SKILL.md
-│       ├── pp-ai-create-action/SKILL.md
-│       ├── pp-ai-create-adapter/SKILL.md
-│       ├── pp-ai-promote-changes-team/SKILL.md
-│       └── pp-ai-promote-changes-master/SKILL.md
+│       ├── rk-mentor/SKILL.md   консультация; знакомство в references/guide.md
+│       ├── rk-init/SKILL.md     факты через setup-status; детали в references/
+│       ├── rk-diagnose/SKILL.md
+│       ├── rk-run-process/SKILL.md
+│       ├── rk-run-action/SKILL.md
+│       ├── rk-create-process/SKILL.md
+│       ├── rk-create-action/SKILL.md
+│       ├── rk-create-adapter/SKILL.md
+│       ├── rk-install-local-mcp/SKILL.md
+│       ├── rk-promote-changes-team/SKILL.md
+│       └── rk-promote-changes-master/SKILL.md
 ├── processes/<имя>/                 имя определения — по ownership.md
 │   ├── PROCESS.md                  точка входа и маршрут
 │   ├── publication.json            свидетельство допуска required-определения, создаёт код
@@ -131,7 +133,7 @@ outputs/
 ```
 $ git log --oneline -3
 a91d3e2 Новый процесс: my-stale-issues
-5c0e7aa Настройка Process Kit
+5c0e7aa Настройка RocKit
 <тег или коммит командной ветки>
 $ git show --stat 5c0e7aa
  config/ | 2 +-

@@ -9,7 +9,7 @@
     "actions/check-methodology/rules/result-shape.md": "c915442b4a583b97e017ef514ef109f829f2adf176e8c0474b44db111d26328d",
     "actions/check-methodology/runtime.js": "0a3cfcf428b74333ace58c0a567f17a7a2b0aae3253805761bba6d6c0c008b09",
     "actions/classify-issuance/ACTION.md": "6c25e89a641762752893cf5dca5d3ad35ea6ef5fa8d0a1285b82344629b1ac73",
-    "actions/classify-issuance/POLICY.md": "3e1436c2e205bf43c2bf533582752fbfb4e2c3ca3a780fba096301408c31f5c6",
+    "actions/classify-issuance/POLICY.md": "f0ab0ee709397a1844e2898c128ed83feb8061fa85425980a89593564598e6c6",
     "actions/classify-issuance/contracts/result.json": "a9e7716577a9f02e5239f6044b70f0b2b791ec43998c2332c06becb015544f6f",
     "actions/classify-issuance/examples/result.json": "1b7346a19eb6d487357f6d05ac050ae0b7e4eafbe8e783d07e36ac5df03e469c",
     "actions/classify-issuance/rules/classify-issuance.md": "6d7a224f83dd9a19d51b89d9160da32af5f8354bbb89b6b04e1caa25f63f2427",
@@ -24,8 +24,8 @@
     "actions/run-query/contracts/input.json": "f5f61bb3888b924441699c6d5842a7ddf7e5c9a798ed46b7b093bc5520a5b92b",
     "actions/run-query/contracts/result.json": "a59216afff5f0288ab8763712acd0416ec6ec8a2a59d5400150536ba1ef8326d",
     "actions/run-query/runtime.js": "963db802cbe3025d22b99167c6afbbb79c937d1e20ac7796626c3018dfebe4b3",
-    "context/master/writing-style/CONTEXT.md": "a187c1e1e3a3645b639303b2e7cba7c11ce64824786d1766b1688f6f2a6198aa",
-    "processes/info-povod/PROCESS.md": "c9d2b58ccb96562656d1576d374b9f3777b2c74f849cacb8d2e2d8ba62997cda",
+    "context/master/writing-style/CONTEXT.md": "b898810238830e75c766e70a96bef34366abac74296a455f907ce471abf0da03",
+    "processes/info-povod/PROCESS.md": "77d5abaf84137a117362c31d3d7e29f726ca422e91fb9aa33e273ff4a3fcea7e",
     "processes/info-povod/contracts/report-data.json": "6b25cb1ac235b7bcfdc66d3bd9983eaa744568c790297d9e4cb7352772d75f55",
     "processes/info-povod/queries/releases.md": "3e92d7065a0f32a1d68ec0bb65ceb53913d1b668edccb5b8e35d58d598317888",
     "processes/info-povod/renderers/report-html.js": "80f3fbe4cea863be79b7c4420227bc6ba951ceb0ba4c2c5246347c2e2b5e6872",
@@ -34,11 +34,11 @@
     "processes/info-povod/rules/info-povod.js": "e8ac9f84cdd99f8f159c6552be07acc55a919f63061177273276864a641bef07",
     "processes/info-povod/templates/report.md": "4573001a2b360aa6c0864fbbaa559c388b4f916515cb65488e66dd34aad166db"
   },
-  "updated": "2026-11-13T16:00:21.544Z",
+  "updated": "2026-11-22T18:27:36.062Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-13_проба-проверка-поводы",
-    "2026-11-13_проба-проверка-поводы-2",
-    "2026-11-13_проба-проверка-поводы-3"
+    "2026-11-22_проба-проверка-поводы-4",
+    "2026-11-22_проба-проверка-поводы-5",
+    "2026-11-22_проба-проверка-поводы-6"
   ]
 }

@@ -64,7 +64,7 @@ params:
   methodologyCheck: ask
   # Чтение внешних систем исполняет отдельный агент по одному на шаг; локальные вычисления
   # (assess, compose, render-html) остаются у координатора. Порядок — раздел «Шаг в
-  # отдельном агенте» в .gigacode/skills/pp-ai-run-process/SKILL.md.
+  # отдельном агенте» в .gigacode/skills/rk-run-process/SKILL.md.
   agentSteps: [check-methodology, fetch-sigma, fetch-delta, classify-sigma, classify-delta]
   releaseType: Release 2.0
   # Имя статуса исключение подтверждено живым запросом 2026-11-07 в обеих инсталляциях;

@@ -32,7 +32,7 @@ try{
   assert.deepEqual(files(),before);
   for(const value of ['PRIVATE_PROFILE_NAME','private-profile@example.invalid'])assert.ok(!JSON.stringify(result).includes(value));
   const cli=spawnSync(process.execPath,['tools/kit.js','setup-status'],{cwd:tmp,encoding:'utf8'});assert.equal(cli.status,0,cli.stderr);assert.deepEqual(JSON.parse(cli.stdout),result);
-  assert.deepEqual(Object.keys(result).sort(),['version','personalReady','personal','known','protection','connections','issues','summary'].sort());
+  assert.deepEqual(Object.keys(result).sort(),['version','personalReady','personal','known','protection','connections','configuration','issues','summary'].sort());
   assert.notEqual(spawnSync(process.execPath,['tools/kit.js','setup-status','--instructions'],{cwd:tmp}).status,0);
   assert.notEqual(spawnSync(process.execPath,['tools/kit.js','setup-status','unexpected'],{cwd:tmp}).status,0);
  });
@@ -76,6 +76,22 @@ try{
   assert.equal(inspect(tmp).personalReady,true);
  });
  ready();
+ check('unfinished team settings are distinguished from a ready personal copy without leaking values',()=>{
+  write('config/team/config.json',JSON.stringify({schemaVersion:2,team:{id:'a',name:'TODO: PRIVATE_TEAM_NAME',owners:[]},taskStores:[{id:'PRIVATE_ID',adapter:'adapters/TODO/ADAPTER.md',mcpServer:'todo: PRIVATE_SERVER',baseUrl:'https://PRIVATE.invalid'}]}));
+  write('config/my/config.json',JSON.stringify({...personal(),teamId:'a'}));
+  const result=inspect(tmp);assert.equal(result.personalReady,true);assert.equal(result.known.team,'selected');
+  assert.equal(result.configuration.state,'incomplete');
+  for(const field of ['team.name','taskStores[0].adapter','taskStores[0].mcpServer'])assert.ok(result.configuration.missing.some(row=>row.file==='config/team/config.json'&&row.field===field));
+  assert.ok(!JSON.stringify(result).includes('PRIVATE_'));
+  git('switch','master');fs.unlinkSync(myFile);git('switch','-c','team-a');
+  const team=inspect(tmp);assert.equal(team.personalReady,false);assert.equal(team.configuration.state,'incomplete');assert.equal(team.configuration.missing.length,3);
+  git('switch','my');ready();
+ });
+ check('missing identity fields preserve already known team and storage choices',()=>{
+  write('config/my/config.json',JSON.stringify({...personal(),profile:{name:'TODO: name',email:'confirmed@example.invalid'}}));
+  const result=inspect(tmp);assert.equal(result.personalReady,false);assert.equal(result.known.team,'without-team');assert.equal(result.known.storage,'local');assert.equal(result.configuration.state,'incomplete');
+  ready();
+ });
  check('missing protection cannot turn existing known choices into a fresh installation',()=>{
   fs.unlinkSync(path.join(tmp,'.git/hooks/pre-push'));
   const result=inspect(tmp);assert.equal(result.personalReady,false);assert.equal(result.known.team,'without-team');assert.equal(result.known.storage,'local');assert.ok(result.issues.includes('local-hooks-missing'));

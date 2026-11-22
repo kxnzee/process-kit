@@ -38,7 +38,7 @@ function accessRules(cwd){
   if(typeof value!=='string')return;
   if(/^[{[]/.test(value.trimStart())){let parsed;try{parsed=JSON.parse(value);}catch{}if(parsed&&typeof parsed==='object'){resources(parsed,from);return;}}
   const resource=value.match(/^(processes|actions|adapters)\/([^/]+)(?:\/|$)/);
-  if(resource)allowed(resource[2],from);
+  if(resource){allowed(resource[2],from);const level=require('../config/process-settings').levelOf(value);if(level==='my'&&!scope.personal||level==='team'&&!scope.teamId)throw new Error('Настройки процесса недоступны по уровню владения');}
   if(value.startsWith('context/')&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
  }
  function paths(value,from){
@@ -114,7 +114,10 @@ function assertAccess(cwd,name,params={},files=[]){
 function visibleFile(file,name,scope){
  if(!canonicalFile(file))return false;
  const [folder,ref]=file.split('/');
- if(['processes','actions'].includes(folder))return /^[a-z0-9][a-z0-9-]*$/.test(ref||'')&&visible(ref,scope)&&allowedReference(name,ref);
+ if(['processes','actions'].includes(folder)){
+  const level=require('../config/process-settings').levelOf(file);
+  return !(level==='my'&&!scope.personal||level==='team'&&!scope.teamId)&&/^[a-z0-9][a-z0-9-]*$/.test(ref||'')&&visible(ref,scope)&&allowedReference(name,ref);
+ }
  return folder==='context'&&['master','team','my'].includes(ref)&&{master:0,team:1,my:2}[ref]<=owner(name).level&&(ref!=='team'||!!scope.teamId)&&(ref!=='my'||scope.personal);
 }
 function canonicalFile(file){return typeof file==='string'&&!/^[a-zA-Z]:/.test(file)&&!file.includes('\\')&&!file.split('/').some(part=>!part||part==='.'||part==='..');}

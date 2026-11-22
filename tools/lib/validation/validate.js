@@ -266,11 +266,14 @@ function ruleLayout() {
   if (teamUnknown()) {
     W('уровни', null, 0, `ветка «${branch}» не называет команду: файлы уровня с префиксом не проверить, передайте --team <код> или настройте выбранную команду в config/my/config.json`);
   }
-  // Настройки процесса лежат рядом с настройками уровня: личные файлы не уезжают в team/master.
+  // Новое и прежнее размещение сохраняют владельца: личные файлы не уезжают в team/master.
   const sharedDoc=(f)=>/(^|\/)(README\.md|EXAMPLE\.json)$/.test(f);
   const teamBranch=(branch||'').startsWith('team-'),commonBranch=branch==='master'||(branch||'').startsWith('master-');
   for(const f of tracked){
     if(sharedDoc(f))continue;
+    const processLevel=require('../config/process-settings').levelOf(f);
+    if(processLevel==='my'&&(commonBranch||teamBranch))E('раскладка',path.join(ROOT,f),0,'личные настройки процесса не переносятся в общий и командный уровни');
+    if(processLevel==='team'&&commonBranch)E('раскладка',path.join(ROOT,f),0,'командные настройки процесса не переносятся в master');
     if(f.startsWith('config/my/')&&(commonBranch||teamBranch))E('раскладка',path.join(ROOT,f),0,teamBranch&&f==='config/my/config.json'?'личный конфиг не переносится в team':'личные настройки не переносятся в общий и командный уровни');
     if(f.startsWith('config/team/')&&commonBranch)E('раскладка',path.join(ROOT,f),0,'в master нет реальных настроек team/my');
   }
@@ -818,6 +821,17 @@ function ruleProcessFiles() {
       if (!exists(entry)) { E('файлы настроек', full, 0, `настройки процесса ${process}, а процесса нет на этом или дальнем уровне`); continue; }
       try { settings.read(ROOT, level, process, Object.keys(processModel(read(entry)).data.params || {})); }
       catch (error) { E('файлы настроек', full, 0, error.message); }
+    }
+  }
+  for(const process of ls(path.join(ROOT,'processes'))){
+    const dir=path.join(ROOT,'processes',process,'config');
+    for(const name of ls(dir)){
+      const full=path.join(dir,name),level=name.replace(/\.json$/,'');
+      if(!settings.LEVELS.includes(level)||name!==level+'.json'||isDir(full)){E('файлы настроек',full,0,'нужен файл master.json, team.json или my.json');continue;}
+      const entry=path.join(ROOT,'processes',process,'PROCESS.md');
+      if(!NAME.test(process)||!exists(entry)){E('файлы настроек',full,0,'нет процесса-владельца настроек');continue;}
+      try{settings.read(ROOT,level,process,Object.keys(processModel(read(entry)).data.params||{}));}
+      catch(error){E('файлы настроек',full,0,error.message);}
     }
   }
 }

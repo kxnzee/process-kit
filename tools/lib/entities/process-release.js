@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const {inside}=require('../core/safe-path'),{root}=require('../core/paths');
 const {validateDefinition}=require('./process-definition'),{dependencies}=require('./process-dependencies');
 const {atomic,hash}=require('../runtime/run-storage');
-const relevant=file=>/^(processes|actions|context)\//.test(file)&&!file.endsWith('/publication.json');
+const relevant=file=>/^(processes|actions|context)\//.test(file)&&!file.endsWith('/publication.json')&&!require('../config/process-settings').levelOf(file);
 function publicationFiles(cwd,name,files,params={},overrides=params){
  const inputs=new Set(require('./process-dependencies').runtimeInputFiles(cwd,name,params,overrides));
  return files.filter(file=>file!==params.dataFile&&!inputs.has(file));

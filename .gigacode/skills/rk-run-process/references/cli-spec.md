@@ -29,7 +29,7 @@ Start возвращает state.params, entities, connections, readFiles (то�
 files (снимок целостности) доступен с --full. InputText автоматически копируется в .run/inputs/input.md, а params.input
 содержит путь копии. Не создавай этот файл вручную. Params/explicitParams — явные
 аргументы выше литералов шага и defaults процесса, в том числе во вложенных вызовах.
-config/<уровень>/processes/<имя>.json заполняет только объявленные params выбранных
+processes/<имя>/config/<уровень>.json заполняет только объявленные params выбранных
 уровней конфигурации, ниже параметров шага и явных аргументов.
 Defaults Action применяются ниже параметров процесса и литералов шага; одинаковые
 эффективные параметры используются в preflight, next, begin и save.

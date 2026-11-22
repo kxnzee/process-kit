@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('no
 const {inside}=require('../core/safe-path'),{loadConfig,loadMaster}=require('./config');
 function inspect(cwd){
  const git=(...args)=>{try{return execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore'],env:{...process.env,GIT_OPTIONAL_LOCKS:'0'}}).trim();}catch{return null;}};
- const result={version:1,personalReady:false,personal:{state:'unknown',configPresent:null,branch:'unknown'},known:{profile:'unknown',team:'unknown',storage:'unknown'},protection:{hooks:false,push:false},connections:{tasks:0,code:0,access:'not-checked'},issues:[],summary:[]};
+ const result={version:1,personalReady:false,personal:{state:'unknown',configPresent:null,branch:'unknown'},known:{profile:'unknown',team:'unknown',storage:'unknown'},protection:{hooks:false,push:false},connections:{tasks:0,code:0,access:'not-checked'},configuration:{state:'unknown',files:[],missing:[]},issues:[],summary:[]};
  function finish(state){
   result.personal.state=state;
   if(state==='ready')result.summary.push('Личная копия уже настроена. Повторно создавать её не нужно.');
@@ -13,6 +13,7 @@ function inspect(cwd){
   if(result.known.storage==='local')result.summary.push('Хранение только на этом компьютере уже выбрано.');
   if(result.known.storage==='repository')result.summary.push('Хранение в личном репозитории уже выбрано.');
   if(state==='ready')result.summary.push(result.connections.tasks+result.connections.code?'Подключения объявлены; доступ к системам ещё не проверен.':'Подключения к системам пока не настроены.');
+  if(result.configuration.state==='incomplete')result.summary.push('В настройках остались незаполненные поля: '+result.configuration.missing.length+'. Личная готовность не означает завершённую настройку подключений.');
   return result;
  }
  if(git('rev-parse','--is-inside-work-tree')!=='true'){result.issues.push('git-unavailable');return finish('unknown');}
@@ -26,14 +27,28 @@ function inspect(cwd){
   return finish('unknown');
  }
  let my;
+ const gaps=require('./setup-gaps');
+ function configuration(){
+  const files=my?['config/my/config.json']:[];
+  const teamBranch=/^(?:team-[a-z0-9]+|promote\/team-[a-z0-9]+\/.+)$/.test(branch);
+  if(teamBranch||(my&&my.teamId!==null&&typeof my.teamId==='string'&&!gaps.todo(my.teamId)))files.push('config/team/config.json');
+  result.configuration=gaps.inspect(cwd,files);
+ }
  try{
   const file=inside(cwd,'config/my/config.json');result.personal.configPresent=fs.existsSync(file);
   if(result.personal.configPresent){
    my=JSON.parse(fs.readFileSync(file,'utf8'));
+   configuration();
+   if(my&&typeof my==='object'){
+    if(my.profile&&[my.profile.name,my.profile.email].every(value=>typeof value==='string'&&value.trim()&&!gaps.todo(value)))result.known.profile='configured';
+    if(my.teamId===null)result.known.team='without-team';else if(typeof my.teamId==='string'&&my.teamId.trim()&&!gaps.todo(my.teamId))result.known.team='selected';
+    if(['local','repository'].includes(my.storage?.mode))result.known.storage=my.storage.mode;
+   }
    loadConfig(cwd,['master','my']);
   }
  }catch{result.issues.push('personal-config-invalid');return finish('invalid');}
  if(!result.personal.configPresent){
+  configuration();
   if(hasMy){result.issues.push(branch==='my'?'personal-config-missing':'open-existing-personal-copy');return finish('incomplete');}
   return finish('missing');
  }

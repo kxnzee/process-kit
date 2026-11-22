@@ -34,7 +34,7 @@ function promotionPlan(cwd, targetRef) {
     const levels = file.startsWith('context/')?[]:parts.map(part => owner(part));
     const scopedContext=file.match(/^context\/(master|team|my)\/([^/]+)\//);
     const contextLevel=scopedContext&&scopedContext[2]!=='example'?scopedContext[1]:null;
-    const configLevel=file.match(/^config\/(team|my)\/processes\//)?.[1];
+    const configLevel=file.match(/^config\/(team|my)\/processes\//)?.[1]||require('../config/process-settings').levelOf(file);
     const personal = configLevel==='my'||contextLevel==='my'||levels.some(item => item.level === 2);
     const teams = levels.filter(item => item.level === 1).map(item => item.team);
     if(contextLevel==='team'){let id;try{id=require('../config/config').loadConfig(cwd).teamId;}catch{}teams.push(id||'unresolved-context-owner');}

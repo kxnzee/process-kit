@@ -10,6 +10,11 @@ try {
   check('частично заполненный массив', () => { config.taskStores[0].projects.push('TODO'); save(); validate(['--process', 'sdd-stories-report'], false, 'projects'); config.taskStores[0].projects.pop(); save(); });
   check('вложенный TODO в репозитории', () => { config.codeStores[0].repositories[0].slug = 'TODO'; save(); validate(['--process', 'sdd-stories-report'], false, 'repositories[].slug'); config.codeStores[0].repositories[0].slug = 'repo'; save(); });
   check('disabled', () => { config.taskStores[0].enabled = false; save(); validate(['--process', 'sdd-stories-report'], false, 'выключено'); config.taskStores[0].enabled = true; save(); });
+  check('absence of enabled permits selection while required TODO fields still block it', () => {
+    delete config.taskStores[0].enabled; save(); validate(['--process', 'sdd-stories-report'], true);
+    config.taskStores[0].mcpServer='TODO'; save(); validate(['--process', 'sdd-stories-report'], false, 'mcpServer');
+    config.taskStores[0].mcpServer='test'; save();
+  });
   check('не подставлять первую запись', () => { config.defaults.taskStore = 'missing'; save(); validate(['--process', 'sdd-stories-report'], false, 'missing'); config.defaults.taskStore = 'tasks'; save(); });
   check('явный выбор записи приоритетнее defaults', () => { write('params.json', '{"taskStore":"other"}'); validate(['--process', 'sdd-stories-report', '--params', path.join(tmp, 'params.json')], false, 'other'); });
   check('точный запрос, без fallback', () => { write('params.json', '{"queryFile":"processes/sdd-stories-report/queries/missing.md"}'); validate(['--process', 'sdd-stories-report', '--demo', '--params', path.join(tmp, 'params.json')], false, 'queries/missing.md'); });

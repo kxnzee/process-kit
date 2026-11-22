@@ -94,17 +94,20 @@ function resolveProcess(cwd,name,params={},overrides=params){
   visiting.delete(process);
  }
  visit(name,params,0);
- return {ready:missing.length===0,process:name,configFiles:[...configFiles],connections,paramOrigins,readFiles:[...new Set(connections.map(item=>item.adapterFile))],missing,note:'Доступность MCP-инструментов проверяется отдельно в среде агента.'};
+ return {ready:missing.length===0,process:name,configFiles:[...configFiles],connections,paramOrigins,legacySettings:[...configFiles].filter(file=>/^config\/(master|team|my)\/processes\//.test(file)),readFiles:[...new Set(connections.map(item=>item.adapterFile))],missing,note:'Доступность MCP-инструментов проверяется отдельно в среде агента.'};
 }
 module.exports={FILES,loadMaster,loadConfig,selectedStore,selectedResource,requiredFields,resolveStore,resolveProcess};
 
 if(require.main===module){
  try{
   const args=process.argv.slice(2);
-  if(args.length===1&&args[0]==='--json')console.log(JSON.stringify(loadConfig(process.cwd()),null,2));
+  if(args[0]==='--migrate-process-settings'&&(args.length===1||args.length===2&&args[1]==='--apply')){
+   const result=require('./migrate-process-settings').migrate(process.cwd(),{apply:args[1]==='--apply'});console.log(JSON.stringify(result,null,2));if(!result.ready)process.exitCode=1;
+  }else if(args[0]==='--rollback-process-settings'&&args.length===2)console.log(JSON.stringify(require('./migrate-process-settings').rollback(process.cwd(),args[1]),null,2));
+  else if(args.length===1&&args[0]==='--json')console.log(JSON.stringify(loadConfig(process.cwd()),null,2));
   else if(args[0]==='--process'&&args[1]&&(args.length===2||args.length===4&&args[2]==='--params')){
    const params=args[2]?JSON.parse(fs.readFileSync(args[3],'utf8')):{};
    const result=resolveProcess(process.cwd(),args[1],params);console.log(JSON.stringify(result,null,2));if(!result.ready)process.exitCode=1;
-  }else throw new Error('Использование: node tools/kit.js config --json | --process <имя> [--params <JSON-файл>]');
+  }else throw new Error('Использование: node tools/kit.js config --json | --process <имя> [--params <JSON-файл>] | --migrate-process-settings [--apply] | --rollback-process-settings <id>');
  }catch(error){console.error(error.message);process.exitCode=1;}
 }

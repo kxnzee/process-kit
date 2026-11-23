@@ -660,9 +660,11 @@ function checkSummary(file, names, isProbe) {
   if (!end) E('итог', file, 0, 'нет строки «Чем закончилось: …»');
   else {
     const v = end[1].trim();
+    let running=false;
+    if(v==='выполняется')try{running=JSON.parse(read(path.join(path.dirname(file),'.run/state.json'))).status==='running';}catch{ /* Повреждённое состояние отдельно проверяет checkRunDir. */ }
     if (isProbe && !/^пробный прогон/i.test(v)) E('итог', file, 0, 'пробный прогон: «Чем закончилось: пробный прогон …, ничего не отправлялось»');
     if (!isProbe && /^пробный прогон/i.test(v)) E('итог', file, 0, 'для демо имя папки должно начинаться с <дата>_проба-<задача>, не demo-');
-    else if (!isProbe && !/^(готово|не получилось:)/i.test(v)) E('итог', file, 0, '«Чем закончилось:» начинается с «готово» или «не получилось: <причина>»');
+    else if (!isProbe && !running && !/^(готово|не получилось:)/i.test(v)) E('итог', file, 0, '«Чем закончилось:» начинается с «готово» или «не получилось: <причина>»; «выполняется» допустимо только для running');
   }
   if (/\$secret:|Bearer\s|Authorization:|x-[a-z]+-token/i.test(t)) E('итог', file, 0, 'в итоге есть данные доступа');
   if (/^\s+at\s.+:\d+:\d+\)?$/m.test(t) || /\b(TypeError|ReferenceError|ECONNREFUSED|stack trace)\b/.test(t)) W('итог', file, 0, 'похоже на текст системной ошибки: причину пишите простыми словами');
@@ -680,14 +682,24 @@ function checkSummary(file, names, isProbe) {
 }
 
 function checkRunDir(dir) {
+  let boundStartRequest=false;
   try {
     const stateFile=path.join(dir,'state.json');
-    if(exists(stateFile)){const state=JSON.parse(read(stateFile));const verified=require('../runtime/run-storage').verify(dir);if(state.schemaVersion===2&&!verified)throw new Error('отсутствует checkpoint');if(!['running','completed','failed'].includes(state.status))throw new Error('недопустимый статус');}
+    if(exists(stateFile)){
+      const state=JSON.parse(read(stateFile)),storage=require('../runtime/run-storage'),verified=storage.verify(dir);
+      if(state.schemaVersion===2&&!verified)throw new Error('отсутствует checkpoint');
+      if(!['running','completed','failed'].includes(state.status))throw new Error('недопустимый статус');
+      if(state.identity?.startRequest?.requestFileHash){
+        if(storage.hash(fs.readFileSync(require('../core/safe-path').inside(dir,'start-request.json')))!==state.identity.startRequest.requestFileHash)throw new Error('Изменён сохранённый запрос start');
+        boundStartRequest=true;
+      }
+    }
     if(exists(path.join(dir,'transaction.json')))E('прогон',dir,0,'незавершённая запись: используйте run recover');
   } catch(error){E('прогон',dir,0,error.message);}
   for (const n of ls(dir)) {
     const f = path.join(dir, n);
     if (['run.md', 'trace.jsonl', 'state.json', 'checkpoint.json', 'transaction.json', '.journal.lock', '.recovery.lock'].includes(n)) continue;
+    if(n==='start-request.json'&&boundStartRequest)continue;
     if (n === 'inputs' && isDir(f)) continue;
     if (!/^\d{2}-[a-z0-9][\w-]*\.\w+$/i.test(n)) W('прогон', f, 0, 'файл шага: <NN>-<имя шага>.<расширение>, например 01-jira-search.json');
   }

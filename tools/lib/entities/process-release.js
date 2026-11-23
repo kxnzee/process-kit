@@ -98,10 +98,11 @@ function lifecycle(cwd,operation,spec){
 }
 module.exports={admitPublished,assertPublished,assertPublishedTree,lifecycle,current,validReceipt};
 if(require.main===module){
- const [operation,file,...rest]=process.argv.slice(2);
+ const [operation,...args]=process.argv.slice(2);
  try{
-  if(!file||rest.length)throw new Error('node tools/kit.js definition <inspect|validate|test|publish|status> <spec.json>');
-  const cwd=root(),spec=JSON.parse(fs.readFileSync(file,'utf8'));
+  const usage='node tools/kit.js definition <inspect|validate|test|publish|status> <spec.json>|--stdin|--process <имя> [--output <прогон>] [--level <уровень>] [--team <код>]';
+  const {spec}=require('../core/cli-spec').readSpec(args,{usage,flags:{'--process':'process','--output':'outputs','--level':'level','--team':'team'},lists:['outputs']});
+  const cwd=root();
   if(operation!=='inspect')require('./process-facts').assertAccess(cwd,spec.process,spec.params);
   console.log(JSON.stringify(lifecycle(cwd,operation,spec),null,2));
  }catch(error){console.error(operation==='inspect'?'Не удалось прочитать факты. Использование: node tools/kit.js definition inspect <spec.json>; нужны process и необязательные level/team.':error.message);process.exitCode=1;}

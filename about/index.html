@@ -178,49 +178,51 @@
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>validation-cr — проверка Change Request</h4>
-    <p>Выбирает CR, проверяет бизнес-поля, текстовые правила и безопасность, затем собирает HTML-отчёт и текстовую форму. Поля и правила задаёт владелец; пропущенные проверки отмечаются явно. Записи в Jira нет.</p>
-    <h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">версия 1.1.0</span></h4>
-    <p>Собирает релизы Release 2.0 периметра КЭ из обеих инсталляций Jira, читает состав каждого, отделяет содержательные задачи от технических и печатает таблицу из двух колонок: текущие инфоповоды и планы на следующую неделю, построчно по КЭ. Результат отдаёт файлом прогона: развилка в конце спрашивает, положить ли сверху одностраничник <code>отчёт-инфо-поводы.html</code> — форма страницы не меняет ни строки содержимого.</p>
+    <h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">версия 1.2.0</span></h4>
+    <p>Собирает релизы Release 2.0 периметра КЭ из двух инсталляций Jira, читает их состав, отделяет содержательные задачи от технических и формирует текущие инфоповоды и планы на следующую неделю по КЭ. Markdown и HTML строятся из одних данных; штатный итог — HTML-отчёт. Сверка с методикой выполняется по явному выбору до начала основной работы.</p>
     <div class="flow">
-      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
-      <span class="node src">fetch-sigma</span><span class="arrow">∥</span>
-      <span class="node src">fetch-delta</span><span class="arrow">→</span>
-      <span class="node src">classify-sigma</span><span class="arrow">∥</span>
-      <span class="node src">classify-delta</span><span class="arrow">→</span>
-      <span class="node tr">assess</span><span class="arrow">→</span>
-      <span class="node tr">compose</span><span class="arrow">→</span>
-      <span class="node gate">publish-gate</span><span class="arrow">→</span>
-      <span class="node tr">render-html</span><span class="arrow">→</span>
+      <span class="node">methodology-gate</span><span class="arrow">→</span>
+      <span class="node">check-methodology</span><span class="arrow">→</span>
+      <span class="node">methodology-review</span><span class="arrow">→</span>
+      <span class="node">fetch-sigma</span><span class="arrow">→</span>
+      <span class="node">fetch-delta</span><span class="arrow">→</span>
+      <span class="node">classify-sigma</span><span class="arrow">→</span>
+      <span class="node">classify-delta</span><span class="arrow">→</span>
+      <span class="node">assess</span><span class="arrow">→</span>
+      <span class="node">compose</span><span class="arrow">→</span>
+      <span class="node">render-html</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><a href="examples/info-povod.html">пример отчёта</a></p>
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>sdd-stories-report — доля стори по SDD (командная методика дашборда) <span class="tag">командный</span><span class="tag">версия 1.0.0</span></h4>
-    <p>Считает истории КЭ из периметра команды, доведённые до «Тестирование — Внедрен», и делит на выполненные по SDD (метка или спецификация в принятой правке/привязанном коммите) и без неё. На выходе доля, разбивка по КЭ, признак ТОП КЭ, худший КЭ, исключения и сверка с методикой дашборда.</p>
+    <h4>sdd-stories-report — доля стори по SDD <span class="tag">общий</span><span class="tag">версия 1.2.0</span></h4>
+    <p>Считает долю стори по выбранным периоду, статусам и периметру КЭ. Признак SDD — метка или подтверждённый принятый PR со спецификацией; непроверенные истории показаны отдельно и не входят в знаменатель. По запросу готовит черновик письма без отправки. Пример IRBIS иллюстрирует вымышленный командный срез по тем же общим правилам.</p>
     <div class="flow">
-      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
-      <span class="node src">check-methodology</span><span class="arrow">→</span>
-      <span class="node gate">methodology-review</span><span class="arrow">→</span>
-      <span class="node src">fetch</span><span class="arrow">→</span>
-      <span class="node src">read-code</span><span class="arrow">→</span>
-      <span class="node tr">assess</span><span class="arrow">→</span>
-      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node">fetch</span><span class="arrow">→</span>
+      <span class="node">read-code</span><span class="arrow">→</span>
+      <span class="node">assess</span><span class="arrow">→</span>
+      <span class="node">compose</span><span class="arrow">→</span>
+      <span class="node">gate</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><a href="examples/team-irbis-sdd-stories-report.html">пример отчёта</a></p>
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>cr-validator — валидация CR <span class="tag">личный</span><span class="tag">версия 1.0.0</span></h4>
-    <p>Читает один Change Request запросом команды (CR с меткой <code>CHECK_OK</code> или <code>CHECK_ERROR</code> повторно не проверяется). Три проверки — бизнес-поля, обязательные блоки описания, уровень безопасности текста. Затем пишет итог в Jira — метку, исполнителя, комментарий — но только по явному согласию человека на точное изменение (задача, метки, исполнитель был → станет, полный текст комментария), и подтверждает запись повторным чтением; отказ не обрывает прогон. Завершается html-отчётом: ход проверки, замечания, что итог предписывает записать и что фактически изменилось в задаче.</p>
+    <h4>validation-cr — валидация CR <span class="tag">общий</span><span class="tag">версия 1.1.0</span></h4>
+    <p>Читает один Change Request или выборку запроса, показывает отобранные задачи и продолжает проверки по явному ответу человека. Выполняет включённые проверки бизнес-полей, правил текста и попыток вмешательства, сводит их в CHECK_OK или CHECK_ERROR и формирует текстовый и HTML-отчёт. Пропуски и непрочитанные поля показаны явно. Процесс не меняет метки, исполнителя и комментарии в Jira.</p>
     <div class="flow">
-      <span class="node src">fetch</span><span class="arrow">→</span>
-      <span class="node">validate · cr-validator</span><span class="arrow">→</span>
-      <span class="node act">apply</span><span class="arrow">→</span>
-      <span class="node tr">report</span><span class="arrow">→</span>
+      <span class="node">select-crs</span><span class="arrow">→</span>
+      <span class="node">review-selection</span><span class="arrow">→</span>
+      <span class="node">review-confirmation</span><span class="arrow">→</span>
+      <span class="node">check-fields</span><span class="arrow">→</span>
+      <span class="node">check-rules</span><span class="arrow">→</span>
+      <span class="node">check-security</span><span class="arrow">→</span>
+      <span class="node">decide</span><span class="arrow">→</span>
+      <span class="node">report</span><span class="arrow">→</span>
+      <span class="node">report-html</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><a href="examples/cr-validation-report.html">пример отчёта</a></p>

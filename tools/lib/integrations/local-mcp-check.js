@@ -20,14 +20,15 @@ function probe(cwd,file,timeout=5000){return new Promise(resolve=>{
    if(message.id===2){if(message.error||!Array.isArray(message.result?.tools))return finish({status:'failed',reason:'tools-list-failed'});finish({status:'ready',tools:message.result.tools.length});}
   }
  });
- send({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2024-11-05',capabilities:{},clientInfo:{name:'process-kit-install-check',version:'1.0.0'}}});
+ send({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2024-11-05',capabilities:{},clientInfo:{name:'rockit-install-check',version:'1.0.0'}}});
 });}
 async function check(cwd,{probe:withProbe=false}={}){
  const data=JSON.parse(fs.readFileSync(inside(cwd,'.gigacode/settings.json'),'utf8')),servers=[];
- for(const name of ['pp-ai-bitbucket','pp-ai-email']){
-  const config=data.mcpServers?.[name],arg=config?.args?.[0]?.replace(/\\/g,'/');
+ for(const name of ['rk-bitbucket','rk-email']){
+  const config=data.mcpServers?.[name],args=config?.args;
+  const arg=Array.isArray(args)&&typeof args[0]==='string'?args[0].replace(/\\/g,'/'):null;
   if(!config){servers.push({name,status:'missing',reason:'configuration'});continue;}
-  if(config.command!=='node'||config.args.length!==1||!/^\.?\/?\.gigacode\/mcp\/[a-z0-9-]+\/dist\/index\.js$/.test(arg||'')){servers.push({name,status:'failed',reason:'unsupported-entry'});continue;}
+  if(config.command!=='node'||!Array.isArray(args)||args.length!==1||!/^\.?\/?\.gigacode\/mcp\/[a-z0-9-]+\/dist\/index\.js$/.test(arg||'')){servers.push({name,status:'failed',reason:'unsupported-entry'});continue;}
   const rel=arg.replace(/^\.\//,''),file=inside(cwd,rel);
   if(!fs.existsSync(file)){servers.push({name,status:'missing',reason:'server-files',file:rel});continue;}
   servers.push({name,file:rel,...(withProbe?await probe(cwd,file):{status:'installed'})});

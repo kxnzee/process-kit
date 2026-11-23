@@ -39,7 +39,7 @@ node -v
 
 ## 2. Проверить объявления подключений
 
-В `.gigacode/settings.json` должны быть секции `pp-ai-bitbucket`, `pp-ai-email` и `pp-ai-onework`.
+В `.gigacode/settings.json` должны быть секции `rk-bitbucket`, `rk-email` и `rk-onework`.
 Если их нет, настройки в этой копии нет — так и сказать и предложить сначала доставить её,
 самой себе подключения не выдумывать.
 
@@ -102,31 +102,31 @@ node tools/kit.js mcp-check --probe
 
 | Подключение | Что нужно | Где взять |
 |---|---|---|
-| `pp-ai-jira`, `pp-ai-jira-delta` | Персональный токен Jira: профиль домена → «Персональные токены» → «Создать токен». Токен берут в том же домене, куда подключаются (Sigma и Delta — разные токены); срок действия можно снять | [MApp, «MCP-сервер Jira»](https://mapp.sberbank.ru/ai-disrupt/page/118380), раздел «Пререквизиты», пункт 3 |
-| `pp-ai-confluence`, `pp-ai-confluence-delta` | Маркер доступа Confluence: профиль → Настройки → «Личные маркеры доступа» → «Создать маркер»; домен маркера совпадает с доменом подключения | [MApp, «MCP-сервер Confluence»](https://mapp.sberbank.ru/ai-disrupt/page/118464), раздел «Пререквизиты», пункт 3 |
-| `pp-ai-onework` | Токен платформы OneWork, при выпуске выбрать «API платформы»; значение заголовка записывается с префиксом `Bearer ` и одним пробелом, иначе сервер отклоняет запрос | [MApp, «OneWork MCP Gateway»](https://mapp.sberbank.ru/tpp/page/365805), раздел «Предусловия»; выпуск токена — [токен платформы](https://mapp.sberbank.ru/tpp/page/116940) |
-| `pp-ai-bitbucket` | Токен Bitbucket Server из личного профиля («Токены доступа для HTTP») | Страница MApp про BitBucket CI описывает серверный вариант с сертификатом и этот случай не покрывает; адрес выдачи токена подтверждает владелец Bitbucket |
-| `pp-ai-email` | Пять значений почтовой учётной записи, токенов нет | Блок параметров ниже |
+| `rk-jira`, `rk-jira-delta` | Персональный токен Jira: профиль домена → «Персональные токены» → «Создать токен». Токен берут в том же домене, куда подключаются (Sigma и Delta — разные токены); срок действия можно снять | [MApp, «MCP-сервер Jira»](https://mapp.sberbank.ru/ai-disrupt/page/118380), раздел «Пререквизиты», пункт 3 |
+| `rk-confluence`, `rk-confluence-delta` | Маркер доступа Confluence: профиль → Настройки → «Личные маркеры доступа» → «Создать маркер»; домен маркера совпадает с доменом подключения | [MApp, «MCP-сервер Confluence»](https://mapp.sberbank.ru/ai-disrupt/page/118464), раздел «Пререквизиты», пункт 3 |
+| `rk-onework` | Токен платформы OneWork, при выпуске выбрать «API платформы»; значение заголовка записывается с префиксом `Bearer ` и одним пробелом, иначе сервер отклоняет запрос | [MApp, «OneWork MCP Gateway»](https://mapp.sberbank.ru/tpp/page/365805), раздел «Предусловия»; выпуск токена — [токен платформы](https://mapp.sberbank.ru/tpp/page/116940) |
+| `rk-bitbucket` | Токен Bitbucket Server из личного профиля («Токены доступа для HTTP») | Страница MApp про BitBucket CI описывает серверный вариант с сертификатом и этот случай не покрывает; адрес выдачи токена подтверждает владелец Bitbucket |
+| `rk-email` | Пять значений почтовой учётной записи, токенов нет | Блок параметров ниже |
 
 ### Шаги, которые остаются человеку
 
-1. В секции `pp-ai-email` файла `.gigacode/settings.json` заменить `USER` на логин Sigma,
+1. В секции `rk-email` файла `.gigacode/settings.json` заменить `USER` на логин Sigma,
    `SMTP_FROM` — на свой почтовый адрес. В текущей поставке `PASSWORD`, `LDAP_BIND_DN`
    и `LDAP_BIND_PASSWORD` остаются ссылками на хранилище клиента:
 
    ```json
    "USER": "<логин Sigma>",
-   "PASSWORD": "$secret:pp-ai-email/PASSWORD",
+   "PASSWORD": "$secret:rk-email/PASSWORD",
    "SMTP_FROM": "<ваш адрес>@sberbank.ru",
-   "LDAP_BIND_DN": "$secret:pp-ai-email/LDAP_BIND_DN",
-   "LDAP_BIND_PASSWORD": "$secret:pp-ai-email/LDAP_BIND_PASSWORD"
+   "LDAP_BIND_DN": "$secret:rk-email/LDAP_BIND_DN",
+   "LDAP_BIND_PASSWORD": "$secret:rk-email/LDAP_BIND_PASSWORD"
    ```
 
    За `LDAP_BIND_DN` человек сохраняет `<логин Sigma>@sigma.sbrf.ru`, за двумя ссылками
    пароля — пароль своей учётной записи. Значения секретов не записываются в файл.
 2. Завести значения в интерфейсе GigaCode под точными именами из `.gigacode/settings.json`:
-   `pp-ai-bitbucket/BITBUCKET_TOKEN`, `pp-ai-email/PASSWORD`, `pp-ai-email/LDAP_BIND_DN`,
-   `pp-ai-email/LDAP_BIND_PASSWORD`, для OneWork — `onework/Authorization`.
+   `rk-bitbucket/BITBUCKET_TOKEN`, `rk-email/PASSWORD`, `rk-email/LDAP_BIND_DN`,
+   `rk-email/LDAP_BIND_PASSWORD`, для OneWork — `rk-onework/Authorization`.
    Если раньше использовались `mcp-email/*` или `bitbucket-inventory/*`, клиент не переносит
    их автоматически: человек сохраняет значения под новыми именами. Список ключей проверяют
    через `mcp list-secrets`, без вывода значений. Личный сервер и проектный сервер могут

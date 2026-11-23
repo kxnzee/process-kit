@@ -22,7 +22,7 @@ module.exports={problems,staged};
 if(require.main===module){try{
  if(process.argv.length!==2)throw new Error('commit-guard.js проверяет только подготовленный индекс');
  const cwd=root(),issues=staged(cwd);if(issues.length){for(const row of issues)console.error(`${row.file}: ${row.reason}. Значение секрета не выводится.`);process.exitCode=1;}else{
-  let previous='';try{previous=execFileSync('git',['config','--local','processkit.previousPreCommit'],{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{}
+  const previous=require('./git-hook').previousHook(cwd,'pre-commit').file;
   if(previous){const result=require('./git-hook').runHook(previous,[],{cwd,stdio:'inherit'});if(result.error||result.status!==0)throw new Error('Прежняя проверка коммита отклонила действие');}
  }
 }catch(error){console.error(error.message);process.exitCode=1;}}

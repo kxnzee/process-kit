@@ -1,62 +1,62 @@
 {
   "mcpServers": {
-    "pp-ai-confluence": {
+    "rk-confluence": {
       "type": "streamable-http",
       "httpUrl": "https://api.sbertrack.sberbank.ru/confluence/mcp",
       "headers": {
-        "x-confluence-token": "$secret:pp-ai-confluence/x-confluence-token"
+        "x-confluence-token": "$secret:rk-confluence/x-confluence-token"
       }
     },
-    "pp-ai-confluence-delta": {
+    "rk-confluence-delta": {
       "type": "streamable-http",
       "httpUrl": "https://api.sbertrack.sberbank.ru/confluence/delta/mcp",
       "headers": {
-        "x-confluence-token": "$secret:pp-ai-confluence-delta/x-confluence-token"
+        "x-confluence-token": "$secret:rk-confluence-delta/x-confluence-token"
       }
     },
-    "pp-ai-jira": {
+    "rk-jira": {
       "type": "streamable-http",
       "httpUrl": "https://api.sbertrack.sberbank.ru/jira/mcp",
       "headers": {
-        "x-jira-token": "$secret:pp-ai-jira/x-jira-token"
+        "x-jira-token": "$secret:rk-jira/x-jira-token"
       }
     },
-    "pp-ai-jira-delta": {
+    "rk-jira-delta": {
       "type": "streamable-http",
       "httpUrl": "https://api.sbertrack.sberbank.ru/jira/delta/mcp",
       "headers": {
-        "x-jira-token": "$secret:pp-ai-jira-delta/x-jira-token"
+        "x-jira-token": "$secret:rk-jira-delta/x-jira-token"
       }
     },
-    "pp-ai-bitbucket": {
+    "rk-bitbucket": {
       "command": "node",
       "args": [
         ".gigacode/mcp/bitbucket-mcp/dist/index.js"
       ],
       "env": {
         "BITBUCKET_URL": "https://stash.sigma.sbrf.ru",
-        "BITBUCKET_TOKEN": "$secret:pp-ai-bitbucket/BITBUCKET_TOKEN"
+        "BITBUCKET_TOKEN": "$secret:rk-bitbucket/BITBUCKET_TOKEN"
       },
       "timeout": 120000,
       "trust": false
     },
-    "pp-ai-onework": {
+    "rk-onework": {
       "httpUrl": "https://mcp.onework.sigma.sbrf.ru/mcp",
       "headers": {
-        "Authorization": "$secret:onework/Authorization"
+        "Authorization": "$secret:rk-onework/Authorization"
       }
     },
-    "pp-ai-email": {
+    "rk-email": {
       "command": "node",
       "args": [
         ".gigacode/mcp/mcp-email/dist/index.js"
       ],
       "env": {
         "USER": "<логин Sigma>",
-        "PASSWORD": "$secret:pp-ai-email/PASSWORD",
+        "PASSWORD": "$secret:rk-email/PASSWORD",
         "SMTP_FROM": "<ваш адрес>@sberbank.ru",
-        "LDAP_BIND_DN": "$secret:pp-ai-email/LDAP_BIND_DN",
-        "LDAP_BIND_PASSWORD": "$secret:pp-ai-email/LDAP_BIND_PASSWORD"
+        "LDAP_BIND_DN": "$secret:rk-email/LDAP_BIND_DN",
+        "LDAP_BIND_PASSWORD": "$secret:rk-email/LDAP_BIND_PASSWORD"
       },
       "timeout": 60000,
       "trust": false

@@ -31,7 +31,7 @@ if (!isOwn) {
   }
 }
 // Preserve a pre-existing user hook, including its stdin and failure status.
-const previous = git('config', '--local', 'processkit.previousPrePush');
+let previous;try{previous=require('./git-hook').previousHook(cwd,'pre-push').file;}catch(error){reject(error.message);}
 if (previous) {
   const result = require('./git-hook').runHook(previous, [remote, address], { cwd, input, stdio: ['pipe', 'inherit', 'inherit'] });
   if (result.error || result.status !== 0) reject('Ранее установленная проверка отправки отклонила действие.');

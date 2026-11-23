@@ -1,4 +1,4 @@
-// Пути Process Kit в одном месте для кода: скрипты tools/ и hook pre-push.
+// Пути RocKit в одном месте для кода: скрипты tools/ и hook pre-push.
 // В текстах (скиллы, GIGACODE.md) корень задаётся разделом «Где лежат результаты».
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');

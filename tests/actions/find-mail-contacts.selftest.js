@@ -91,7 +91,7 @@ check('пустая выдача отличается от непроверен�
   // Имена куска и цель прогона помощник просит посчитать оболочку. Фейковая оболочка исполняет эти
   // программы настоящим node над подставным прогоном: тест проверяет сам текст программы помощника
   // и не расходится с ним, когда помощник добавляет или переставляет аргументы.
-  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ppai-mail-poll-'));
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'rk-mail-poll-'));
   process.on('exit', () => fs.rmSync(sandbox, { recursive: true, force: true }));
   const call = async (o) => {
     const written = [];

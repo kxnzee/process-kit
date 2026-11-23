@@ -3,6 +3,7 @@ const fixture=require('../fixture'),ctx=fixture(),{fs,path,assert,tmp,write,chec
 const {execFileSync,spawnSync}=require('node:child_process'),crypto=require('node:crypto');
 const {inspect}=require('../../tools/lib/config/setup-state');
 const git=(...args)=>execFileSync('git',args,{cwd:tmp,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+const sharedRefs=()=>git('show-ref').split('\n').filter(line=>! / refs\/notes\/ai(?:\/|$)/.test(line)).sort();
 const myFile=path.join(tmp,'config/my/config.json');
 const personal=()=>({schemaVersion:2,teamId:null,profile:{name:'PRIVATE_PROFILE_NAME',email:'private-profile@example.invalid'},storage:{mode:'local'},taskStores:[],codeStores:[],defaults:{},preferences:{}});
 function ready(){
@@ -25,13 +26,19 @@ try{
  });
  git('switch','-c','my','--no-track');ready();
  check('existing no-team local setup exports only safe facts',()=>{
-  const before=files(),result=inspect(tmp);
+  const before=files(),refsBefore=sharedRefs(),result=inspect(tmp);
   assert.equal(result.personalReady,true);assert.equal(result.personal.state,'ready');
   assert.deepEqual(result.known,{profile:'configured',team:'without-team',storage:'local'});
   assert.deepEqual(result.connections,{tasks:0,code:0,access:'not-checked'});
-  assert.deepEqual(files(),before);
+  // Среда исполнения во время команд ведёт собственные записи внутри .git (служебные
+  // логи .git/ai, заметки refs/notes/ai с их объектами и reflog); инвариант инспекции
+  // проверяет все файлы вне .git и защищаемые точки внутри него.
+  const watched=map=>Object.fromEntries(Object.entries(map).filter(([key])=>!/^[.]git[\\/]/.test(key)||/^[.]git[\\/](hooks[\\/]|config$|HEAD$|index$)/.test(key)));
+  assert.deepEqual(watched(files()),watched(before));
+  assert.deepEqual(sharedRefs(),refsBefore);
   for(const value of ['PRIVATE_PROFILE_NAME','private-profile@example.invalid'])assert.ok(!JSON.stringify(result).includes(value));
   const cli=spawnSync(process.execPath,['tools/kit.js','setup-status'],{cwd:tmp,encoding:'utf8'});assert.equal(cli.status,0,cli.stderr);assert.deepEqual(JSON.parse(cli.stdout),result);
+  assert.deepEqual(watched(files()),watched(before));assert.deepEqual(sharedRefs(),refsBefore);
   assert.deepEqual(Object.keys(result).sort(),['version','personalReady','personal','known','protection','connections','configuration','issues','summary'].sort());
   assert.notEqual(spawnSync(process.execPath,['tools/kit.js','setup-status','--instructions'],{cwd:tmp}).status,0);
   assert.notEqual(spawnSync(process.execPath,['tools/kit.js','setup-status','unexpected'],{cwd:tmp}).status,0);

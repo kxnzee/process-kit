@@ -168,7 +168,7 @@
 
 <section id="flows">
   <h2>Рабочие процессы</h2>
-  <p>Ниже общие процессы и примеры командных и личных вариантов. Доступные в этой копии процессы показывает <code>node tools/kit.js processes</code>; общий валидатор называется <code>validation-cr</code>, пример личного процесса — <code>cr-validator</code>.</p>
+  <p>Ниже процессы общего уровня и учебный образец. Ниже приведены сохранённые примеры отчётов; даты и данные относятся к их исходным прогонам. Доступные в этой копии процессы показывает <code>node tools/kit.js processes</code>.</p>
   <div class="card" style="margin-bottom:14px">
     <h4>gmi-cluster-report — цифры индекса зрелости и план подъёма <span class="tag">общий</span><span class="tag">версия 1.6.0</span></h4>
     <p>Даёт картину по кластеру: средний индекс, сколько людей ниже цели и где именно проседает обучение, навыки и продуктивность. А каждому, кто ниже цели, — что подтянуть, чтобы дойти до неё: какие курсы доучить, какие навыки закрыть, как менять режим работы и какие метрики и истории догнать, с ценой каждого шага в баллах. Считает по шкалам методики «Методика оценки сотрудников по блокам метрик» (GigaCode Maturity Index, слайды 1–3): веса блоков 30/30/40 и балл за каждую градацию берутся оттуда, а планку 6,0 из 10 задаёт владелец процесса — в методике такой планки нет. Ссылка «Письмо сотруднику» берётся из карты адресов, которую собирает запускающий прогон по почтовому справочнику; сама карта — локальный файл и в репозиторий не попадает. Всегда создаёт HTML-страницу и текстовую форму рядом с итогом прогона. Почтовый справочник читается внутри запуска; при недоступном подключении отчёт выходит без ссылок на письма. Внешних изменений процесс не делает.</p>
@@ -186,22 +186,23 @@
       <span class="node">end</span>
     </div>
     <p class="ex-line"><button type="button" class="ex-btn" data-ex="gmi" data-box="ex-gmi">показать пример в этой странице</button></p>
-    <div class="ex-box" id="ex-gmi" hidden><iframe title="Пример отчёта: индекс зрелости кластера"></iframe><p class="ex-note">Встроенная копия отчёта прогона <code>outputs/2026-11-16_gmi-zamer-2/отчёт-gmi.html</code> от 16.11.2026. Содержит рабочие данные: фамилии сотрудников и адреса из почтового справочника. <a class="ex-blank" href="#" target="_blank" rel="noopener">открыть встроенную копию в новой вкладке</a></p></div>
+    <div class="ex-box" id="ex-gmi" hidden><iframe title="Пример отчёта: индекс зрелости кластера"></iframe><p class="ex-note">Сохранённый пример отчёта GMI от 16.11.2026. Содержит рабочие данные: фамилии сотрудников и адреса из почтового справочника. <a class="ex-blank" href="#" target="_blank" rel="noopener">открыть встроенную копию в новой вкладке</a></p></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">версия 1.1.0</span></h4>
-    <p>Собирает релизы Release 2.0 периметра КЭ из обеих инсталляций Jira, читает состав каждого, отделяет содержательные задачи от технических и печатает таблицу из двух колонок: текущие инфоповоды и планы на следующую неделю, построчно по КЭ. Результат отдаёт файлом прогона: развилка в конце спрашивает, положить ли сверху одностраничник <code>отчёт-инфо-поводы.html</code> — форма страницы не меняет ни строки содержимого.</p>
+    <h4>info-povod — «Инфо-поводы Release Notes» <span class="tag">общий</span><span class="tag">версия 1.2.0</span></h4>
+    <p>Собирает релизы Release 2.0 периметра КЭ из двух инсталляций Jira, читает их состав, отделяет содержательные задачи от технических и формирует текущие инфоповоды и планы на следующую неделю по КЭ. Markdown и HTML строятся из одних данных; штатный итог — HTML-отчёт. Сверка с методикой выполняется по явному выбору до начала основной работы.</p>
     <div class="flow">
-      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
-      <span class="node src">fetch-sigma</span><span class="arrow">∥</span>
-      <span class="node src">fetch-delta</span><span class="arrow">→</span>
-      <span class="node src">classify-sigma</span><span class="arrow">∥</span>
-      <span class="node src">classify-delta</span><span class="arrow">→</span>
-      <span class="node tr">assess</span><span class="arrow">→</span>
-      <span class="node tr">compose</span><span class="arrow">→</span>
-      <span class="node gate">publish-gate</span><span class="arrow">→</span>
-      <span class="node tr">render-html</span><span class="arrow">→</span>
+      <span class="node">methodology-gate</span><span class="arrow">→</span>
+      <span class="node">check-methodology</span><span class="arrow">→</span>
+      <span class="node">methodology-review</span><span class="arrow">→</span>
+      <span class="node">fetch-sigma</span><span class="arrow">→</span>
+      <span class="node">fetch-delta</span><span class="arrow">→</span>
+      <span class="node">classify-sigma</span><span class="arrow">→</span>
+      <span class="node">classify-delta</span><span class="arrow">→</span>
+      <span class="node">assess</span><span class="arrow">→</span>
+      <span class="node">compose</span><span class="arrow">→</span>
+      <span class="node">render-html</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><button type="button" class="ex-btn" data-ex="info" data-box="ex-info">показать пример в этой странице</button></p>
@@ -209,16 +210,14 @@
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>sdd-stories-report — доля стори по SDD (командная методика дашборда) <span class="tag">командный</span><span class="tag">версия 1.0.0</span></h4>
-    <p>Считает истории КЭ из периметра команды, доведённые до «Тестирование — Внедрен», и делит на выполненные по SDD (метка или спецификация в принятой правке/привязанном коммите) и без неё. На выходе доля, разбивка по КЭ, признак ТОП КЭ, худший КЭ, исключения и сверка с методикой дашборда.</p>
+    <h4>sdd-stories-report — доля стори по SDD <span class="tag">общий</span><span class="tag">версия 1.2.0</span></h4>
+    <p>Считает долю стори по выбранным периоду, статусам и периметру КЭ. Признак SDD — метка или подтверждённый принятый PR со спецификацией; непроверенные истории показаны отдельно и не входят в знаменатель. По запросу готовит черновик письма без отправки. Пример IRBIS показывает сохранённый командный отчёт.</p>
     <div class="flow">
-      <span class="node gate">methodology-gate</span><span class="arrow">→</span>
-      <span class="node src">check-methodology</span><span class="arrow">→</span>
-      <span class="node gate">methodology-review</span><span class="arrow">→</span>
-      <span class="node src">fetch</span><span class="arrow">→</span>
-      <span class="node src">read-code</span><span class="arrow">→</span>
-      <span class="node tr">assess</span><span class="arrow">→</span>
-      <span class="node tr">compose</span><span class="arrow">→</span>
+      <span class="node">fetch</span><span class="arrow">→</span>
+      <span class="node">read-code</span><span class="arrow">→</span>
+      <span class="node">assess</span><span class="arrow">→</span>
+      <span class="node">compose</span><span class="arrow">→</span>
+      <span class="node">gate</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><button type="button" class="ex-btn" data-ex="sdd" data-box="ex-sdd">показать пример в этой странице</button></p>
@@ -226,13 +225,18 @@
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h4>cr-validator — валидация CR <span class="tag">личный</span><span class="tag">версия 1.0.0</span></h4>
-    <p>Читает один Change Request запросом команды (CR с меткой <code>CHECK_OK</code> или <code>CHECK_ERROR</code> повторно не проверяется). Три проверки — бизнес-поля, обязательные блоки описания, уровень безопасности текста. Затем пишет итог в Jira — метку, исполнителя, комментарий — но только по явному согласию человека на точное изменение (задача, метки, исполнитель был → станет, полный текст комментария), и подтверждает запись повторным чтением; отказ не обрывает прогон. Завершается html-отчётом: ход проверки, замечания, что итог предписывает записать и что фактически изменилось в задаче.</p>
+    <h4>validation-cr — валидация CR <span class="tag">общий</span><span class="tag">версия 1.1.0</span></h4>
+    <p>Читает один Change Request или выборку запроса, показывает отобранные задачи и продолжает проверки по явному ответу человека. Выполняет включённые проверки бизнес-полей, правил текста и попыток вмешательства, сводит их в CHECK_OK или CHECK_ERROR и формирует текстовый и HTML-отчёт. Пропуски и непрочитанные поля показаны явно. Процесс не меняет метки, исполнителя и комментарии в Jira.</p>
     <div class="flow">
-      <span class="node src">fetch</span><span class="arrow">→</span>
-      <span class="node">validate · cr-validator</span><span class="arrow">→</span>
-      <span class="node act">apply</span><span class="arrow">→</span>
-      <span class="node tr">report</span><span class="arrow">→</span>
+      <span class="node">select-crs</span><span class="arrow">→</span>
+      <span class="node">review-selection</span><span class="arrow">→</span>
+      <span class="node">review-confirmation</span><span class="arrow">→</span>
+      <span class="node">check-fields</span><span class="arrow">→</span>
+      <span class="node">check-rules</span><span class="arrow">→</span>
+      <span class="node">check-security</span><span class="arrow">→</span>
+      <span class="node">decide</span><span class="arrow">→</span>
+      <span class="node">report</span><span class="arrow">→</span>
+      <span class="node">report-html</span><span class="arrow">→</span>
       <span class="node">end</span>
     </div>
     <p class="ex-line"><button type="button" class="ex-btn" data-ex="cr" data-box="ex-cr">показать пример в этой странице</button></p>

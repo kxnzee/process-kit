@@ -18,8 +18,8 @@ $ git branch -vv
 $ git config branch.my.pushRemote
 no_push
 $ git remote -v
-origin  https://bitbucket.example/scm/pk/process-kit.git (fetch)
-origin  https://bitbucket.example/scm/pk/process-kit.git (push)
+origin  https://bitbucket.example/scm/rk/rockit.git (fetch)
+origin  https://bitbucket.example/scm/rk/rockit.git (push)
 ```
 
 Если человек выбрал «ещё в вашем репозитории»: есть remote mine и

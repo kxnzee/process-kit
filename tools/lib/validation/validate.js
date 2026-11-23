@@ -250,7 +250,8 @@ function ruleLayout() {
   const tracked = (git(['ls-files', '-z'], ROOT) || '').split('\0').filter(Boolean);
   const bad = [
     [/^(system|team|user)\//, 'папки system/, team/, user/ устарели'],
-    [/^process-kit\.local\.json$/, 'process-kit.local.json устарел'],
+    [/^[^/]+\.local\.json$/, 'локальные настройки хранятся в config/my/config.json'],
+    [/^[^/]* [^/]*\//, 'личные папки с пробелами в корне не переносятся в общий репозиторий'],
     [/^gigacode-extension\.json$/, 'gigacode-extension.json в корне не используется'],
     [/(^|\/)CODEOWNERS$/, 'CODEOWNERS не используется'],
     [/^\.gigacode\/\.env$/, '.gigacode/.env не используется: доступ через $secret:'],
@@ -259,7 +260,7 @@ function ruleLayout() {
   ];
   for (const f of tracked) for (const [re, msg] of bad) if (re.test(f)) E('раскладка', path.join(ROOT, f), 0, msg);
 
-  for (const n of ['Process Kit', '.runs', 'runs', 'trace.jsonl', 'run.md']) {
+  for (const n of ['.runs', 'runs', 'trace.jsonl', 'run.md']) {
     if (exists(path.join(ROOT, n))) E('раскладка', path.join(ROOT, n), 0, 'в корне не должно быть: результаты и прогоны лежат в outputs/<имя>/');
   }
   const { branch, base } = branchInfo();
@@ -282,7 +283,7 @@ function ruleLayout() {
   if (!exists(gi)) { E('раскладка', gi, 0, 'нет .gitignore'); return; }
   const g = lines(read(gi)).map((l) => l.trim());
   for (const need of ['/outputs/', '/.history/']) if (!g.includes(need)) E('раскладка', gi, 0, `нет строки ${need}`);
-  for (const old of ['Process Kit/', '.runs/']) if (!g.includes(old)) W('раскладка', gi, 0, `нет строки ${old} (старое имя, держим одну версию)`);
+  if (!g.includes('.runs/')) W('раскладка', gi, 0, 'нет строки .runs/ (прежние локальные прогоны)');
 
   // Team identity belongs to the team config.
   if((branch||'').startsWith('team-')&&!exists(path.join(ROOT,'config/team/config.json')))E('раскладка',path.join(ROOT,'config/team/config.json'),0,'в командной ветке нет настроек team');
@@ -723,7 +724,7 @@ function checkRunDir(dir) {
 
 function checkSetupReport(file) {
   const t = read(file);
-  if (!/^# Настройка (?:RocKit|Process Kit)(?:,|\r?\n|$)/.test(t)) E('отчёт настройки', file, 1, 'первая строка — «# Настройка RocKit, <дата>»');
+  if (!/^# Настройка RocKit(?:,|\r?\n|$)/.test(t)) E('отчёт настройки', file, 1, 'первая строка — «# Настройка RocKit, <дата>»');
   if (lines(t).filter((l) => l.trim()).length > 15) W('отчёт настройки', file, 0, 'отчёт длиннее 15 строк');
   if (/\$secret:|Bearer\s|x-[a-z]+-token/i.test(t)) E('отчёт настройки', file, 0, 'в отчёте есть данные доступа');
 }

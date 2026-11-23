@@ -63,25 +63,25 @@
 
 <table>
   <tr><th>Подключение</th><th>Как запускается</th><th>Что нужно завести</th><th>Чем подтвердить готовность</th></tr>
-  <tr><td><code>pp-ai-bitbucket</code></td>
+  <tr><td><code>rk-bitbucket</code></td>
     <td>локальный процесс из <code>.gigacode/mcp/bitbucket-mcp/dist/index.js</code> — 40 инструментов хранилища кода: репозитории, файлы, диффы, запросы на изменения, комментарии, ветки</td>
-    <td>Node.js 22+, секрет <code>pp-ai-bitbucket/BITBUCKET_TOKEN</code>, сверить <code>BITBUCKET_URL</code> с адресом вашего сервера</td>
+    <td>Node.js 22+, секрет <code>rk-bitbucket/BITBUCKET_TOKEN</code>, сверить <code>BITBUCKET_URL</code> с адресом вашего сервера</td>
     <td><code>bitbucket_get_me</code></td></tr>
-  <tr><td><code>pp-ai-email</code></td>
+  <tr><td><code>rk-email</code></td>
     <td>локальный процесс из <code>.gigacode/mcp/mcp-email/dist/index.js</code> — 12 инструментов: чтение и отправка почты, контакты в LDAP, локальные архивы, календарь</td>
-    <td>Node.js 22+, секреты <code>pp-ai-email/PASSWORD</code> и <code>pp-ai-email/LDAP_BIND_PASSWORD</code>, свои <code>USER</code>, <code>SMTP_FROM</code>, <code>LDAP_BIND_DN</code> через секрет <code>pp-ai-email/LDAP_BIND_DN</code></td>
+    <td>Node.js 22+, секреты <code>rk-email/PASSWORD</code> и <code>rk-email/LDAP_BIND_PASSWORD</code>, свои <code>USER</code>, <code>SMTP_FROM</code>, <code>LDAP_BIND_DN</code> через секрет <code>rk-email/LDAP_BIND_DN</code></td>
     <td><code>list_folders</code> для почты, <code>search_ldap</code> по своему ФИО для контактов</td></tr>
-  <tr><td><code>pp-ai-jira</code><br><code>pp-ai-jira-delta</code></td>
+  <tr><td><code>rk-jira</code><br><code>rk-jira-delta</code></td>
     <td>удалённое обращение по адресам <code>api.sbertrack.sberbank.ru</code> — установка не нужна</td>
-    <td>секрет <code>pp-ai-jira/x-jira-token</code>, для второго — <code>pp-ai-jira-delta/x-jira-token</code></td>
+    <td>секрет <code>rk-jira/x-jira-token</code>, для второго — <code>rk-jira-delta/x-jira-token</code></td>
     <td>одно живое чтение: своя задача по номеру</td></tr>
-  <tr><td><code>pp-ai-confluence</code><br><code>pp-ai-confluence-delta</code></td>
+  <tr><td><code>rk-confluence</code><br><code>rk-confluence-delta</code></td>
     <td>удалённое обращение по адресам <code>api.sbertrack.sberbank.ru</code> — установка не нужна</td>
-    <td>секрет <code>pp-ai-confluence/x-confluence-token</code>, для второго — <code>pp-ai-confluence-delta/x-confluence-token</code></td>
+    <td>секрет <code>rk-confluence/x-confluence-token</code>, для второго — <code>rk-confluence-delta/x-confluence-token</code></td>
     <td>одно живое чтение: страница по идентификатору</td></tr>
-  <tr><td><code>pp-ai-onework</code></td>
+  <tr><td><code>rk-onework</code></td>
     <td>удалённое обращение к <code>mcp.onework.sigma.sbrf.ru</code> — установка не нужна</td>
-    <td>секрет <code>onework/Authorization</code></td>
+    <td>секрет <code>rk-onework/Authorization</code></td>
     <td><code>grafinya_healthCheck</code></td></tr>
 </table>
 <p style="color:var(--muted);font-size:14px">Удалённым подключениям нужен только секрет; локальным серверам — ещё и сами файлы серверов, их ставит навык установки ниже.</p>
@@ -89,17 +89,17 @@
 <h3>Как подключить</h3>
 <ol>
   <li><b>Поставить локальные серверы.</b> Это делает служебный навык <code>rk-install-local-mcp</code> — его вызывает помощник по просьбе человека: достаточно сказать «установи локальные серверы доступа» и назвать путь к архиву. Навык проверяет Node.js и свободное место, распаковывает архив в <code>.gigacode/mcp/</code> либо собирает серверы из исходников, проверяет запуск <code>node tools/kit.js mcp-check --probe</code> и называет шаги, которые остаются человеку. Доступы он не заводит и во внешних системах ничего не меняет.</li>
-  <li><b>Заменить чужие значения учётной записи на свои</b> — в секции <code>pp-ai-email</code>: <code>USER</code> — логин Sigma, <code>SMTP_FROM</code> — свой адрес почты. <code>LDAP_BIND_DN</code> остаётся ссылкой на секрет <code>pp-ai-email/LDAP_BIND_DN</code>; в клиенте за ней сохраняют <code>&lt;логин Sigma&gt;@sigma.sbrf.ru</code>.</li>
+  <li><b>Заменить чужие значения учётной записи на свои</b> — в секции <code>rk-email</code>: <code>USER</code> — логин Sigma, <code>SMTP_FROM</code> — свой адрес почты. <code>LDAP_BIND_DN</code> остаётся ссылкой на секрет <code>rk-email/LDAP_BIND_DN</code>; в клиенте за ней сохраняют <code>&lt;логин Sigma&gt;@sigma.sbrf.ru</code>.</li>
   <li><b>Завести секреты</b> из таблицы — значения вводятся в GigaCode, не в чат и не в файл.</li>
   <li><b>Подтвердить подключения</b> после окончательной правки настроек: агент показывает весь список проектных серверов и только после согласия на него выполняет из корня копии <code>gigacode mcp approve --all</code>. Подтверждения сохраняет сам клиент в пользовательском хранилище; агент вручную его файлы не редактирует. Правка секции сервера требует повторного подтверждения.</li>
   <li><b>Перезапустить сессию</b> и подтвердить каждое подключение одним живым чтением из столбца «Чем подтвердить готовность»: готовность подтверждается чтением, а не пунктом в списке.</li>
 </ol>
-<p style="color:var(--muted);font-size:14px">Заполняемые значения почтового подключения в секции <code>pp-ai-email</code> файла <code>.gigacode/settings.json</code>: <code>логин сигма</code> — логин вашей учётной записи Sigma, <code>ВАШАПОЧТА</code> — ваш адрес. Значения паролей в файл не записываются: на их месте ссылки вида <code>$secret:</code>, а само значение вводится в хранилище секретов GigaCode.</p>
+<p style="color:var(--muted);font-size:14px">Заполняемые значения почтового подключения в секции <code>rk-email</code> файла <code>.gigacode/settings.json</code>: <code>логин сигма</code> — логин вашей учётной записи Sigma, <code>ВАШАПОЧТА</code> — ваш адрес. Значения паролей в файл не записываются: на их месте ссылки вида <code>$secret:</code>, а само значение вводится в хранилище секретов GigaCode.</p>
 <pre>"USER": "&lt;логин Sigma&gt;",
-"PASSWORD": "$secret:pp-ai-email/PASSWORD",
+"PASSWORD": "$secret:rk-email/PASSWORD",
 "SMTP_FROM": "&lt;ваш адрес&gt;@sberbank.ru",
-"LDAP_BIND_DN": "$secret:pp-ai-email/LDAP_BIND_DN",
-"LDAP_BIND_PASSWORD": "$secret:pp-ai-email/LDAP_BIND_PASSWORD"</pre>
+"LDAP_BIND_DN": "$secret:rk-email/LDAP_BIND_DN",
+"LDAP_BIND_PASSWORD": "$secret:rk-email/LDAP_BIND_PASSWORD"</pre>
 </div>
 </body>
 </html>

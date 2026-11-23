@@ -37,9 +37,9 @@ function accessRules(cwd){
   if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value))if(!literals.has(key))resources(item,from);return;}
   if(typeof value!=='string')return;
   if(/^[{[]/.test(value.trimStart())){let parsed;try{parsed=JSON.parse(value);}catch{}if(parsed&&typeof parsed==='object'){resources(parsed,from);return;}}
-  const resource=value.match(/^(processes|actions|adapters)\/([^/]+)(?:\/|$)/);
-  if(resource){allowed(resource[2],from);const level=require('../config/process-settings').levelOf(value);if(level==='my'&&!scope.personal||level==='team'&&!scope.teamId)throw new Error('Настройки процесса недоступны по уровню владения');}
-  if(value.startsWith('context/')&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
+  const resource=value.match(/^(processes|actions|adapters)[/\\]([^/\\]+)(?:[/\\]|$)/i);
+  if(resource){if(!canonicalFile(value))throw new Error('Нужен канонический путь ресурса');allowed(resource[2],from);const level=require('../config/process-settings').levelOf(value);if(level==='my'&&!scope.personal||level==='team'&&!scope.teamId)throw new Error('Настройки процесса недоступны по уровню владения');}
+  if(/^context[/\\]/i.test(value)&&!visibleFile(value,from,scope))throw new Error('Ресурс недоступен по уровню владения');
  }
  function paths(value,from){
   if(value===undefined)return;
@@ -120,7 +120,13 @@ function visibleFile(file,name,scope){
  }
  return folder==='context'&&['master','team','my'].includes(ref)&&{master:0,team:1,my:2}[ref]<=owner(name).level&&(ref!=='team'||!!scope.teamId)&&(ref!=='my'||scope.personal);
 }
-function canonicalFile(file){return typeof file==='string'&&!/^[a-zA-Z]:/.test(file)&&!file.includes('\\')&&!file.split('/').some(part=>!part||part==='.'||part==='..');}
+function canonicalFile(file){
+ if(typeof file!=='string'||/[\\<>:"|?*\u0000-\u001f]/.test(file))return false;
+ if(file.split('/').some(part=>!part||part==='.'||part==='..'||/[. ]$/.test(part)||/^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:[ .]|$)/i.test(part)))return false;
+ const folder=file.split('/')[0];
+ if(/^(processes|actions|adapters|context|config|tools|docs)$/i.test(folder)&&folder!==folder.toLowerCase())return false;
+ return !require('../config/process-settings').levelOf(file)||file===file.toLowerCase();
+}
 function publicationFacts(cwd,name,scope,issue){
  const file=`processes/${name}/publication.json`;
  try{

@@ -262,13 +262,13 @@ function ruleLayout() {
   for (const n of ['Process Kit', '.runs', 'runs', 'trace.jsonl', 'run.md']) {
     if (exists(path.join(ROOT, n))) E('раскладка', path.join(ROOT, n), 0, 'в корне не должно быть: результаты и прогоны лежат в outputs/<имя>/');
   }
-  const { branch } = branchInfo();
+  const { branch, base } = branchInfo();
   if (teamUnknown()) {
     W('уровни', null, 0, `ветка «${branch}» не называет команду: файлы уровня с префиксом не проверить, передайте --team <код> или настройте выбранную команду в config/my/config.json`);
   }
   // Новое и прежнее размещение сохраняют владельца: личные файлы не уезжают в team/master.
   const sharedDoc=(f)=>/(^|\/)(README\.md|EXAMPLE\.json)$/.test(f);
-  const teamBranch=(branch||'').startsWith('team-'),commonBranch=branch==='master'||(branch||'').startsWith('master-');
+  const teamBranch=(base||'').startsWith('team-'),commonBranch=base==='master'||(base||'').startsWith('master-');
   for(const f of tracked){
     if(sharedDoc(f))continue;
     const processLevel=require('../config/process-settings').levelOf(f);

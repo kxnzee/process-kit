@@ -13,7 +13,7 @@ function scope(cwd){
 function active(cwd,entries){
  if(!entries.length)return [];
  const base=inside(cwd,'outputs');if(!fs.existsSync(base))return [];
- const files=new Set(entries.flatMap(e=>[e.source,e.target])),blocked=[];
+ const files=new Set(entries.flatMap(e=>[e.source.toLowerCase(),e.target.toLowerCase()])),blocked=[];
  for(const item of fs.readdirSync(base,{withFileTypes:true})){
   if(!item.isDirectory())continue;
   const run=`outputs/${item.name}/.run`;
@@ -24,7 +24,7 @@ function active(cwd,entries){
    const pinned=state?.identity?.files;
    if(!pinned||typeof pinned!=='object'||Array.isArray(pinned)||!Object.keys(pinned).length){blocked.push(run);continue;}
    if(['completed','failed'].includes(state.status))continue;
-   if(state.status!=='running'||Object.keys(pinned).some(file=>files.has(file)))blocked.push(run);
+   if(state.status!=='running'||Object.keys(pinned).some(file=>files.has(file.toLowerCase())))blocked.push(run);
   }catch{blocked.push(run);}
  }
  return blocked;
@@ -32,13 +32,13 @@ function active(cwd,entries){
 function plan(cwd){
  const current=scope(cwd),base=`config/${current.level}/processes`,entries=[],issues=[];
  if(fs.existsSync(inside(cwd,base)))for(const item of fs.readdirSync(inside(cwd,base),{withFileTypes:true})){
-  const name=item.name.replace(/\.json$/,''),source=base+'/'+item.name;
+  const name=item.name.replace(/\.json$/i,''),source=base+'/'+item.name;
   try{
-   if(!item.isFile()||!item.name.endsWith('.json')||!NAME.test(name))throw new Error('Invalid entry');
+   if(!item.isFile()||!(/\.json$/i.test(item.name))||!NAME.test(name))throw new Error('Invalid entry');
    if(!require('../entities/process-facts').visible(name,current))throw new Error('Foreign process');
    const model=processModel(fs.readFileSync(inside(cwd,`processes/${name}/PROCESS.md`),'utf8'));
    if(model.errors.length)throw new Error('Invalid process');
-   settings.read(cwd,current.level,name,Object.keys(model.data.params||{}));
+   if(settings.read(cwd,current.level,name,Object.keys(model.data.params||{}))===null)throw new Error('Legacy settings are not readable');
    const target=settings.file(current.level,name);
    if(fs.existsSync(inside(cwd,target)))throw new Error('Destination exists');
    entries.push({process:name,level:current.level,source,target,sha256:hash(fs.readFileSync(inside(cwd,source)))});
@@ -83,7 +83,7 @@ function rollback(cwd,id){
  if(journal.status==='rolled-back')return {rolledBack:true,journal:id};
  const visible=require('../entities/process-facts').visible;
  for(const entry of journal.entries){
-  if(!NAME.test(entry.process||'')||entry.level!==current.level||!visible(entry.process,current)||entry.source!==settings.legacyFile(entry.level,entry.process)||entry.target!==settings.file(entry.level,entry.process)||!/^[a-f0-9]{64}$/.test(entry.sha256))throw new Error('Повреждённый журнал миграции');
+  if(!NAME.test(entry.process||'')||entry.level!==current.level||!visible(entry.process,current)||typeof entry.source!=='string'||entry.source.replace(/\.json$/i,'.json')!==settings.legacyFile(entry.level,entry.process)||entry.target!==settings.file(entry.level,entry.process)||!/^[a-f0-9]{64}$/.test(entry.sha256))throw new Error('Повреждённый журнал миграции');
   for(const file of [entry.source,entry.target])if(fs.existsSync(inside(cwd,file))&&hash(fs.readFileSync(inside(cwd,file)))!==entry.sha256)throw new Error('Настройки изменены; автоматический откат запрещён');
   if(!fs.existsSync(inside(cwd,entry.source))&&!fs.existsSync(inside(cwd,entry.target)))throw new Error('Файл миграции утрачен');
  }

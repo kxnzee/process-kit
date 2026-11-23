@@ -9,7 +9,8 @@ const LEVELS=['master','team','my'];
 const SECRET_KEY=/token|password|passwd|secret|api[-_]?key|authorization/i;
 const file=(level,name)=>`processes/${name}/config/${level}.json`;
 const legacyFile=(level,name)=>`config/${level}/processes/${name}.json`;
-const levelOf=file=>file.match(/^processes\/[a-z0-9][a-z0-9-]*\/config\/(master|team|my)\.json$/)?.[1]||null;
+// Classify case aliases too: NTFS resolves MY.JSON to the same private my.json.
+const levelOf=file=>file.match(/^processes\/[a-z0-9][a-z0-9-]*\/config\/(master|team|my)\.json$/i)?.[1].toLowerCase()||null;
 function secrets(value,where){
  for(const [key,item]of Object.entries(value)){
   if(SECRET_KEY.test(key))throw new Error(where+': секреты не являются параметрами');

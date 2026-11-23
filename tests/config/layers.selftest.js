@@ -18,6 +18,35 @@ try{
   const explicit=support.source({cwd:tmp,params:{...params,taskStore:'team-tasks',parameters:{project:'A'}},mode:'live',actionName:'run-query',processName:'sdd-stories-report'},'taskStore');
   assert.equal(explicit.parameters.project,'A');
  });
+ check('personal chat address is optional, validated and independent of Git identity',()=>{
+  const before={...my.preferences};
+  try{
+   for(const addressAs of ['Алексей Викторович',null]){
+    my.preferences={...before,addressAs};save();const config=loadConfig(tmp);
+    assert.equal(config.preferences.addressAs,addressAs);assert.equal(config.profile.name,my.profile.name);
+    assert.equal(config.preferences.language,'ru');
+    assert.deepEqual(loadConfig(tmp,['master','team']).preferences,{});
+   }
+   for(const addressAs of ['', ' ',false,42,[],{}]){
+    my.preferences={...before,addressAs};save();assert.throws(()=>loadConfig(tmp),/preferences.addressAs/);
+   }
+  }finally{my.preferences=before;save();}
+  assert.equal(loadConfig(tmp).preferences.addressAs,undefined);
+ });
+ check('chat style preferences validate supported choices while preserving legacy preferences',()=>{
+  const before={...my.preferences};
+  try{
+   for(const addressMode of ['formal','informal'])for(const responseDetail of ['auto','brief','detailed']){
+    my.preferences={...before,addressMode,responseDetail};save();
+    assert.deepEqual(loadConfig(tmp).preferences,my.preferences);
+    assert.equal(loadConfig(tmp).profile.name,my.profile.name);
+   }
+   for(const [field,values]of [['addressMode',['ты','unknown',false,null,{}]],['responseDetail',['short','unknown',3,null,[]]]]){
+    for(const value of values){my.preferences={...before,[field]:value};save();assert.throws(()=>loadConfig(tmp),new RegExp('preferences.'+field));}
+   }
+  }finally{my.preferences=before;save();}
+  assert.deepEqual(loadConfig(tmp).preferences,before);
+ });
  check('personal layers cannot overwrite team entries or select another inherited team',()=>{
   my.taskStores[0].id='team-tasks';save();assert.throws(()=>loadConfig(tmp),/повтор id/);my.taskStores[0].id='my-tasks';
   my.teamId='other';save();assert.throws(()=>loadConfig(tmp),/не совпадает/);my.teamId='a';

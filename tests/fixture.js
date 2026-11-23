@@ -43,7 +43,7 @@ function validate(args, success, contains) {
 function model(body) { return processModel(`---\nname: sample\nentry: a\n---\n## Шаги\n${body}`); }
 if(copy)copyProject(source,tmp);
 
-return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter, close: () => fs.rmSync(tmp, {recursive:true,force:true}) };
+return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter, close: () => fs.rmSync(tmp,{recursive:true,force:true,maxRetries:7,retryDelay:100}) };
 };
 
 module.exports.declare=declare;

@@ -27,8 +27,8 @@ function lock(dir,recover=false,name='.journal.lock'){
  }
  function claim(){
   // Publish closed, complete owner bytes exclusively. A file rename could overwrite a lock.
-  // Keep the candidate as an anchor until after unlinking the reusable name.
-  // On Windows a last-link delete can leave that name pending while a reader is open.
+  // Keep the candidate as an anchor until the reusable name has been renamed away.
+  // On Windows deleting that name can leave it pending while a reader is open.
   const candidate=candidateFor(owner);let published=false;
   try{
    fs.writeFileSync(candidate,encode(owner),{flag:'wx',mode:0o600});
@@ -81,7 +81,10 @@ function lock(dir,recover=false,name='.journal.lock'){
       if(!acquired)try{
        const anchored=statFile(anchor),captured=JSON.parse(fs.readFileSync(anchor,'utf8'));
        if(!same(anchored,entry)||!sameOwner(captured,previous))throw new Error('Журнал занят работающим процессом');
-       fs.unlinkSync(file);
+       // Same rename-before-delete rule as release: an unlink here would freeze the
+       // reusable path while the reader handle is still open.
+       const trash=file+'.'+crypto.randomUUID()+'.released';
+       fs.renameSync(file,trash);fs.unlinkSync(trash);
        if(typeof previous.id==='string'&&/^[a-f0-9-]{36}$/.test(previous.id)){
         const candidate=candidateFor(previous);
         if(same(statFile(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
@@ -97,7 +100,12 @@ function lock(dir,recover=false,name='.journal.lock'){
  return ()=>{
   const entry=statFile(file),current=readOwner(entry);
   if(current.id!==owner.id)throw new Error('Изменился владелец блокировки');
-  fs.unlinkSync(file);
+  // Unlinking a name whose inode still has open handles (a lock reader) freezes that
+  // reusable path in Windows delete-pending until the handles close. Renaming the
+  // canonical name away frees it immediately; the private trash copy is deleted instead.
+  const trash=file+'.'+crypto.randomUUID()+'.released';
+  fs.renameSync(file,trash);
+  fs.unlinkSync(trash);
   const candidate=candidateFor(owner);
   if(same(statFile(candidate,{throwIfNoEntry:false}),entry))fs.unlinkSync(candidate);
  };

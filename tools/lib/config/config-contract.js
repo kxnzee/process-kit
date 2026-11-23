@@ -239,6 +239,22 @@ module.exports={
       },
       "preferences": {
         "type": "object",
+        "properties": {
+          "addressAs": {
+            "anyOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "null" }
+            ]
+          },
+          "addressMode": {
+            "type": "string",
+            "enum": ["formal", "informal"]
+          },
+          "responseDetail": {
+            "type": "string",
+            "enum": ["auto", "brief", "detailed"]
+          }
+        },
         "additionalProperties": true
       },
       "profile": {

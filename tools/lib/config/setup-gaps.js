@@ -2,7 +2,7 @@
 // Safe placeholder locations, never configuration values or arbitrary property names.
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path');
-const keys=new Set('schemaVersion team id name owners profile email teamId storage mode repositoryUrl taskStores codeStores defaults preferences kind adapter displayName mcpServer enabled baseUrl issueUrlTemplate projects issueTypes statusesExclude modules code capabilities limits jqlMustIncludeIssueType getIssuesBatchMax pageSize pullRequestUrlTemplate repositories projectKey slug defaultBranch url acceptTargetBranches pullRequest keyExtraction fields pattern ignorePatterns taskStore codeStore project repository'.split(' '));
+const keys=new Set('schemaVersion team id name owners profile email teamId storage mode repositoryUrl taskStores codeStores defaults preferences addressAs addressMode responseDetail kind adapter displayName mcpServer enabled baseUrl issueUrlTemplate projects issueTypes statusesExclude modules code capabilities limits jqlMustIncludeIssueType getIssuesBatchMax pageSize pullRequestUrlTemplate repositories projectKey slug defaultBranch url acceptTargetBranches pullRequest keyExtraction fields pattern ignorePatterns taskStore codeStore project repository'.split(' '));
 const todo=value=>typeof value==='string'&&/\bTODO\b/i.test(value);
 function locations(value,at=''){
  if(todo(value))return [at];

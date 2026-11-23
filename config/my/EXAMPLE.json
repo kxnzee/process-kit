@@ -94,5 +94,9 @@
     "project": "TODO: ключ проекта; удалить, если выбор не нужен",
     "repository": "TODO: projectKey/slug; удалить, если выбор не нужен"
   },
-  "preferences": {}
+  "preferences": {
+    "addressAs": null,
+    "addressMode": "formal",
+    "responseDetail": "auto"
+  }
 }

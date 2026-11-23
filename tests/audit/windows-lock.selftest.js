@@ -29,12 +29,13 @@ try{
    assert.deepEqual(fs.readdirSync(tmp),[]);
   }
  });
- check('ARCH-004: release never deletes the last link at a reusable lock path while a reader is open',()=>{
-  // Deterministic model of Windows delete-pending: recreating the same name fails
-  // if unlink removed the last hard link while another process still reads it.
+ check('ARCH-004: release frees the reusable lock name while a reader and candidate link remain',()=>{
+  // A retained hard link does not prove that Windows can reuse a deleted name.
+  // Model delete-pending on that name while another process still reads the file.
   const file=path.join(tmp,'.journal.lock'),release=storage.lock(tmp),reader=fs.openSync(file,'r');
+  assert.ok(fs.statSync(file).nlink>1,'The candidate anchor must be present');
   const unlink=fs.unlinkSync,link=fs.linkSync;let pending=false;
-  fs.unlinkSync=function(target){if(target===file&&fs.statSync(target).nlink===1)pending=true;return unlink.apply(this,arguments);};
+  fs.unlinkSync=function(target){if(target===file)pending=true;return unlink.apply(this,arguments);};
   fs.linkSync=function(from,to){if(to===file&&pending)throw Object.assign(new Error('WINDOWS_DELETE_PENDING'),{code:'EPERM'});return link.apply(this,arguments);};
   try{
    release();const next=storage.lock(tmp);next();
@@ -50,11 +51,11 @@ try{
   finally{fs.readFileSync=read;}
   assert.equal(fs.readFileSync(file,'utf8'),bytes);fs.unlinkSync(file);assert.deepEqual(fs.readdirSync(tmp),[]);
  });
- check('ARCH-004: recovery anchors old file locks before unlinking their reusable name',()=>{
+ check('ARCH-004: recovery frees the reusable lock name while an old owner reader remains open',()=>{
   const file=path.join(tmp,'.journal.lock');
   const child=require('node:child_process').spawnSync(process.execPath,['-e',"require('node:fs').writeFileSync(process.argv[1],JSON.stringify({pid:process.pid,host:require('node:os').hostname(),id:require('node:crypto').randomUUID()}));",file],{encoding:'utf8'});
   assert.equal(child.status,0,child.stderr);const reader=fs.openSync(file,'r'),unlink=fs.unlinkSync,link=fs.linkSync;let pending=false;
-  fs.unlinkSync=function(target){if(target===file&&fs.statSync(target).nlink===1)pending=true;return unlink.apply(this,arguments);};
+  fs.unlinkSync=function(target){if(target===file)pending=true;return unlink.apply(this,arguments);};
   fs.linkSync=function(from,to){if(to===file&&pending)throw Object.assign(new Error('WINDOWS_DELETE_PENDING'),{code:'EPERM'});return link.apply(this,arguments);};
   try{const release=storage.lock(tmp,true);release();assert.equal(pending,false);}
   finally{fs.unlinkSync=unlink;fs.linkSync=link;fs.closeSync(reader);}

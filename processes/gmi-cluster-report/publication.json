@@ -23,7 +23,7 @@
     "actions/read-score-table/ACTION.md": "368e1aec4352cfca8849b23e92d7216564a240671147b3aad59abc59d7ebdd9e",
     "actions/read-score-table/contracts/result.json": "6ae2c7e7533f2d495781a7a1a1e55e0dbebcf04a06127dc1ea3bde654c45e39b",
     "actions/read-score-table/runtime.js": "df3808b44a80139318a7f3b3161335d25b55e0baed16b5fd3192b42725ed9993",
-    "processes/gmi-cluster-report/PROCESS.md": "f40d4422d774906f84935c4961a7c164b625fe4cd64538636bb92f1e4e7eb674",
+    "processes/gmi-cluster-report/PROCESS.md": "70f325c1ed4c001a3585305bfe2ab9b9dcd4fea1a404c8980ebf2d9dca87edb2",
     "processes/gmi-cluster-report/contracts/report-data.json": "5727f2b6ee92a549bcf8e9a6a95427a4d82ddd4536f01c0d07c0db8b1ef58811",
     "processes/gmi-cluster-report/methodology-notes.md": "815822d47003dd16e5dd02e519b59b56c499ea4a4672b88e95fd2283e892e409",
     "processes/gmi-cluster-report/renderers/report-html.js": "14ec1d9b35b02fb4b6fb0adcfb92ebb252211a6477d027aa7424505b351c8ce1",
@@ -32,12 +32,12 @@
     "processes/gmi-cluster-report/rules/gmi.js": "9d1218c0ead87e9e75f4b2271fe9bee7a2768dcec4bba23c7c96e995792623ac",
     "processes/gmi-cluster-report/templates/report.md": "7f9338cc8d72669fb4a8c52c9284261d12bf27ee4cab344ca494c2ed2bd64113"
   },
-  "updated": "2026-11-22T18:16:07.255Z",
+  "updated": "2026-11-24T05:01:23.001Z",
   "scope": "local/demo",
   "outputs": [
-    "2026-11-22_проба-проверка-rockit-gmi",
-    "2026-11-22_проба-проверка-rockit-gmi-2",
-    "2026-11-22_проба-проверка-rockit-gmi-3",
-    "2026-11-22_проба-проверка-rockit-gmi-4"
+    "2026-11-24_проба-проверка-gmi-почты",
+    "2026-11-24_проба-проверка-gmi-почты-2",
+    "2026-11-24_проба-проверка-gmi-почты-3",
+    "2026-11-24_проба-проверка-gmi-почты-4"
   ]
 }

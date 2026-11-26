@@ -48,7 +48,8 @@ $ git ls-remote origin team-urmepk
 │   ├── hooks/pre-push               исходник; копия ставится в .git/hooks/
 │   ├── references/                  общие операционные инструкции агента
 │   │   ├── interaction.md           случаи продолжения, изменений и отмены
-│   │   └── promotion.md             общая процедура двух переносов
+│   │   ├── promotion.md             общая процедура двух переносов
+│   │   └── result-presentation.md   показ списков и таблиц в чате
 │   └── skills/
 │       ├── rk-mentor/SKILL.md   консультация; знакомство в references/guide.md
 │       ├── rk-init/SKILL.md     факты через setup-status; детали в references/

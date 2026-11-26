@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// Definition lifecycle receipt, beside its owner. Does not execute a process or publish to Git.
+// Definition authoring and lifecycle. Does not execute a process or publish to Git.
 const fs=require('node:fs');
 const {inside}=require('../core/safe-path'),{root}=require('../core/paths');
 const {validateDefinition}=require('./process-definition'),{dependencies}=require('./process-dependencies');
@@ -57,10 +57,11 @@ function assertPublishedTree(cwd,name,params,mode,overrides,files,options={}){
 }
 function lifecycle(cwd,operation,spec){
  if(operation==='inspect')return require('./process-inspect').inspect(cwd,spec);
+ if(operation==='scaffold')return require('./process-scaffold').scaffold(cwd,spec);
  const model=validateDefinition(cwd,spec.process),file=inside(cwd,`processes/${spec.process}/publication.json`);
  const previous=operation!=='validate'&&fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  if(operation==='status')return {process:spec.process,status:current(cwd,previous,spec.process)?previous.status:'draft',policy:model.data.publication||'required',scope:previous?.scope||null};
- if(!['validate','test','publish'].includes(operation))throw new Error('Нужна операция inspect/validate/test/publish/status');
+ if(!['validate','test','publish'].includes(operation))throw new Error('Нужна операция scaffold/inspect/validate/test/publish/status');
  let receipt;
  if(operation==='validate'){
   const params={...require('./process-dependencies').declaredParams(cwd,spec.process,model),...spec.params};
@@ -101,10 +102,10 @@ module.exports={admitPublished,assertPublished,assertPublishedTree,lifecycle,cur
 if(require.main===module){
  const [operation,...args]=process.argv.slice(2);
  try{
-  const usage='node tools/kit.js definition <inspect|validate|test|publish|status> <spec.json>|--stdin|--process <имя> [--output <прогон>] [--level <уровень>] [--team <код>]';
+  const usage='node tools/kit.js definition <scaffold|inspect|validate|test|publish|status> <spec.json>|--stdin|--process <имя> [--output <прогон>] [--level <уровень>] [--team <код>]';
   const {spec}=require('../core/cli-spec').readSpec(args,{usage,flags:{'--process':'process','--output':'outputs','--level':'level','--team':'team'},lists:['outputs']});
   const cwd=root();
-  if(operation!=='inspect')require('./process-facts').assertAccess(cwd,spec.process,spec.params);
+  if(!['inspect','scaffold'].includes(operation))require('./process-facts').assertAccess(cwd,spec.process,spec.params);
   console.log(JSON.stringify(lifecycle(cwd,operation,spec),null,2));
  }catch(error){console.error(operation==='inspect'?'Не удалось прочитать факты. Использование: node tools/kit.js definition inspect <spec.json>; нужны process и необязательные level/team.':error.message);process.exitCode=1;}
 }

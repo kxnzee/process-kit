@@ -4,7 +4,7 @@
 const path=require('node:path'),{spawnSync}=require('node:child_process');
 const commands={
  'mcp-check':{file:'lib/integrations/local-mcp-check.js',usage:'[--probe]',purpose:'Проверить файлы локальных MCP; --probe проверяет stdio без рабочих доступов',scope:'local-execution'},
- definition:{file:'lib/entities/process-release.js',usage:'<inspect|validate|test|publish|status> <spec.json>|--stdin|--process <name> [--output <run>] [--level <level>] [--team <code>]',purpose:'Безопасно прочитать факты (inspect); глубоко проверить (status/validate) и допустить версию',scope:'local-write',scopeNote:'inspect: read-only; status: глубокая проверка с загрузкой кода; validate/test/publish: локальная запись и загрузка кода'},
+ definition:{file:'lib/entities/process-release.js',usage:'<scaffold|inspect|validate|test|publish|status> <spec.json>|--stdin|--process <name> [--output <run>] [--level <level>] [--team <code>]',purpose:'Создать каркас процесса, прочитать факты, проверить и допустить версию',scope:'local-write',scopeNote:'scaffold: новый PROCESS.md в области текущей ветки; inspect: read-only; status: глубокая проверка с загрузкой кода; validate/test/publish: локальная запись и загрузка кода'},
  action:{file:'lib/actions/invoke.js',usage:'<spec.json>|--stdin',purpose:'Выполнить локальный экшен без создания процесса',scope:'local-write'},
  entities:{file:'lib/entities/entities.js',usage:'<process> [local|demo|live] [params.json]',purpose:'Разрешить сущности и подключения процесса',scope:'definition-code',scopeNote:'Глубокая проверка может загрузить и выполнить код определения; только доверенные определения'},
  skills:{file:'lib/entities/skills.js',usage:'',purpose:'Прочитать каталог скиллов без тел инструкций',scope:'read-only'},
@@ -13,7 +13,7 @@ const commands={
  config:{file:'lib/config/config.js',usage:'--json | --process <name> [--params <file>] | --migrate-process-settings [--apply] | --rollback-process-settings <id>',purpose:'Проверить настройки; явно перенести файлы параметров процесса или откатить перенос',scope:'local-write',scopeNote:'--json/--process и план миграции: чтение; --apply/--rollback-process-settings: локальная запись'},
  'setup-status':{file:'lib/config/setup-state.js',usage:'',purpose:'Безопасно прочитать факты о личной настройке',scope:'read-only'},
  check:{file:'lib/validation/validate.js',usage:'[--process <name> [--demo] [--params <file>]] [--level master|team|my] [--team <code>] [--only <rule>] [--root <folder>] [--json]',purpose:'Проверить структуру или готовность процесса',scope:'definition-code',scopeNote:'Проверка структуры читает файлы; проверка готовности может загрузить и выполнить код определения'},
- test:{file:'../tests/run.js',usage:'[--level master|team|my] [--team <код>]',purpose:'Запустить тесты разработки; не нужен для обычной задачи',scope:'temporary-files'},
+ test:{file:'../tests/run.js',usage:'[--level master|team|my] [--team <код>]',purpose:'Запустить самотесты репозитория; агент вызывает только по явной просьбе пользователя',scope:'temporary-files'},
  'hooks-install':{file:'lib/git/install-hooks.js',usage:'',purpose:'Установить локальную защиту Git при инициализации',scope:'git-local-write'},
  'promote-plan':{file:'lib/git/promotion-plan.js',usage:'--target <origin/master|origin/team-code>',purpose:'Рассчитать план переноса без копирования и отправки',scope:'read-only'}
 };

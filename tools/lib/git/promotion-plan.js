@@ -7,6 +7,7 @@ const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { root } = require('../core/paths');
 const { owner } = require('../entities/process-model');
+const { SETTINGS_FILE, parseSettings, hasClientPermissions, clientPermissionsOnly } = require('../config/gigacode-settings');
 function promotionPlan(cwd, targetRef) {
   if (!/^(?:origin\/)?(?:master|team-[a-z0-9]+)$/.test(targetRef)) throw new Error('Target must be master or team-<code>, optionally under origin/');
   const git = (...args) => execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -46,15 +47,25 @@ function promotionPlan(cwd, targetRef) {
     }
     const full = path.join(cwd, file);
     let source = null;
+    let content;
     const stat = fs.lstatSync(full, { throwIfNoEntry: false });
     if (stat) {
       if (!stat.isFile() || parts.some((_, i) => fs.lstatSync(path.join(cwd, ...parts.slice(0, i + 1))).isSymbolicLink())) {
         excluded.push({ path: file, reason: 'symlink or unsupported file' }); continue;
       }
-      source = { mode: stat.mode & 0o111 ? '100755' : '100644', sha256: hash(fs.readFileSync(full)) };
+      content = fs.readFileSync(full);
+      source = { mode: stat.mode & 0o111 ? '100755' : '100644', sha256: hash(content) };
     }
     const base = version(baseCommit, file), target = version(targetCommit, file);
     if (equal(source, base) || equal(source, target)) continue;
+    if (file === SETTINGS_FILE && hasClientPermissions(parseSettings(content))) {
+      const onlyPermissions = base?.mode === source.mode &&
+        clientPermissionsOnly(git('show', `${baseCommit}:${file}`), content);
+      const reason = onlyPermissions ? 'local GigaCode permissions' :
+        'shared settings also changed; prepare them separately from local GigaCode permissions';
+      excluded.push({ path: file, reason });
+      continue;
+    }
     const item = { path: file, operation: source ? target ? 'modify' : 'add' : 'delete', source, base, target, administrative: admin };
     if (!equal(base, target)) conflicts.push(item);
     else candidates.push(item);

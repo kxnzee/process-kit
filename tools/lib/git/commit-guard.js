@@ -2,6 +2,7 @@
 'use strict';
 // Scan the Git index, not the working tree. This is commit protection, not a test suite.
 const {execFileSync}=require('node:child_process'),{root}=require('../core/paths');
+const {SETTINGS_FILE,hasClientPermissions}=require('../config/gigacode-settings');
 function problems(file,text){
  const issues=[];
  if(/^(?:outputs|\.history)\//.test(file)||/(^|\/)\.env(?:\.|$)/.test(file))issues.push('локальные данные/доступы не коммитятся');
@@ -9,6 +10,7 @@ function problems(file,text){
  if(patterns.some(re=>re.test(text)))issues.push('возможный секрет');
  if(file.endsWith('settings.json')){
   let value;try{value=JSON.parse(text);}catch{issues.push('неверный JSON настроек');return issues;}
+  if(file===SETTINGS_FILE&&hasClientPermissions(value))issues.push('локальные разрешения GigaCode (permissions) не коммитятся');
   function walk(obj,key=''){if(obj&&typeof obj==='object'){for(const [name,item]of Object.entries(obj))walk(item,name);return;}if(/token|password|passwd|api[-_]?key|authorization|secret/i.test(key)&&(typeof obj!=='string'||!/^(?:Bearer )?\$secret:[\w.-]+\/[\w.-]+$/.test(obj)))issues.push('доступ должен быть ссылкой на секрет');}
   walk(value);
  }

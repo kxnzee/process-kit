@@ -2,6 +2,18 @@
 // Read-only application input. Export facts, never instructions, settings or raw errors.
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const {inside}=require('../core/safe-path'),{loadConfig,loadMaster}=require('./config');
+const {SETTINGS_FILE,clientPermissionsOnly}=require('./gigacode-settings');
+
+function unstagedClientPermissions(cwd,git){
+ if(git('diff','--cached','--quiet','--',SETTINGS_FILE)!==''||git('diff','--quiet','--',SETTINGS_FILE)==='')return false;
+ const mode=git('ls-tree','HEAD','--',SETTINGS_FILE)?.split(' ')[0];
+ if(!['100644','100755'].includes(mode))return false;
+ try{
+  const file=inside(cwd,SETTINGS_FILE),stat=fs.lstatSync(file);
+  return stat.isFile()&&(mode==='100755')===!!(stat.mode&0o111)&&
+   clientPermissionsOnly(git('show','HEAD:'+SETTINGS_FILE),fs.readFileSync(file,'utf8'));
+ }catch{return false;}
+}
 function inspect(cwd){
  const git=(...args)=>{try{return execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore'],env:{...process.env,GIT_OPTIONAL_LOCKS:'0'}}).trim();}catch{return null;}};
  const result={version:1,personalReady:false,personal:{state:'unknown',configPresent:null,branch:'unknown'},known:{profile:'unknown',team:'unknown',storage:'unknown'},protection:{hooks:false,push:false},connections:{tasks:0,code:0,access:'not-checked'},configuration:{state:'unknown',files:[],missing:[]},issues:[],summary:[]};
@@ -20,6 +32,7 @@ function inspect(cwd){
  const branch=git('symbolic-ref','--quiet','--short','HEAD');
  if(branch===null){result.issues.push('branch-unavailable');return finish('unknown');}
  result.personal.branch=branch==='my'?'personal':'other';
+ if(unstagedClientPermissions(cwd,git))result.summary.push('В .gigacode/settings.json изменились только локальные разрешения клиента. Файл не подготовлен к коммиту.');
  const hasMy=branch==='my'||git('show-ref','--verify','--quiet','refs/heads/my')!==null;
  try{loadMaster(cwd);}catch{
   result.issues.push('shared-config-unavailable');

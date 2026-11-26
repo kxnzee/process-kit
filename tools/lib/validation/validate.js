@@ -24,6 +24,8 @@ const fs = require('fs');
 const path = require('path');
 const { processModel, parameter, NAME } = require('../entities/process-model');
 const { execFileSync } = require('child_process');
+const { SETTINGS_FILE, clientPermissionsOnly } = require('../config/gigacode-settings');
+const { inside } = require('../core/safe-path');
 
 // ---------- аргументы и корень ----------
 
@@ -221,7 +223,12 @@ function ruleLevels() {
       const raw=stat?.isFile()&&!stat.isSymbolicLink()?git(['hash-object','--no-filters','--',rel],ROOT):null;
       const actual=raw===expected?raw:stat?.isFile()&&!stat.isSymbolicLink()?git(['hash-object','--path',rel,'--',rel],ROOT):null;
       const entry=git(['ls-tree',baseline,'--',rel],ROOT),mode=entry?.split(' ')[0];
-      if(!stat||actual!==expected||(mode==='100755')!==!!(stat.mode&0o111))E('уровни',file,0,'унаследованный файл изменён или удалён; создайте свой вариант с префиксом');
+      const sameMode=stat&&(mode==='100755')===!!(stat.mode&0o111);
+      const localPermissions=rel===SETTINGS_FILE&&actual!==null&&actual!==expected&&sameMode&&
+        (mode==='100644'||mode==='100755')&&clientPermissionsOnly(
+          git(['show',`${baseline}:${rel}`],ROOT),read(inside(ROOT,rel))
+        );
+      if(!sameMode||actual!==expected&&!localPermissions)E('уровни',file,0,'унаследованный файл изменён или удалён; создайте свой вариант с префиксом');
     }
   }
   checkInherited('origin/master');

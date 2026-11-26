@@ -324,12 +324,17 @@ function executeLocked(cwd,spec,environment){
   if(!state.pending&&state.next_step!==spec.step)throw new Error('Текущий шаг карточки — '+state.next_step+': передайте его spec без изменений');
   if(!state.pending)operation(cwd,'begin',spec,environment);
   state=json(inside(dir,'state.json'));
-  const model=processModel(fs.readFileSync(inside(cwd,`processes/${state.cursorProcess}/PROCESS.md`),'utf8')),step=model.steps.find(item=>item.name===state.pending.step),meta=action(cwd,step.ref),inputs=Object.fromEntries(meta.consumes.artifacts.map(name=>[name,state.artifacts[name].endsWith('.json')?json(inside(dir,state.artifacts[name])):fs.readFileSync(inside(dir,state.artifacts[name]),'utf8')]));
   attemptId=state.pending.id;
+  const model=processModel(fs.readFileSync(inside(cwd,`processes/${state.cursorProcess}/PROCESS.md`),'utf8')),step=model.steps.find(item=>item.name===state.pending.step),meta=action(cwd,step.ref),inputs=Object.fromEntries(meta.consumes.artifacts.map(name=>[name,state.artifacts[name].endsWith('.json')?json(inside(dir,state.artifacts[name])):fs.readFileSync(inside(dir,state.artifacts[name]),'utf8')]));
   const context={cwd,processName:state.cursorProcess,actionName:step.ref,meta,params:state.pending.params,inputs,mode:state.identity.mode},policy=require('../actions/action-runtime').runtime(cwd,step.ref,meta);
   if(meta.kind==='act'||typeof policy.execute!=='function'||!(policy.canExecute?.(context)??true))throw new Error('Этот шаг не имеет штатного локального вычисления: используйте next и ACTION.md');
   const value=policy.execute(context),extension=meta.contracts[Object.keys(meta.produces)[0]]==='text'?'md':'json';
   return operation(cwd,'save',{output:spec.output,step:step.name,attemptId:state.pending.id,artifact:step.artifact,extension,content:value,next:step.next},environment);
- }catch(error){if(attemptId&&json(inside(dir,'state.json')).pending?.id===attemptId)failStep(cwd,spec.output,error.message,environment,operationLocked);error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;}
+ }catch(error){
+  let pending=null;
+  if(attemptId){try{pending=json(inside(dir,'state.json')).pending;}catch{/* Состояние недоступно: сбой шага не фиксируем, исходную ошибку не затираем. */}}
+  if(attemptId&&pending?.id===attemptId)failStep(cwd,spec.output,error.message,environment,operationLocked);
+  error.summaryFile=path.join(path.dirname(dir),'итог.md');throw error;
+ }
 }
 module.exports={brief,start,operation,execute,failStep,effectiveParams};

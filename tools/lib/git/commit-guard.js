@@ -15,7 +15,7 @@ function problems(file,text){
  return [...new Set(issues)];
 }
 function staged(cwd){
- const git=(...args)=>execFileSync('git',args,{cwd,stdio:['ignore','pipe','pipe']}),names=git('diff','--cached','--name-only','--diff-filter=ACMR','-z').toString().split('\0').filter(Boolean);
+ const git=(...args)=>execFileSync('git',args,{cwd,stdio:['ignore','pipe','pipe'],maxBuffer:512*1024*1024}),names=git('diff','--cached','--name-only','--diff-filter=ACMR','-z').toString().split('\0').filter(Boolean);
  return names.flatMap(file=>problems(file,git('show',':'+file).toString()).map(reason=>({file,reason})));
 }
 module.exports={problems,staged};

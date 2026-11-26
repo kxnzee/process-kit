@@ -27,6 +27,43 @@ try{
   assert.equal(lifecycle(tmp,'status',{process}).status,'published');
   if(process==='sdd-stories-report')assert.ok(fs.existsSync(path.join(tmp,'outputs',published.runs[1].output,'отчёт.md')));
  });
+ check('a repeated full cycle with fresh run names writes byte-identical portable receipts',()=>{
+  const file=path.join(tmp,'processes/example/publication.json'),before=fs.readFileSync(file,'utf8'),receipt=JSON.parse(before);
+  assert.deepEqual(Object.keys(receipt),['schemaVersion','process','status','scope','files']);
+  assert.equal(receipt.schemaVersion,2);assert.ok(!('outputs'in receipt));assert.ok(!('updated'in receipt));
+  assert.equal(publishDefinition(tmp,'example').receipt.status,'published');
+  assert.equal(fs.readFileSync(file,'utf8'),before);
+ });
+ check('correct v1 receipts stay admissible, while stray v2 fields do not become valid evidence',()=>{
+  const file=path.join(tmp,'processes/example/publication.json'),portable=JSON.parse(fs.readFileSync(file,'utf8'));
+  fs.writeFileSync(file,JSON.stringify({...portable,schemaVersion:1,outputs:['синтетический-v1-прогон'],updated:'2026-01-01T00:00:00.000Z'},null,2)+'\n');
+  const spec={process:'example'};
+  assert.equal(lifecycle(tmp,'status',spec).status,'published');
+  assert.equal(journal.start(tmp,{process:'example',mode:'local',inputText:'12 задач.',params:{to:'User',subject:'Status'}}).state.status,'running');
+  lifecycle(tmp,'publish',spec);
+  const restored=JSON.parse(fs.readFileSync(file,'utf8'));
+  assert.equal(restored.schemaVersion,2);assert.equal(restored.status,'published');
+  assert.ok(!('outputs'in restored)&&!('updated'in restored));
+  assert.deepEqual(Object.entries(restored.files),Object.entries(portable.files));
+  for(const patch of [{outputs:['v2-не-переносит-имена-прогонов']},{updated:'2026-01-01T00:00:00.000Z'}]){
+   fs.writeFileSync(file,JSON.stringify({...restored,...patch},null,2)+'\n');
+   assert.equal(lifecycle(tmp,'status',spec).status,'draft');
+  }
+  fs.writeFileSync(file,JSON.stringify(restored,null,2)+'\n');
+ });
+ check('publish normalizes legacy key order, so conversion, republication and a fresh full cycle agree byte-for-byte',()=>{
+  const file=path.join(tmp,'processes/example/publication.json'),canonical=JSON.parse(fs.readFileSync(file,'utf8'));
+  fs.writeFileSync(file,JSON.stringify({schemaVersion:1,process:'example',status:'published',scope:'local/demo',files:Object.fromEntries(Object.entries(canonical.files).reverse()),outputs:['синтетический-v1-порядок'],updated:'2026-01-01T00:00:00.000Z'},null,2)+'\n');
+  lifecycle(tmp,'publish',{process:'example'});
+  const converted=fs.readFileSync(file,'utf8'),receipt=JSON.parse(converted);
+  assert.deepEqual(Object.keys(receipt),['schemaVersion','process','status','scope','files']);
+  assert.deepEqual(Object.keys(receipt.files),Object.keys(canonical.files));
+  assert.ok(!('outputs'in receipt)&&!('updated'in receipt));
+  lifecycle(tmp,'publish',{process:'example'});
+  assert.equal(fs.readFileSync(file,'utf8'),converted);
+  publishDefinition(tmp,'example');
+  assert.equal(fs.readFileSync(file,'utf8'),converted);
+ });
  check('a copied receipt does not publish a new process name',()=>{
   fs.cpSync(path.join(tmp,'processes/example'),path.join(tmp,'processes/my-copy'),{recursive:true});
   const file=path.join(tmp,'processes/my-copy/PROCESS.md');fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('name: example','name: my-copy'));

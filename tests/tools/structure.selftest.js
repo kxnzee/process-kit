@@ -36,6 +36,10 @@ try {
     const {problems}=require('../../tools/lib/git/commit-guard');
     assert.deepEqual(problems('tests/outputs/structure.selftest.js',''),[]);
     for(const file of ['outputs/2026-11-05_test/result.md','.history/runs.jsonl','config/.env.local'])assert.ok(problems(file,'').length,file);
+    assert.deepEqual(problems('.gigacode/mcp/localmcp.bundle','\0asm binary\0'),[]);
+    assert.ok(problems('.gigacode/mcp/server.js','\0key=' + 'Bearer' + ' ' + 'a'.repeat(40) + '\0').includes('возможный секрет'),'NUL-байт не отключает поиск секретов');
+    assert.ok(problems('.gigacode/mcp/localmcp.bundle','\0' + 'Bearer' + ' ' + 'b'.repeat(30)).includes('возможный секрет'),'набор подключений не исключён из защиты');
+    assert.ok(problems('.gigacode/mcp/server.js','key=' + 'Bearer' + ' ' + 'a'.repeat(40)).includes('возможный секрет'));
   });
   check('hook reinstall migrates previous metadata and preserves the user hook without recursion',()=>{
     const c=fixture({prefix:'rk-hooks-'}),{execFileSync,spawnSync}=require('node:child_process');

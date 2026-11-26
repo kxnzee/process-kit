@@ -12,8 +12,10 @@ function publicationFiles(cwd,name,files,params={},overrides=params){
 }
 function snapshot(cwd,files){return Object.fromEntries([...new Set(files)].filter(relevant).sort().map(file=>[file,hash(fs.readFileSync(inside(cwd,file)))]));}
 function validReceipt(receipt,process=receipt?.process){
- if(!receipt||receipt.schemaVersion!==1||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
- if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!Array.isArray(receipt.outputs)||!receipt.outputs.length))return false;
+ if(!receipt||receipt.schemaVersion!==1&&receipt.schemaVersion!==2||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
+ if(receipt.schemaVersion===1){
+  if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!Array.isArray(receipt.outputs)||!receipt.outputs.length))return false;
+ }else if(Object.keys(receipt).some(key=>!['schemaVersion','process','status','scope','files'].includes(key))||(receipt.status==='validated'?receipt.scope!==undefined:receipt.scope!=='local/demo'))return false;
  return Object.entries(receipt.files).every(([file,digest])=>relevant(file)&&/^[a-f0-9]{64}$/.test(digest));
 }
 function current(cwd,receipt,process=receipt?.process){
@@ -63,10 +65,9 @@ function lifecycle(cwd,operation,spec){
  if(operation==='validate'){
   const params={...require('./process-dependencies').declaredParams(cwd,spec.process,model),...spec.params};
   const files=publicationFiles(cwd,spec.process,dependencies(cwd,spec.process,params,spec.mode==='demo'?'demo':'local',[],spec.params||{}),params,spec.params||{});
-  receipt={schemaVersion:1,process:spec.process,status:'validated',files:snapshot(cwd,files)};
+  receipt={schemaVersion:2,process:spec.process,status:'validated',files:snapshot(cwd,files)};
  }else{
   if(previous?.process!==spec.process||!current(cwd,previous))throw new Error('Сначала definition validate для текущей версии');
-  receipt=previous;
   if(operation==='test'){
    if(!Array.isArray(spec.outputs)||!spec.outputs.length)throw new Error('Нужны outputs завершённых проверочных прогонов');
    const covered=new Set(),allFiles=new Set(Object.keys(previous.files));
@@ -87,13 +88,13 @@ function lifecycle(cwd,operation,spec){
     }
    }
    coverage(spec.process);
-   receipt={...receipt,status:'tested',files:snapshot(cwd,[...allFiles]),scope:'local/demo',outputs:spec.outputs};
+   receipt={schemaVersion:2,process:spec.process,status:'tested',scope:'local/demo',files:snapshot(cwd,[...allFiles])};
   }else{
    if(previous.status!=='tested'&&previous.status!=='published')throw new Error('Сначала definition test с проверенными маршрутами');
-   receipt={...receipt,status:'published'};
+   receipt={schemaVersion:2,process:spec.process,status:'published',scope:previous.scope,files:Object.fromEntries(Object.entries(previous.files).sort(([a],[b])=>a<b?-1:a>b?1:0))};
   }
  }
- receipt.updated=new Date().toISOString();atomic(file,receipt);
+ atomic(file,receipt);
  return {process:spec.process,status:receipt.status,file,scope:receipt.scope||null};
 }
 module.exports={admitPublished,assertPublished,assertPublishedTree,lifecycle,current,validReceipt};

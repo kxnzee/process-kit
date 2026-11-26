@@ -1,7 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "process": "gmi-cluster-report",
   "status": "published",
+  "scope": "local/demo",
   "files": {
     "actions/check-methodology/ACTION.md": "f3872d6dbaf6d558eeef394a66bcf4e9bf54ece53d2c26fca135c7c27480d30f",
     "actions/check-methodology/contracts/methodology-check.json": "5562fa07bf789c512ca6149f95b6f80aaa4f0d94eb224e4edc84ec94d0af2285",
@@ -31,13 +32,5 @@
     "processes/gmi-cluster-report/rules/branches.js": "4c3ac1ac99682d835d0408e08beda9bd05b73d58de5530a4d156435ec5b8e42e",
     "processes/gmi-cluster-report/rules/gmi.js": "9d1218c0ead87e9e75f4b2271fe9bee7a2768dcec4bba23c7c96e995792623ac",
     "processes/gmi-cluster-report/templates/report.md": "7f9338cc8d72669fb4a8c52c9284261d12bf27ee4cab344ca494c2ed2bd64113"
-  },
-  "updated": "2026-11-24T05:01:23.001Z",
-  "scope": "local/demo",
-  "outputs": [
-    "2026-11-24_проба-проверка-gmi-почты",
-    "2026-11-24_проба-проверка-gmi-почты-2",
-    "2026-11-24_проба-проверка-gmi-почты-3",
-    "2026-11-24_проба-проверка-gmi-почты-4"
-  ]
+  }
 }

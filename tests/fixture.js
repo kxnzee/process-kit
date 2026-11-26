@@ -43,7 +43,25 @@ function validate(args, success, contains) {
 function model(body) { return processModel(`---\nname: sample\nentry: a\n---\n## Шаги\n${body}`); }
 if(copy)copyProject(source,tmp);
 
-return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter, close: () => fs.rmSync(tmp,{recursive:true,force:true,maxRetries:7,retryDelay:100}) };
+return { fs, path, assert, tmp, source, write, check, validate, model, allowedReference, validRunFolderName, parseFrontmatter,
+ close(){
+  const remove=()=>{
+   if(process.platform==='win32'){
+    // Нативная команда не застревает на деревьях с занятыми служебными файлами, где rmSync стоит минуты; при её отказе остаётся прежняя ошибка.
+    const r=spawnSync('cmd.exe',['/d','/s','/c','rmdir','/s','/q',tmp],{stdio:'ignore',timeout:60000});
+    if(!fs.existsSync(tmp))return;
+   }
+   fs.rmSync(tmp,{recursive:true,force:true,maxRetries:7,retryDelay:100});
+  };
+  // Под полной нагрузкой набора дескрипторы служебных файлов переоткрываются на секунды: серия попыток переживает их, не скрывая исходную ошибку.
+  let last;
+  for(let round=0;round<3;round++){
+   try{remove();return;}catch(error){last=error;}
+   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,300);
+  }
+  throw last;
+ }
+};
 };
 
 module.exports.declare=declare;
@@ -53,6 +71,7 @@ module.exports.copyProject=copyProject;
 // Synthetic publication fixtures isolate runtime/config tests from the publication workflow.
 // Genuine lifecycle acceptance uses process-release + completed runs in publication.selftest.js.
 // This helper is never imported by tools/, skills, or a production run.
+// v2 receipts carry only portable fields, so no synthetic marker or run names are written into the file.
 function seedPublication(cwd,name,spec={}){
  if(path.resolve(cwd)===path.resolve(source))throw new Error('Synthetic publication is restricted to test copies');
  const model=require('../tools/lib/entities/process-definition').validateDefinition(cwd,name);
@@ -61,7 +80,7 @@ function seedPublication(cwd,name,spec={}){
  const release=require('../tools/lib/entities/process-release');
  release.lifecycle(cwd,'validate',{process:name,mode:spec.mode==='demo'?'demo':'local',params});
  const file=path.join(cwd,'processes',name,'publication.json'),receipt=JSON.parse(fs.readFileSync(file,'utf8'));
- Object.assign(receipt,{status:'published',scope:'local/demo',outputs:['2026-01-01_синтетическая-фикстура'],syntheticTestFixture:true});
+ Object.assign(receipt,{status:'published',scope:'local/demo'});
  fs.writeFileSync(file,JSON.stringify(receipt,null,2)+'\n');
 }
 module.exports.seedPublication=seedPublication;

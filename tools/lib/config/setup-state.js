@@ -52,9 +52,6 @@ function inspect(cwd){
   if(hasMy){result.issues.push(branch==='my'?'personal-config-missing':'open-existing-personal-copy');return finish('incomplete');}
   return finish('missing');
  }
- result.known.profile='configured';
- result.known.team=my.teamId===null?'without-team':'selected';
- result.known.storage=my.storage.mode;
  let config;
  try{config=loadConfig(cwd);}catch{result.issues.push('selected-config-unavailable');return finish('incomplete');}
  result.connections.tasks=config.taskStores.filter(x=>x.enabled!==false).length;

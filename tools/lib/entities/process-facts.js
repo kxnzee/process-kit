@@ -133,7 +133,7 @@ function publicationFacts(cwd,name,scope,issue){
   const full=inside(cwd,file);
   if(!fs.existsSync(full))return {status:'draft',current:false};
   const receipt=JSON.parse(fs.readFileSync(full,'utf8'));
-  if(!validReceipt(receipt,name)||!Object.entries(receipt.files).every(([file,digest])=>typeof digest==='string'&&visibleFile(file,name,scope))||receipt.status!=='validated'&&receipt.outputs.some(output=>typeof output!=='string'||!output))throw new Error('Invalid receipt');
+  if(!validReceipt(receipt,name)||!Object.entries(receipt.files).every(([file,digest])=>typeof digest==='string'&&visibleFile(file,name,scope))||receipt.outputs!==undefined&&receipt.outputs.some(output=>typeof output!=='string'||!output))throw new Error('Invalid receipt');
   const valid=current(cwd,receipt,name);
   return {status:valid?receipt.status:'stale',current:valid};
  }catch{issue('publication-unavailable',file);return {status:'unknown',current:false};}

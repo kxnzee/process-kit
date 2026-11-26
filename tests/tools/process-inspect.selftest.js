@@ -103,6 +103,9 @@ try{
   for(const status of ['validated','tested','published']){
    receipt('inspect-test',{status,...(status==='validated'?{}:{scope:'local/demo',outputs:['synthetic-inspect-only']})});assert.deepEqual(inspect().publication,{status,current:true});
   }
+  receipt('inspect-test',{schemaVersion:2});assert.deepEqual(inspect().publication,{status:'validated',current:true});
+  receipt('inspect-test',{schemaVersion:2,status:'published',scope:'local/demo'});assert.deepEqual(inspect().publication,{status:'published',current:true});
+  for(const patch of [{schemaVersion:2,status:'published',scope:'local/demo',outputs:['v2-не-несёт-имён-прогонов']},{schemaVersion:2,status:'validated',scope:'local/demo'}])receipt('inspect-test',patch),assert.equal(inspect().publication.status,'unknown');
   // Matching hashes say nothing about missing dependencies or completion of a new edit request.
   proc('inspect-test','','### edit\n- действие: absent-action\n- артефакт: result\n- следующий: end');receipt('inspect-test');
   let facts=inspect();assert.equal(facts.publication.status,'validated');assert.ok(issue(facts,'dependency-missing'));assert.equal(facts.ready,undefined);

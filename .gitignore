@@ -36,5 +36,6 @@ Thumbs.db
 # Временные рабочие копии переноса
 .gigacode/worktrees/
 
-# Локальные MCP доставляются отдельно: бинарные файлы и зависимости не публикуются
-/.gigacode/mcp/
+# Локальные MCP
+.gigacode/mcp/*
+!.gigacode/mcp/localmcp.bundle

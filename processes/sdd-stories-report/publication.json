@@ -1,7 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "process": "sdd-stories-report",
   "status": "published",
+  "scope": "local/demo",
   "files": {
     "actions/compose-report/ACTION.md": "4e4cdd05c328bc2bb670768c7641b1dfda7db004502d9ec4cf818b333ef96e43",
     "actions/compose-report/contracts/input.json": "d4ec5f73692b184fec19276f092704c7f73cf696fde88988cd5a0aa4bdf2fcbe",
@@ -34,11 +35,5 @@
     "processes/sdd-stories-report/rules/sdd.md": "9bec16d319057493279dde1632f5e7b559915406d0d94f5c6b1021114be4f7ae",
     "processes/sdd-stories-report/templates/mail.md": "d1d76bd55ea88fa87df40ba2e95ddb69a0d33ec40dffca9cd893434ae090f225",
     "processes/sdd-stories-report/templates/report.md": "c35adbaabc6d895c3b5e89f9cc5c0051a2c3a9f8022c7cfe9827ebc656aa6aa6"
-  },
-  "updated": "2026-11-22T18:16:00.880Z",
-  "scope": "local/demo",
-  "outputs": [
-    "2026-11-22_проба-проверка-сдд",
-    "2026-11-22_проба-проверка-сдд-2"
-  ]
+  }
 }

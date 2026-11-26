@@ -1,7 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "process": "info-povod",
   "status": "published",
+  "scope": "local/demo",
   "files": {
     "actions/check-methodology/ACTION.md": "f3872d6dbaf6d558eeef394a66bcf4e9bf54ece53d2c26fca135c7c27480d30f",
     "actions/check-methodology/contracts/methodology-check.json": "5562fa07bf789c512ca6149f95b6f80aaa4f0d94eb224e4edc84ec94d0af2285",
@@ -33,12 +34,5 @@
     "processes/info-povod/rules/branches.js": "e565e1b1c8c3124ee530e5b1e4dc2b8ed4249b0a0b9797d74619f643328e9dca",
     "processes/info-povod/rules/info-povod.js": "e8ac9f84cdd99f8f159c6552be07acc55a919f63061177273276864a641bef07",
     "processes/info-povod/templates/report.md": "4573001a2b360aa6c0864fbbaa559c388b4f916515cb65488e66dd34aad166db"
-  },
-  "updated": "2026-11-22T18:27:36.062Z",
-  "scope": "local/demo",
-  "outputs": [
-    "2026-11-22_проба-проверка-поводы-4",
-    "2026-11-22_проба-проверка-поводы-5",
-    "2026-11-22_проба-проверка-поводы-6"
-  ]
+  }
 }

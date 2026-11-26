@@ -1,7 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "process": "validation-cr",
   "status": "published",
+  "scope": "local/demo",
   "files": {
     "actions/check-fields/ACTION.md": "5fd55d6bf0121c49defcca8b7707288db7e95a3e857840b111d9142b12d6fd62",
     "actions/check-fields/contracts/result.json": "b4ad48245fa68cafb9e339adc17ce8d1aadcbfa7ebbeb81743efe1aaad5fc4f4",
@@ -38,12 +39,5 @@
     "processes/validation-cr/rules/branches.js": "d7edcd884e6b8953f4a44c5b6bf285ea64204f0e389426c0a2e36a52656168cf",
     "processes/validation-cr/rules/decide.js": "168dc46febd5870f580f0221b998e15e74480e46ec32aa904e01259554969e8d",
     "processes/validation-cr/templates/report.md": "fd68a4f5cc122e8f831256f0c7e40014b8e3695b5393b73b853fcd50c878aed7"
-  },
-  "updated": "2026-11-19T05:18:31.442Z",
-  "scope": "local/demo",
-  "outputs": [
-    "2026-11-19_проба-проверка-cr-13",
-    "2026-11-19_проба-проверка-cr-14",
-    "2026-11-19_проба-проверка-cr-15"
-  ]
+  }
 }

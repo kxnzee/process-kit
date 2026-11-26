@@ -62,6 +62,9 @@ try{
   const value={schemaVersion:1,process:'catalog-sentinel',status:'validated',files:{'processes/catalog-sentinel/PROCESS.md':require('node:crypto').createHash('sha256').update(fs.readFileSync(file)).digest('hex')}};
   write(receipt,JSON.stringify(value));assert.deepEqual(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').publication,{status:'validated',current:true});
   value.status='published';value.scope='local/demo';value.outputs=['synthetic-catalog-only'];write(receipt,JSON.stringify(value));assert.equal(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').publication.status,'published');
+  write(receipt,JSON.stringify({schemaVersion:2,process:'catalog-sentinel',status:'published',scope:'local/demo',files:value.files}));assert.deepEqual(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').publication,{status:'published',current:true});
+  write(receipt,JSON.stringify({schemaVersion:2,process:'catalog-sentinel',status:'published',scope:'local/demo',outputs:['v2-не-несёт-имён-прогонов'],files:value.files}));assert.equal(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').publication.status,'unknown');
+  write(receipt,JSON.stringify(value));
   fs.appendFileSync(file,'\nChanged');assert.equal(catalog(tmp).processes.find(p=>p.name==='catalog-sentinel').publication.status,'stale');
   write(receipt,'PRIVATE_INVALID_JSON');const rows=catalog(tmp);assert.equal(rows.complete,false);assert.equal(rows.processes.find(p=>p.name==='catalog-sentinel').publication.status,'unknown');assert.ok(!JSON.stringify(rows).includes('PRIVATE_INVALID_JSON'));
   fs.rmSync(path.join(tmp,receipt));

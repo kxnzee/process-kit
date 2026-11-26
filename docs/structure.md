@@ -72,7 +72,7 @@ $ git ls-remote origin team-urmepk
 ├── adapters/<имя>/ADAPTER.md
 ├── context/<master|team|my>/<тема>/CONTEXT.md          уровни master/team/my, без префиксов у тем
 ├── config/
-│   ├── master/                      общие безопасные defaults
+│   ├── master/                      config.json (общие defaults) и README.md
 │   ├── team/                        EXAMPLE.json и командный config.json
 │   └── my/                          EXAMPLE.json и личный config.json
 ├── tools/

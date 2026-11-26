@@ -22,6 +22,19 @@ try{
   assert.throws(()=>journal.operation(tmp,'begin',{output,step:'edit'}),/Завершённый/);
   assert.throws(()=>journal.operation(tmp,'finish',{output,resultName:'another.md'}),/переименовать/);
  });
+ check('a wrong execute attemptId is rejected without failing the run or its pending attempt',()=>{
+  const output=journal.start(tmp,{process:'sdd-stories-report',mode:'demo',params:{dataFile:'processes/sdd-stories-report/fixture.json'}}).output;
+  const trace=()=>fs.readFileSync(path.join(tmp,'outputs',output,'.run/trace.jsonl'),'utf8');
+  assert.throws(()=>journal.execute(tmp,{output,step:'fetch',attemptId:'wrong'}),/Неверный attemptId/);
+  const fresh=state(output);
+  assert.equal(fresh.status,'running');assert.equal(fresh.failure,undefined);assert.equal(fresh.pending,null);
+  journal.operation(tmp,'begin',{output,step:'fetch'});
+  const attempted=state(output),events=trace();
+  assert.throws(()=>journal.execute(tmp,{output,step:'fetch',attemptId:'wrong'}),/Неверный attemptId/);
+  assert.deepEqual(state(output),attempted);assert.equal(trace(),events);
+  journal.execute(tmp,{output,step:'fetch'});
+  assert.equal(state(output).last_step_name,'fetch');assert.equal(state(output).failure,undefined);assert.equal(state(output).pending,null);
+ });
  check('start shares structural and artifact-flow validation with check, before writing outputs',()=>{
   const original=fs.readFileSync(path.join(tmp,'processes/example/PROCESS.md'),'utf8');
   const variants=[original.replace('version: 1.0.0','version: broken'),original.replace('entry: edit','entry: draft').replace(/### edit[\s\S]*?(?=### draft)/,''),original.replace('действие: edit-text','действие: missing'),original.replace('следующий: draft','следующий: edit')];

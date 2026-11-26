@@ -1,7 +1,7 @@
 # RocKit: правила агента
 
 Сначала определи цель и границы поручения, затем выбери нужный скилл и прочитай
-его инструкцию. Проверяй настройку, только если она нужна задаче.
+его инструкцию. Проверяй состояние копии при знакомстве и когда это нужно задаче.
 
 ## Ограничения и согласия
 
@@ -84,16 +84,18 @@ local/demo-прогоны конкретного процесса и `definition
 Определи ближайшую операцию по карте. Сверь `description` доступного скилла, прочитай
 его `SKILL.md` и нужные материалы. Если обнаружение неполное, используй `node tools/kit.js skills`
 для метаданных. Неполный каталог не доказывает, что подходящего процесса нет.
+В GigaCode CLI человек может выбрать скилл через `/<имя-скилла>`. Для команды и
+обычного поручения применяй одну инструкцию скилла и те же правила согласия.
 
 | Ситуация | Ответственный скилл |
 | --- | --- |
-| Знакомство, консультация или выбор подхода к автоматизации | [rk-mentor](.gigacode/skills/rk-mentor/SKILL.md). Консультация по запросу, без обязательного входа через Mentor. |
-| Выполнение или продолжение опубликованного процесса | [rk-run-process](.gigacode/skills/rk-run-process/SKILL.md). Ищет подходящий Process и ведёт его через Controller. |
+| `/rk-mentor`, «Старт» без текущего поручения, «Как начать?», «Что ты умеешь?», консультация | [rk-mentor](.gigacode/skills/rk-mentor/SKILL.md). Для знакомства использует состояние копии и каталог процессов. |
+| `/rk-run-process`, выполнение или продолжение опубликованного процесса | [rk-run-process](.gigacode/skills/rk-run-process/SKILL.md). Ищет подходящий Process и ведёт его через Controller. |
 | Одно существующее локальное вычисление или преобразование | [rk-run-action](.gigacode/skills/rk-run-action/SKILL.md). Выполняет один transform по его контракту. |
-| Новый процесс, черновик или изменение маршрута | [rk-create-process](.gigacode/skills/rk-create-process/SKILL.md). Создаёт каркас через `definition scaffold`, ведёт адаптацию и допуск. |
+| `/rk-create-process`, новый процесс, черновик или изменение маршрута | [rk-create-process](.gigacode/skills/rk-create-process/SKILL.md). Создаёт каркас через `definition scaffold`, ведёт адаптацию и допуск. |
 | Новый или изменяемый контракт переиспользуемого действия | [rk-create-action](.gigacode/skills/rk-create-action/SKILL.md). Описывает входы, результат и контракт Action. |
 | Описание операций системы и их связи с инструментами | [rk-create-adapter](.gigacode/skills/rk-create-adapter/SKILL.md). Описывает Adapter. Настройку существующего подключения ведёт Init. |
-| Настройка личной копии, подключения или предпочтений | [rk-init](.gigacode/skills/rk-init/SKILL.md). Установку локального MCP ведёт [rk-install-local-mcp](.gigacode/skills/rk-install-local-mcp/SKILL.md) по запросу или в рамках согласованной настройки. |
+| `/rk-init`, «Настрой RocKit», изменение подключений или предпочтений | [rk-init](.gigacode/skills/rk-init/SKILL.md). Установку локального MCP ведёт [rk-install-local-mcp](.gigacode/skills/rk-install-local-mcp/SKILL.md) по запросу или в рамках согласованной настройки. |
 | Сбой, жалоба на результат или разбор конкретного запуска | [rk-diagnose](.gigacode/skills/rk-diagnose/SKILL.md). Собирает безопасные факты о выбранном Run. |
 | Доставка подготовленных изменений через запрос на изменения | [rk-promote-changes-team](.gigacode/skills/rk-promote-changes-team/SKILL.md) для своей команды, [rk-promote-changes-master](.gigacode/skills/rk-promote-changes-master/SKILL.md) для общего уровня. |
 

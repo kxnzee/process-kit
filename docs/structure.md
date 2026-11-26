@@ -200,7 +200,11 @@ kit.js run next/execute либо begin/save для работы модели. Ф
 
 ## Способности и общие references
 
-В .gigacode/skills/ остаются десять самостоятельных способностей. Обязательных
+В GigaCode CLI `/<имя-скилла>` открывает тот же `SKILL.md`, который агент выбирает
+по обычной просьбе. Например, `/rk-init` соответствует `skills/rk-init/SKILL.md`
+в `.gigacode/`.
+
+В .gigacode/skills/ описаны одиннадцать самостоятельных способностей. Обязательных
 посредников нет. Общие инварианты и policy-driven продолжение — GIGACODE.md;
 подробные случаи — [interaction.md](../.gigacode/references/interaction.md). Общая процедура двух переносов
 находится в [promotion.md](../.gigacode/references/promotion.md), правила назначения — в соответствующих skills.

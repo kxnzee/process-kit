@@ -497,10 +497,12 @@ function ruleSources() {
 }
 
 function ruleSettings() {
-  const file = path.join(ROOT, '.gigacode/settings.json');
+  const file = path.join(ROOT, SETTINGS_FILE);
   if (!exists(file)) { E('настройки GigaCode', file, 0, 'нет .gigacode/settings.json'); return; }
   const j = loadJson('настройки GigaCode', file);
   if (!j) return;
+  // Client permission rules are not connection settings.
+  delete j.permissions;
   function settingsValues(value, key = '', trail = '') {
     if (value && typeof value === 'object') { for (const [k, v] of Object.entries(value)) settingsValues(v, k, trail ? `${trail}.${k}` : k); return; }
     if (ACCESS_KEY.test(key) && typeof value !== 'string') E('настройки GigaCode', file, 0, `${trail}: значение доступа должно быть ссылкой $secret:`);

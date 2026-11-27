@@ -10,7 +10,9 @@ const { owner } = require('../entities/process-model');
 const { SETTINGS_FILE, parseSettings, hasClientPermissions, clientPermissionsOnly } = require('../config/gigacode-settings');
 function promotionPlan(cwd, targetRef) {
   if (!/^(?:origin\/)?(?:master|team-[a-z0-9]+)$/.test(targetRef)) throw new Error('Target must be master or team-<code>, optionally under origin/');
-  const git = (...args) => execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+  const git = (...args) => execFileSync('git', args, {
+    cwd, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 512 * 1024 * 1024,
+  });
   const hash = buffer => crypto.createHash('sha256').update(buffer).digest('hex');
   const sourceCommit = git('rev-parse', '--verify', 'HEAD').toString().trim();
   const targetCommit = git('rev-parse', '--verify', `${targetRef}^{commit}`).toString().trim();
@@ -58,13 +60,15 @@ function promotionPlan(cwd, targetRef) {
     }
     const base = version(baseCommit, file), target = version(targetCommit, file);
     if (equal(source, base) || equal(source, target)) continue;
-    if (file === SETTINGS_FILE && hasClientPermissions(parseSettings(content))) {
-      const onlyPermissions = base?.mode === source.mode &&
-        clientPermissionsOnly(git('show', `${baseCommit}:${file}`), content);
-      const reason = onlyPermissions ? 'local GigaCode permissions' :
-        'shared settings also changed; prepare them separately from local GigaCode permissions';
-      excluded.push({ path: file, reason });
-      continue;
+    if (file === SETTINGS_FILE && source) {
+      const baseContent = base ? git('show', `${baseCommit}:${file}`) : null;
+      if (hasClientPermissions(parseSettings(baseContent)) || hasClientPermissions(parseSettings(content))) {
+        const onlyPermissions = base?.mode === source.mode && clientPermissionsOnly(baseContent, content);
+        const reason = onlyPermissions ? 'local GigaCode permissions' :
+          'shared settings also changed; prepare them separately from local GigaCode permissions';
+        excluded.push({ path: file, reason });
+        continue;
+      }
     }
     const item = { path: file, operation: source ? target ? 'modify' : 'add' : 'delete', source, base, target, administrative: admin };
     if (!equal(base, target)) conflicts.push(item);

@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const { inspect: inspectSetup } = require('../config/setup-state');
 const { inside } = require('../core/safe-path');
 const { parseFrontmatter } = require('../core/markdown');
 const { NAME, owner } = require('./process-model');
@@ -21,6 +22,13 @@ function scaffold(cwd, spec) {
   }
   const scope = scopeFor(cwd);
   const level = ['master', 'team', 'my'][ownership.level];
+  if (level === 'my' && scope.level === level) {
+    const { personalReady, personal, issues } = inspectSetup(cwd);
+    if (!personalReady) {
+      const reason = issues.join(', ') || personal.state;
+      throw new Error(`Личная копия не готова к созданию процесса (${reason}). Завершите настройку через rk-init.`);
+    }
+  }
   if (scope.level !== level || !visible(name, scope)) {
     throw new Error('Имя процесса не соответствует уровню и владельцу текущей рабочей копии');
   }

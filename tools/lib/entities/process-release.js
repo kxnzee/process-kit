@@ -14,7 +14,8 @@ function snapshot(cwd,files){return Object.fromEntries([...new Set(files)].filte
 function validReceipt(receipt,process=receipt?.process){
  if(!receipt||receipt.schemaVersion!==1&&receipt.schemaVersion!==2||receipt.process!==process||!['validated','tested','published'].includes(receipt.status)||!receipt.files||Array.isArray(receipt.files)||!Object.hasOwn(receipt.files,`processes/${process}/PROCESS.md`))return false;
  if(receipt.schemaVersion===1){
-  if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!Array.isArray(receipt.outputs)||!receipt.outputs.length))return false;
+  if(receipt.outputs!==undefined&&(!Array.isArray(receipt.outputs)||receipt.outputs.some(output=>typeof output!=='string'||!output)))return false;
+  if(receipt.status!=='validated'&&(receipt.scope!=='local/demo'||!receipt.outputs?.length))return false;
  }else if(Object.keys(receipt).some(key=>!['schemaVersion','process','status','scope','files'].includes(key))||(receipt.status==='validated'?receipt.scope!==undefined:receipt.scope!=='local/demo'))return false;
  return Object.entries(receipt.files).every(([file,digest])=>relevant(file)&&/^[a-f0-9]{64}$/.test(digest));
 }
@@ -102,7 +103,7 @@ module.exports={admitPublished,assertPublished,assertPublishedTree,lifecycle,cur
 if(require.main===module){
  const [operation,...args]=process.argv.slice(2);
  try{
-  const usage='node tools/kit.js definition <scaffold|inspect|validate|test|publish|status> <spec.json>|--stdin|--process <имя> [--output <прогон>] [--level <уровень>] [--team <код>]';
+  const usage='node tools/kit.js definition '+require('../../kit').commands.definition.usage;
   const {spec}=require('../core/cli-spec').readSpec(args,{usage,flags:{'--process':'process','--output':'outputs','--level':'level','--team':'team'},lists:['outputs']});
   const cwd=root();
   if(!['inspect','scaffold'].includes(operation))require('./process-facts').assertAccess(cwd,spec.process,spec.params);
